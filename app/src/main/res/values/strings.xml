@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Accelerometer</string>
+    <string name="action_settings">Settings</string>
+    <string name="refreshing_streams">Refreshing Streams</string>
+    <string name="start">START</string>
+    <string name="stop">STOP</string>
+    <string name="elapsed_time">Elapsed Time:</string>
+</resources>
