@@ -12,7 +12,6 @@ import android.widget.Toast;
 
 import org.apache.commons.lang3.ArrayUtils;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Vector;
@@ -36,6 +35,7 @@ public class LSLService extends Service {
 
     static LSL.StreamOutlet accelerometerOutlet;
     LSL.StreamInlet[] inlet;
+    LSL.StreamInfo[] results;
 
     //Vector<Vector<Integer>> list = new Vector<Vector<Integer>>(100);
     //static Vector[] vectors = new Vector[10];
@@ -90,6 +90,7 @@ public class LSLService extends Service {
     String[] name;
     String[] format;
 
+
     double[][] timestamps;
 
 
@@ -121,7 +122,7 @@ public class LSLService extends Service {
         //Creating new thread for my service
         //Always write your long running tasks in a separate thread, to avoid ANR
 
-        final LSL.StreamInfo[] results = LSL.resolve_streams();
+        results = LSL.resolve_streams();
         streamCount = results.length;
 
         inlet = new LSL.StreamInlet[results.length];
@@ -143,45 +144,51 @@ public class LSLService extends Service {
         for (int i=0; i<inlet.length; i++){
             final int finalI = i;
 
+            try {
+                inlet[finalI] = new LSL.StreamInlet(results[finalI]);
+                LSL.StreamInfo inf = inlet[finalI].info();
+                chanelCount[finalI] = inlet[finalI].info().channel_count();
+                System.out.println("The stream's XML meta-data is: ");
+                System.out.println(inf.as_xml());
+                streamHeader[finalI] = inf.as_xml();
+                format[finalI] = getXmlNodeValue(inf.as_xml(), "channel_format");
+//                                if (chanelCount[i] == 1){
+//                                    offset[i] = inlet[i].time_correction();
+//                                }
+
+                if (format[finalI].contains("float")){
+                    sample[finalI] = new float[inlet[finalI].info().channel_count()];
+                    lightSample[finalI] = new ArrayList<Float>(4);
+                } else if(format[finalI].contains("int")){
+                    sampleInt[finalI] = new int[inlet[finalI].info().channel_count()];
+                    lightSampleInt[finalI] = new ArrayList<Integer>(4);
+                } else if(format[finalI].contains("double")){
+                    sampleDouble[finalI] = new double[inlet[finalI].info().channel_count()];
+                    lightSampleDouble[finalI] = new ArrayList<Double>(4);
+                } else if(format[finalI].contains("string")){
+                    sampleString[finalI] = new String[inlet[finalI].info().channel_count()];
+                    lightSampleString[finalI] = new ArrayList<String>(4);
+                } else if(format[finalI].contains("byte")){
+                    sampleByte[finalI] = new byte[inlet[finalI].info().channel_count()];
+                    lightSampleByte[finalI] = new ArrayList<Byte>(4);
+                } else if(format[finalI].contains("short")){
+                    sampleShort[finalI] = new short[inlet[finalI].info().channel_count()];
+                    lightSampleShort[finalI] = new ArrayList<Short>(4);
+                }
+                timestamps[finalI] = new double[1];
+                lightTimestamp[finalI] = new ArrayList<Double>(4);
+                name[finalI] = inlet[finalI].info().name();
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+
             new Thread(new Runnable() {
                 @Override
                 public void run() {
                     while (!MainActivity.checkFlag) {
                         try {
-
-                            inlet[finalI] = new LSL.StreamInlet(results[finalI]);
-                            LSL.StreamInfo inf = inlet[finalI].info();
-                            chanelCount[finalI] = inlet[finalI].info().channel_count();
-                            System.out.println("The stream's XML meta-data is: ");
-                            System.out.println(inf.as_xml());
-                            streamHeader[finalI] = inf.as_xml();
-                            format[finalI] = getXmlNodeValue(inf.as_xml(), "channel_format");
-//                                if (chanelCount[i] == 1){
-//                                    offset[i] = inlet[i].time_correction();
-//                                }
-
-                            if (format[finalI].contains("float")){
-                                sample[finalI] = new float[inlet[finalI].info().channel_count()];
-                                lightSample[finalI] = new ArrayList<Float>(4);
-                            } else if(format[finalI].contains("int")){
-                                sampleInt[finalI] = new int[inlet[finalI].info().channel_count()];
-                                lightSampleInt[finalI] = new ArrayList<Integer>(4);
-                            } else if(format[finalI].contains("double")){
-                                sampleDouble[finalI] = new double[inlet[finalI].info().channel_count()];
-                                lightSampleDouble[finalI] = new ArrayList<Double>(4);
-                            } else if(format[finalI].contains("string")){
-                                sampleString[finalI] = new String[inlet[finalI].info().channel_count()];
-                                lightSampleString[finalI] = new ArrayList<String>(4);
-                            } else if(format[finalI].contains("byte")){
-                                sampleByte[finalI] = new byte[inlet[finalI].info().channel_count()];
-                                lightSampleByte[finalI] = new ArrayList<Byte>(4);
-                            } else if(format[finalI].contains("short")){
-                                sampleShort[finalI] = new short[inlet[finalI].info().channel_count()];
-                                lightSampleShort[finalI] = new ArrayList<Short>(4);
-                            }
-                            timestamps[finalI] = new double[1];
-                            lightTimestamp[finalI] = new ArrayList<Double>(4);
-                            name[finalI] = inlet[finalI].info().name();
 
                             //receive Data
                             //sample = new float[inlet.info().channel_count()];
@@ -247,12 +254,10 @@ public class LSLService extends Service {
                                     }
                                 }
 
-                                System.out.println();
-                                System.out.println("Thread ID is: " + finalI);
+                                //System.out.println();
+                                //System.out.println("Thread ID is: " + finalI);
                             }
 
-                        } catch (IOException e) {
-                            e.printStackTrace();
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -263,205 +268,6 @@ public class LSLService extends Service {
                 }
             }).start();
         }
-
-//        new Thread(new Runnable() {
-//                @Override
-//                public void run() {
-//                    while (!MainActivity.checkFlag) {
-//
-////                        LSL.StreamInfo[] results = LSL.resolve_streams();
-////                        streamCount = results.length;
-//                        try {
-////                            inlet = new LSL.StreamInlet[results.length];
-////                            streamHeader = new String[results.length];
-////                            streamFooter = new String[results.length];
-////                            offset = new double[results.length];
-////                            lastValue = new double[results.length];
-////                            chanelCount = new int[results.length];
-////                            sample = new float[results.length][];
-////                            sampleInt = new int[results.length][];
-////                            sampleDouble = new double[results.length][];
-////                            sampleString = new String[results.length][];
-////                            sampleShort = new short[results.length][];
-////                            sampleByte = new byte[results.length][];
-////                            timestamps = new double[results.length][];
-////                            name = new String[results.length];
-////                            format = new String[results.length];
-//                            //lightSample = new ArrayList[results.length];
-//                            //lightTimestamp = new ArrayList[results.length];
-//
-//                            for (int i=0; i<inlet.length; i++){
-//                                inlet[i] = new LSL.StreamInlet(results[i]);
-//                                LSL.StreamInfo inf = inlet[i].info();
-//                                chanelCount[i] = inlet[i].info().channel_count();
-//                                System.out.println("The stream's XML meta-data is: ");
-//                                System.out.println(inf.as_xml());
-//                                streamHeader[i] = inf.as_xml();
-//                                format[i] = getXmlNodeValue(inf.as_xml(), "channel_format");
-////                                if (chanelCount[i] == 1){
-////                                    offset[i] = inlet[i].time_correction();
-////                                }
-//
-//                                if (format[i].contains("float")){
-//                                    //sample = new float[results.length][];
-//                                    sample[i] = new float[inlet[i].info().channel_count()];
-//                                    lightSample[i] = new ArrayList<Float>(4);
-//                                } else if(format[i].contains("int")){
-//                                    //sampleInt = new int[results.length][];
-//                                    sampleInt[i] = new int[inlet[i].info().channel_count()];
-//                                    lightSampleInt[i] = new ArrayList<Integer>(4);
-//                                } else if(format[i].contains("double")){
-//                                    //sampleDouble = new double[results.length][];
-//                                    sampleDouble[i] = new double[inlet[i].info().channel_count()];
-//                                    lightSampleDouble[i] = new ArrayList<Double>(4);
-//                                } else if(format[i].contains("string")){
-//                                    //sampleString = new String[results.length][];
-//                                    sampleString[i] = new String[inlet[i].info().channel_count()];
-//                                    lightSampleString[i] = new ArrayList<String>(4);
-//                                } else if(format[i].contains("byte")){
-//                                    //sampleString = new String[results.length][];
-//                                    sampleByte[i] = new byte[inlet[i].info().channel_count()];
-//                                    lightSampleByte[i] = new ArrayList<Byte>(4);
-//                                } else if(format[i].contains("short")){
-//                                    //sampleString = new String[results.length][];
-//                                    sampleShort[i] = new short[inlet[i].info().channel_count()];
-//                                    lightSampleShort[i] = new ArrayList<Short>(4);
-//                                }
-//                                timestamps[i] = new double[1];
-//                                lightTimestamp[i] = new ArrayList<Double>(4);
-//                                name[i] = inlet[i].info().name();
-//
-//                            }
-//
-//                            //receive Data
-//                            //sample = new float[inlet.info().channel_count()];
-//                            //timestamps = new double[1];
-//
-//                            while (true) {
-//
-//                                for (int i=0; i<inlet.length; i++) {
-//                                    if (format[i].contains("float")){
-//                                        inlet[i].pull_chunk(sample[i], timestamps[i]);
-//                                    } else if(format[i].contains("int")){
-//                                        inlet[i].pull_chunk(sampleInt[i], timestamps[i]);
-//                                    } else if(format[i].contains("double")){
-//                                        inlet[i].pull_chunk(sampleDouble[i], timestamps[i]);
-//                                    } else if(format[i].contains("string")){
-//                                        inlet[i].pull_chunk(sampleString[i], timestamps[i]);
-//                                    } else if(format[i].contains("byte")){
-//                                        inlet[i].pull_chunk(sampleByte[i], timestamps[i]);
-//                                    } else if(format[i].contains("short")){
-//                                        inlet[i].pull_chunk(sampleShort[i], timestamps[i]);
-//                                    }
-//
-//                                }
-//
-//
-//
-////                                for (int i=0; i<inlet.length; i++) {
-////                                    for(int j=0; j<chanelCount[i]; j++){
-////                                        inlet[i].pull_chunk(sample[i][j], timestamps[i]);
-////                                    }
-////                                }
-//
-//                                //inlet[0].pull_chunk(sample[0], timestamps[0]);
-//
-////                                for (int k=0;k<sample[0].length;k++) {
-//////                                    System.out.print("\t" + Double.toString(sample[k]));
-//////                                    System.out.print("\t" + Double.toString(timestamps[k]));
-////                                    lightSample[0].add(k,sample[0][k]);
-////                                    lightTimestamp[0].add(k,timestamps[0][k]);
-////
-////                                }
-//
-//
-////                                for (int i=0; i<inlet.length; i++) {
-////                                    for (int j=0; j<chanelCount[i]; j++) {
-////                                        for(int k=0;k<sample[i].length;k++){
-////                                            lightSample[i].add(k,sample[j][k]);
-////                                            lightTimestamp[i].add(k,timestamps[i][k]);
-////                                        }
-////
-////
-////                                    }
-////                                }
-//
-//
-//                                for (int i=0; i<inlet.length; i++) {
-//
-//                                    if (format[i].contains("float")){
-//                                        for(int k=0;k<sample[i].length;k++){
-//                                            lightSample[i].add(k,sample[i][k]);
-//                                            if(k==0){
-//                                                lightTimestamp[i].add(k,timestamps[i][k]);
-//                                            }
-//                                        }
-//                                    } else if(format[i].contains("int")){
-//                                        for(int k=0;k<sampleInt[i].length;k++){
-//                                            lightSampleInt[i].add(k,sampleInt[i][k]);
-//                                            if(k==0){
-//                                                lightTimestamp[i].add(k,timestamps[i][k]);
-//                                            }
-//                                        }
-//                                    } else if(format[i].contains("double")){
-//                                        for(int k=0;k<sampleDouble[i].length;k++){
-//                                            lightSampleDouble[i].add(k,sampleDouble[i][k]);
-//                                            if(k==0){
-//                                                lightTimestamp[i].add(k,timestamps[i][k]);
-//                                            }
-//                                        }
-//                                    } else if(format[i].contains("string")){
-//                                        for(int k=0;k<sampleString[i].length;k++){
-//                                            lightSampleString[i].add(k,sampleString[i][k]);
-//                                            if(k==0){
-//                                                lightTimestamp[i].add(k,timestamps[i][k]);
-//                                            }
-//                                        }
-//                                    } else if(format[i].contains("byte")){
-//                                        for(int k=0;k<sampleByte[i].length;k++){
-//                                            lightSampleByte[i].add(k,sampleByte[i][k]);
-//                                            if(k==0){
-//                                                lightTimestamp[i].add(k,timestamps[i][k]);
-//                                            }
-//                                        }
-//                                    } else if(format[i].contains("short")){
-//                                        for(int k=0;k<sampleShort[i].length;k++){
-//                                            lightSampleShort[i].add(k,sampleShort[i][k]);
-//                                            if(k==0){
-//                                                lightTimestamp[i].add(k,timestamps[i][k]);
-//                                            }
-//                                        }
-//                                    }
-//
-//                                }
-//
-////                                for (int k=0;k<sample.length;k++) {
-//////                                    System.out.print("\t" + Double.toString(sample[k]));
-//////                                    System.out.print("\t" + Double.toString(timestamps[k]));
-////                                    lightSample.add(sample[k]);
-////                                    lightTimestamp.add(timestamps[k]);
-////                                }
-//
-////                                for (int k=0;k<sample1.length;k++) {
-//////                                    System.out.print("\t" + Double.toString(sample[k]));
-//////                                    System.out.print("\t" + Double.toString(timestamps[k]));
-////                                    lightSample2.add(sample1[k]);
-////                                    lightTimestamp2.add(timestamps1[k]);
-////                                }
-//                                System.out.println();
-//
-//                            }
-//
-//                        } catch (IOException e) {
-//                            e.printStackTrace();
-//                        } catch (Exception e) {
-//                            e.printStackTrace();
-//                        }
-//
-//                    }
-//                    //Stop service once it finishes its taskstopSelf();
-//                }
-//        }).start();
         MainActivity.isRunning = true;
         return Service.START_STICKY;
     }
