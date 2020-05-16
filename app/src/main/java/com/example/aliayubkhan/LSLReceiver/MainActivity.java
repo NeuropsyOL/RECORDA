@@ -29,8 +29,6 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.example.aliayubkhan.LSLReceiver.LSLService.t2;
-
 public class MainActivity extends Activity
 {
     static TextView tv;
@@ -180,7 +178,7 @@ public class MainActivity extends Activity
                 stopService(intent);
                 //LSLService.t2.interrupt();
                 t.interrupt();
-                t2.interrupt();
+                //t2.interrupt();
                 //restart(2);
 
 
