@@ -35,11 +35,6 @@ public class LSLService extends Service {
     LSL.StreamInlet[] inlet;
     LSL.StreamInfo[] results;
 
-    //Vector<Vector<Integer>> list = new Vector<Vector<Integer>>(100);
-    //static Vector[] vectors = new Vector[10];
-
-    //static ArrayList<Float>[] lightSample = new ArrayList<Float>[](4);
-
     //for int chanel format
     @SuppressWarnings("unchecked")
     ArrayList<Float>[] lightSample = new ArrayList[30];// = new ArrayList[];

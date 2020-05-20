@@ -34,7 +34,6 @@ public class SettingsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.settings_activity);
 
-        //Initialize PickiT
         samplingRate_set_Check = Boolean.TRUE;
         samplingSet = (Button) findViewById(R.id.locationButton);
 
