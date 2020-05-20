@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/LSL_Android_Receiver-master.iml" filepath="$PROJECT_DIR$/LSL_Android_Receiver-master.iml" group="LSL_Android_Receiver-master" />
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" group="LSL_Android_Receiver-master/app" />
+      <module fileurl="file://$PROJECT_DIR$/LSL_RECORDER.iml" filepath="$PROJECT_DIR$/LSL_RECORDER.iml" group="LSL_RECORDER" />
+      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" group="LSL_RECORDER/app" />
     </modules>
   </component>
 </project>
