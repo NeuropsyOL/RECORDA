@@ -7,7 +7,6 @@ import android.os.IBinder;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
 import android.widget.ArrayAdapter;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -30,7 +29,6 @@ public class LSLService extends Service {
 
     private static final String TAG = "LSLService";
     public static Thread t2;
-    TextView tv;
 
 
     static LSL.StreamOutlet accelerometerOutlet;
@@ -69,9 +67,7 @@ public class LSLService extends Service {
     @SuppressWarnings("unchecked")
     ArrayList<Byte>[] lightSampleByte = new ArrayList[30];// = new ArrayList[];
 
-    //static Vector<Float> lightSample = new Vector<Float>(4);
     static Vector<Float> lightSample2 = new Vector<Float>(4);
-    //Vector<Double> lightTimestamp = new Vector<Double>(4);
     Vector<Double> lightTimestamp2 = new Vector<Double>(4);
     float[][] sample = new float[1][1];
     int[][] sampleInt = new int[1][1];
@@ -110,17 +106,6 @@ public class LSLService extends Service {
 
         Log.i(TAG, "Service onStartCommand");
         Toast.makeText(this,"Recording LSL!", Toast.LENGTH_SHORT).show();
-
-        //Recording.createInstance("test.xdf", streams);
-
-        //File file = new File(MainActivity.filenamevalue);
-
-
-//        Recording.writeDoubleManual();
-
-
-        //Creating new thread for my service
-        //Always write your long running tasks in a separate thread, to avoid ANR
 
         results = LSL.resolve_streams();
         streamCount = results.length;
@@ -189,10 +174,6 @@ public class LSLService extends Service {
                 public void run() {
                     while (!MainActivity.checkFlag) {
                         try {
-
-                            //receive Data
-                            //sample = new float[inlet.info().channel_count()];
-                            //timestamps = new double[1];
 
                             while (true) {
 
@@ -307,15 +288,6 @@ public class LSLService extends Service {
             lv.setAdapter(new ArrayAdapter<String>(this,R.layout.list_view_text , LSLStreamName));
         }
 
-//        /*Display Vector elements*/
-//        Enumeration en = lightTimestamp.elements();
-//        System.out.println("\nElements are:");
-//        while(en.hasMoreElements())
-//            System.out.print(en.nextElement() + " ");
-//
-//        System.out.println("testData");
-//
-//
         MainActivity.path = MainActivity.path + "/" + MainActivity.filenamevalue;
 
         System.out.println("bbreakpoint");
@@ -326,19 +298,8 @@ public class LSLService extends Service {
 
                 if (format[i].contains("float")){
                     float[] lightsample = ArrayUtils.toPrimitive(lightSample[i].toArray(new Float[0]), 0);
-                    //float[] testlightsample = Arrays.copyOfRange(lightsample, 100, 112);
                     double[] lighttimestamps = ArrayUtils.toPrimitive(lightTimestamp[i].toArray(new Double[0]), 0);
-                    //double[] testlighttimestamps = Arrays.copyOfRange(lighttimestamps, 100, 104);
 
-                    //                                const std::string footer(
-//                                    "<?xml version=\"1.0\"?>"
-//                                    "<info>"
-//                                    "<first_timestamp>5.1</first_timestamp>"
-//                                    "<last_timestamp>5.9</last_timestamp>"
-//                                    "<sample_count>9</sample_count>"
-//                                    "<clock_offsets>"
-//                                    "<offset><time>50979.7660030605</time><value>-3.436503902776167e-06</value></offset>"
-//                                    "</clock_offsets></info>");
 
 
                     if(!name[i].contains("Audio")){
@@ -363,9 +324,6 @@ public class LSLService extends Service {
                     } else {
                         lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length*chanelCount[i]);
                     }
-                    //lightsample = Arrays.copyOfRange(lightsample, 0, lightsample.length-2000);
-                    //lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
-//            lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length*chanelCount[i]);
                     System.out.println("lengt of timestamps is: "+ lighttimestamps.length);
 
                     streamFooter[i] = "<?xml version=\"1.0\"?>" + "\n"+
@@ -391,19 +349,8 @@ public class LSLService extends Service {
                 } else if(format[i].contains("int")){
 
                     int[] lightsample = ArrayUtils.toPrimitive(lightSampleInt[i].toArray(new Integer[0]), 0);
-                    //float[] testlightsample = Arrays.copyOfRange(lightsample, 100, 112);
-                    double[] lighttimestamps = ArrayUtils.toPrimitive(lightTimestamp[i].toArray(new Double[0]), 0);
-                    //double[] testlighttimestamps = Arrays.copyOfRange(lighttimestamps, 100, 104);
 
-                    //                                const std::string footer(
-//                                    "<?xml version=\"1.0\"?>"
-//                                    "<info>"
-//                                    "<first_timestamp>5.1</first_timestamp>"
-//                                    "<last_timestamp>5.9</last_timestamp>"
-//                                    "<sample_count>9</sample_count>"
-//                                    "<clock_offsets>"
-//                                    "<offset><time>50979.7660030605</time><value>-3.436503902776167e-06</value></offset>"
-//                                    "</clock_offsets></info>");
+                    double[] lighttimestamps = ArrayUtils.toPrimitive(lightTimestamp[i].toArray(new Double[0]), 0);
 
 
                     lightsample = removeZerosInt(lightsample, lightsample.length);
@@ -417,9 +364,6 @@ public class LSLService extends Service {
                     } else {
                         lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length*chanelCount[i]);
                     }
-                    //lightsample = Arrays.copyOfRange(lightsample, 0, lightsample.length-2000);
-                    //lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
-//            lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length*chanelCount[i]);
                     System.out.println("lengt of timestamps is: "+ lighttimestamps.length);
 
                     streamFooter[i] = "<?xml version=\"1.0\"?>" + "\n"+
@@ -446,19 +390,8 @@ public class LSLService extends Service {
                 } else if(format[i].contains("double")){
 
                     double[] lightsample = ArrayUtils.toPrimitive(lightSampleDouble[i].toArray(new Double[0]), 0);
-                    //float[] testlightsample = Arrays.copyOfRange(lightsample, 100, 112);
                     double[] lighttimestamps = ArrayUtils.toPrimitive(lightTimestamp[i].toArray(new Double[0]), 0);
-                    //double[] testlighttimestamps = Arrays.copyOfRange(lighttimestamps, 100, 104);
 
-                    //                                const std::string footer(
-//                                    "<?xml version=\"1.0\"?>"
-//                                    "<info>"
-//                                    "<first_timestamp>5.1</first_timestamp>"
-//                                    "<last_timestamp>5.9</last_timestamp>"
-//                                    "<sample_count>9</sample_count>"
-//                                    "<clock_offsets>"
-//                                    "<offset><time>50979.7660030605</time><value>-3.436503902776167e-06</value></offset>"
-//                                    "</clock_offsets></info>");
 
 
                     lightsample = removeZerosDouble(lightsample, lightsample.length);
@@ -472,9 +405,6 @@ public class LSLService extends Service {
                     } else {
                         lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length*chanelCount[i]);
                     }
-                    //lightsample = Arrays.copyOfRange(lightsample, 0, lightsample.length-2000);
-                    //lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
-//            lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length*chanelCount[i]);
                     System.out.println("lengt of timestamps is: "+ lighttimestamps.length);
 
                     streamFooter[i] = "<?xml version=\"1.0\"?>" + "\n"+
@@ -500,23 +430,11 @@ public class LSLService extends Service {
 
                 } else if(format[i].contains("string")){
 
-                    String[] lightsample = lightSampleString[i].toArray(new String[0]);//ArrayUtils.toPrimitive(lightSampleString[i].toArray(new String[0]), 0);
-                    //float[] testlightsample = Arrays.copyOfRange(lightsample, 100, 112);
+                    String[] lightsample = lightSampleString[i].toArray(new String[0]);
                     double[] lighttimestamps = ArrayUtils.toPrimitive(lightTimestamp[i].toArray(new Double[0]), 0);
-                    //double[] testlighttimestamps = Arrays.copyOfRange(lighttimestamps, 100, 104);
-
-                    //                                const std::string footer(
-//                                    "<?xml version=\"1.0\"?>"
-//                                    "<info>"
-//                                    "<first_timestamp>5.1</first_timestamp>"
-//                                    "<last_timestamp>5.9</last_timestamp>"
-//                                    "<sample_count>9</sample_count>"
-//                                    "<clock_offsets>"
-//                                    "<offset><time>50979.7660030605</time><value>-3.436503902776167e-06</value></offset>"
-//                                    "</clock_offsets></info>");
 
 
-                    //lightsample = removeZerosFloat(lightsample, lightsample.length);
+
                     lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
                     lighttimestamps = invertTimestamps(lighttimestamps);
                     lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
@@ -526,9 +444,6 @@ public class LSLService extends Service {
                     } else {
                         lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length*chanelCount[i]);
                     }
-                    //lightsample = Arrays.copyOfRange(lightsample, 0, lightsample.length-2000);
-                    //lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
-//            lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length*chanelCount[i]);
                     System.out.println("lengt of timestamps is: "+ lighttimestamps.length);
 
                     streamFooter[i] = "<?xml version=\"1.0\"?>" + "\n"+
@@ -559,19 +474,8 @@ public class LSLService extends Service {
                     for (int k=0; k<lightSampleShort[i].size(); k++){
                         lightsample[i] = lightSampleShort[i].get(k).shortValue();
                     }
-                    //float[] testlightsample = Arrays.copyOfRange(lightsample, 100, 112);
                     double[] lighttimestamps = ArrayUtils.toPrimitive(lightTimestamp[i].toArray(new Double[0]), 0);
-                    //double[] testlighttimestamps = Arrays.copyOfRange(lighttimestamps, 100, 104);
 
-                    //                                const std::string footer(
-//                                    "<?xml version=\"1.0\"?>"
-//                                    "<info>"
-//                                    "<first_timestamp>5.1</first_timestamp>"
-//                                    "<last_timestamp>5.9</last_timestamp>"
-//                                    "<sample_count>9</sample_count>"
-//                                    "<clock_offsets>"
-//                                    "<offset><time>50979.7660030605</time><value>-3.436503902776167e-06</value></offset>"
-//                                    "</clock_offsets></info>");
 
 
                     lightsample = removeZerosShort(lightsample, lightsample.length);
@@ -585,9 +489,6 @@ public class LSLService extends Service {
                     } else {
                         lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length*chanelCount[i]);
                     }
-                    //lightsample = Arrays.copyOfRange(lightsample, 0, lightsample.length-2000);
-                    //lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
-//            lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length*chanelCount[i]);
                     System.out.println("lengt of timestamps is: "+ lighttimestamps.length);
 
                     streamFooter[i] = "<?xml version=\"1.0\"?>" + "\n"+
@@ -618,19 +519,7 @@ public class LSLService extends Service {
                     for (int k=0; k<lightSampleByte[i].size(); k++){
                         lightsample[i] = lightSampleByte[i].get(k).byteValue();
                     }
-                    //float[] testlightsample = Arrays.copyOfRange(lightsample, 100, 112);
                     double[] lighttimestamps = ArrayUtils.toPrimitive(lightTimestamp[i].toArray(new Double[0]), 0);
-                    //double[] testlighttimestamps = Arrays.copyOfRange(lighttimestamps, 100, 104);
-
-                    //                                const std::string footer(
-//                                    "<?xml version=\"1.0\"?>"
-//                                    "<info>"
-//                                    "<first_timestamp>5.1</first_timestamp>"
-//                                    "<last_timestamp>5.9</last_timestamp>"
-//                                    "<sample_count>9</sample_count>"
-//                                    "<clock_offsets>"
-//                                    "<offset><time>50979.7660030605</time><value>-3.436503902776167e-06</value></offset>"
-//                                    "</clock_offsets></info>");
 
 
                     lightsample = removeZerosByte(lightsample, lightsample.length);
@@ -645,9 +534,6 @@ public class LSLService extends Service {
                     } else {
                         lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length*chanelCount[i]);
                     }
-                    //lightsample = Arrays.copyOfRange(lightsample, 0, lightsample.length-2000);
-                    //lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
-//            lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length*chanelCount[i]);
                     System.out.println("lengt of timestamps is: "+ lighttimestamps.length);
 
                     streamFooter[i] = "<?xml version=\"1.0\"?>" + "\n"+
@@ -669,7 +555,6 @@ public class LSLService extends Service {
                     } else {
                         Toast.makeText(this, "Writing file please wait!", Toast.LENGTH_LONG).show();
                     }
-                    //Log.d(TAG, "onActivityResult: "+"Path is: checking" +path);
 
                 }
             }
@@ -694,18 +579,6 @@ public class LSLService extends Service {
         return data1;
     }
 
-
-//    public static void triggerRebirth(Context context, Intent nextIntent) {
-//        Intent intent = new Intent(context, MainActivity.class);
-//        intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
-//        intent.putExtra(KEY_RESTART_INTENT, nextIntent);
-//        context.startActivity(intent);
-//        if (context instanceof Activity) {
-//            ((Activity) context).finish();
-//        }
-//
-//        Runtime.getRuntime().exit(0);
-//    }
     // removing leading zeros
     static int[] removeZerosInt(int[] a, int n)
     {
@@ -737,9 +610,6 @@ public class LSLService extends Service {
         for (int i = 0; i < n - ind; i++)
             b[i] = a[ind + i];
 
-//        // print the array
-//        for (int i = 0; i < n - ind; i++)
-//            System.out.print(b[i]+" ");
         return b;
     }
 
@@ -774,9 +644,6 @@ public class LSLService extends Service {
         for (int i = 0; i < n - ind; i++)
             b[i] = a[ind + i];
 
-//        // print the array
-//        for (int i = 0; i < n - ind; i++)
-//            System.out.print(b[i]+" ");
 
         return b;
     }
@@ -812,9 +679,6 @@ public class LSLService extends Service {
         for (int i = 0; i < n - ind; i++)
             b[i] = a[ind + i];
 
-//        // print the array
-//        for (int i = 0; i < n - ind; i++)
-//            System.out.print(b[i]+" ");
         return b;
     }
 
@@ -849,9 +713,6 @@ public class LSLService extends Service {
         for (int i = 0; i < n - ind; i++)
             b[i] = a[ind + i];
 
-//        // print the array
-//        for (int i = 0; i < n - ind; i++)
-//            System.out.print(b[i]+" ");
         return b;
     }
 
@@ -886,9 +747,6 @@ public class LSLService extends Service {
         for (int i = 0; i < n - ind; i++)
             b[i] = a[ind + i];
 
-//        // print the array
-//        for (int i = 0; i < n - ind; i++)
-//            System.out.print(b[i]+" ");
         return b;
     }
 

@@ -176,13 +176,8 @@ public class MainActivity extends Activity
             @Override
             public void onClick(View v) {
                 stopService(intent);
-                //LSLService.t2.interrupt();
                 t.interrupt();
-                //t2.interrupt();
-                //restart(2);
 
-
-                //stopAsyncTask();
             }
         });
 
@@ -205,11 +200,7 @@ public class MainActivity extends Activity
         });
 
         tv.setText("Available Streams: ");
-        //showMessage( "Attempting to send LSL markers: ");
-        //setContentView(tv);
-        //Setting All sensors
 
-        //System.out.println(sensor.get(i).getName());
 
 
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener(){

@@ -71,24 +71,8 @@ public class SettingsActivity extends AppCompatActivity {
             Log.d(TAG, "onActivityResult: "+"Path is: " + MainActivity.path);
             //System.out.println("Path is: " + MainActivity.path);
             MainActivity.path = MainActivity.path; //+ "/" + MainActivity.filenamevalue;
-//            lightSample1.add(100);
-//            lightSample1.add(400);
-//            lightSample1.add(500);
-
-//            int[] lightsample = ArrayUtils.toPrimitive(lightSample1.toArray(new Integer[0]), 0);
-//            //float[] floatArray = new float[1];
-
-//            for (int i=1; i<3; i++) {
-//                int[] testdata = {100, 200, 300};
-//                //Float[] lightsample = lightSample1.toArray(new Float[lightSample1.size()]);
-//                String path = createXdfFile(MainActivity.path, testdata, i);
-//                Toast.makeText(this, "Path is  :" + path, Toast.LENGTH_LONG).show();
-//                //  System.out.println("Path is: checking" +path);
-//                Log.d(TAG, "onActivityResult: " + "Path is: checking" + path);
-//            }
 
             Intent intent = new Intent(SettingsActivity.this, MainActivity.class);
-            //intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
         }
     }
