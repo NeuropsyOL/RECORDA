@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project version="4">
-  <component name="ProjectModuleManager">
-    <modules>
-      <module fileurl="file://$PROJECT_DIR$/LSL_RECORDER.iml" filepath="$PROJECT_DIR$/LSL_RECORDER.iml" group="LSL_RECORDER" />
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" group="LSL_RECORDER/app" />
-    </modules>
-  </component>
-</project>
