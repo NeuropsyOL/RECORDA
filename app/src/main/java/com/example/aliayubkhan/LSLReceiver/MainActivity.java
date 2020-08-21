@@ -15,7 +15,6 @@ import android.os.Environment;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
@@ -31,65 +30,64 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Edited by Sarah Blum on 21/08/2020
+ *
+ * Changes: file handling adapted, storage location fixed
+ */
 public class MainActivity extends Activity
 {
-    static TextView tv;
     public static ListView lv;
-
-    ArrayAdapter<String> adapter;
-    Button start, stop, Reset;
-
-    static boolean isRunning  = false;
-    static int i = 0;
-    static boolean checkFlag = false;
-
-    List<String> stream;
     public static List<String> LSLStreamName = new ArrayList<String>();
     public static ArrayList<String> selectedItems=new ArrayList<String>();
-
-    ImageView refresh;
-
+    public static boolean writePermission = true;
+    public static String filenamevalue;
+    public static String path;
+    public static boolean isComplete = false;
+    public static boolean isAlreadyExecuted = false;
+    static TextView tv;
+    static boolean isRunning  = false;
 
     //Requesting run-time permissions
-
-    //Create placeholder for user's consent to record_audio permission.
-    //This will be used in handling callback
-    private final int MY_PERMISSIONS_WRITE_LSL = 1;
-
-    public static boolean writePermission = true;
-
-    //Elapsed Time
-
-    public TextView tdate;
-
-    public Thread t;
-    //Initializing Sensor data Variables
-
-    public Long startMillis;
-
-    //filename
-
-    public static String filenamevalue;
-
-    //Settings button
-    ImageView settings_button;
-
-
+    static boolean checkFlag = false;
     //Streams
     static LSL.StreamInfo[] streams;
 
-    public static String path;
+    //Elapsed Time
+    //Create placeholder for user's consent to record_audio permission.
+    //This will be used in handling callback
+    private final int MY_PERMISSIONS_WRITE_LSL = 1;
+    public TextView tdate;
+    //Initializing Sensor data Variables
+    public Thread t;
 
-    public static boolean isComplete = false;
-    public static boolean isAlreadyExecuted = false;
+    public Long startMillis;
+    ArrayAdapter<String> adapter;
+    Button start, stop, Reset;
+    List<String> stream;
+    ImageView refresh;
+    //Settings button
+    ImageView settings_button;
 
-    /** Called when the activity is first created. */
+    public static String getElapsedTimeMinutesSecondsString(Long miliseconds) {
+        Long elapsedTime = miliseconds;
+        @SuppressLint("DefaultLocale") String format = String.format("%%0%dd", 2);
+//        elapsedTime = elapsedTime / 1000;
+        String seconds = String.format(format, (elapsedTime / 1000) % 60 );
+        String minutes = String.format(format, ((elapsedTime / (1000*60)) % 60));
+        String hours = String.format(format, ((elapsedTime / (1000*60*60)) % 24));
+        return hours + ":" + minutes + ":" + seconds;
+    }
+
+    public static void showText(String s){
+        tv.setText(s);
+    }
+
     @SuppressLint({"SetTextI18n", "ClickableViewAccessibility"})
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-//        tv = new TextView(this);
         setContentView(R.layout.activity_main);
         tv = (TextView)findViewById(R.id.tv);
         start = (Button)findViewById(R.id.startLSL);
@@ -97,7 +95,8 @@ public class MainActivity extends Activity
         refresh = (ImageButton) findViewById(R.id.refreshStreams);
         tdate = (TextView) findViewById(R.id.elapsedTime);
         //requestWritePermissions();
-        filenamevalue = "default.xdf"; // gets changed if the user enters settings screen
+        // set filename so that is not null, it gets changed if the user enters settings screen
+        filenamevalue = "default.xdf";
         path = Environment.getExternalStorageDirectory() + "/Download/";
         lv = (ListView) findViewById (R.id.streams);
         lv.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
@@ -133,18 +132,16 @@ public class MainActivity extends Activity
 
                             System.out.println(path);
                         } else {
-                            Toast.makeText(MainActivity.this, "Close existing inlets first!", Toast.LENGTH_LONG).show();
+                            Toast.makeText(MainActivity.this, "Close existing inlets first!",
+                                    Toast.LENGTH_LONG).show();
                         }
 
                     } else {
                         //Toast.makeText(MainActivity.this, "Filepath not chosen!", Toast.LENGTH_LONG).show();
-                        Toast.makeText(MainActivity.this, "Filepath invalid: "+ path, Toast.LENGTH_LONG).show();
+                        Toast.makeText(MainActivity.this, "Filepath invalid: "+ path,
+                                Toast.LENGTH_LONG).show();
                     }
-
-
-                    //startAsyncTask(ts);
                 }
-
             }
         });
 
@@ -155,7 +152,8 @@ public class MainActivity extends Activity
             public boolean onTouch(View v, MotionEvent event) {
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN: {
-                        Toast.makeText(MainActivity.this, "Refreshing Streams...", Toast.LENGTH_LONG).show();
+                        Toast.makeText(MainActivity.this, "Refreshing Streams...",
+                                Toast.LENGTH_LONG).show();
                         ImageButton view = (ImageButton ) v;
                         view.getBackground().setColorFilter(0x77000000, PorterDuff.Mode.SRC_ATOP);
                         view.invalidate();
@@ -182,7 +180,6 @@ public class MainActivity extends Activity
             public void onClick(View v) {
                 stopService(intent);
                 t.interrupt();
-
             }
         });
 
@@ -218,7 +215,6 @@ public class MainActivity extends Activity
                     selectedItems.add(selectedItem); //add selected item to the list of selected items
                 showSelectedItems();
             }
-
         });
 
     }
@@ -229,15 +225,12 @@ public class MainActivity extends Activity
         LSLStreamName.clear();
         lv.setAdapter(new ArrayAdapter<String>(this,R.layout.list_view_text , LSLStreamName));
 
-
         for (LSL.StreamInfo stream1 : streams) {
             LSLStreamName.add(stream1.name());
         }
         lv.setAdapter(new ArrayAdapter<String>(this,R.layout.list_view_text , LSLStreamName));
 
     }
-
-
 
     public void ElapsedTime(){
         t = new Thread() {
@@ -262,18 +255,11 @@ public class MainActivity extends Activity
         t.start();
     }
 
-    public static String getElapsedTimeMinutesSecondsString(Long miliseconds) {
-        Long elapsedTime = miliseconds;
-        @SuppressLint("DefaultLocale") String format = String.format("%%0%dd", 2);
-//        elapsedTime = elapsedTime / 1000;
-
-        String seconds = String.format(format, (elapsedTime / 1000) % 60 );
-        String minutes = String.format(format, ((elapsedTime / (1000*60)) % 60));
-        String hours = String.format(format, ((elapsedTime / (1000*60*60)) % 24));
-        return hours + ":" + minutes + ":" + seconds;
-    }
-
-
+    /*
+    We do not need to ask the user for write permissions for every single folder, since the app is
+    prompting the user in the beginning for writing access to external storage.
+     */
+    @Deprecated
     private void requestWritePermissions() {
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE)
@@ -282,7 +268,8 @@ public class MainActivity extends Activity
             //When permission is not granted by user, show them message why this permission is needed.
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                     Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-                Toast.makeText(this, "Please grant permissions to write LSL Stream", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "Please grant permissions to write LSL Stream",
+                        Toast.LENGTH_LONG).show();
                 writePermission = false;
 
                 //Give user option to still opt-in the permissions
@@ -320,7 +307,6 @@ public class MainActivity extends Activity
         }
     }
 
-
     private void showSelectedItems() {
         String selItems="";
         for(String item:selectedItems){
@@ -340,11 +326,6 @@ public class MainActivity extends Activity
         AlarmManager manager = (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
         manager.set(AlarmManager.RTC, System.currentTimeMillis() + delay, intent);
         System.exit(2);
-    }
-
-    public static void showText(String s){
-        tv.setText(s);
-
     }
 
 }

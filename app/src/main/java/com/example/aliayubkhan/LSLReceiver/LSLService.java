@@ -284,7 +284,7 @@ public class LSLService extends Service {
             lv.setAdapter(new ArrayAdapter<String>(this,R.layout.list_view_text , LSLStreamName));
         }
 
-        MainActivity.path = MainActivity.path + "/" + MainActivity.filenamevalue;
+        MainActivity.path = MainActivity.path + MainActivity.filenamevalue;
 
         for (int i=0; i<streamCount; i++){
 

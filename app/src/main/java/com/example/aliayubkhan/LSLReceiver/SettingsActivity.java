@@ -14,13 +14,10 @@ import android.provider.MediaStore;
 import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
 public class SettingsActivity extends AppCompatActivity {
-
-    //Variable to store file name
 
     public static Boolean samplingRate_set_Check = Boolean.FALSE;
 
@@ -35,10 +32,13 @@ public class SettingsActivity extends AppCompatActivity {
         setContentView(R.layout.settings_activity);
 
         samplingRate_set_Check = Boolean.TRUE;
-        samplingSet = (Button) findViewById(R.id.locationButton);
+
+        //TODO for now, the location handling is not implemented, every file is stored in
+        // external storage - Download/
+        //samplingSet = (Button) findViewById(R.id.locationButton);
 
         MainActivity.isComplete = true;
-        samplingSet.setOnClickListener(new View.OnClickListener() {
+/*        samplingSet.setOnClickListener(new View.OnClickListener() {
 
             @RequiresApi(api = Build.VERSION_CODES.KITKAT)
             @Override
@@ -47,9 +47,8 @@ public class SettingsActivity extends AppCompatActivity {
                 Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
                 i.addCategory(Intent.CATEGORY_DEFAULT);
                 startActivityForResult(Intent.createChooser(i, "Choose directory"), 9999);
-
             }
-        });
+        });*/
 
         filename = (EditText) findViewById(R.id.filenametext);
         MainActivity.filenamevalue = String.valueOf(filename.getText());
@@ -74,11 +73,9 @@ public class SettingsActivity extends AppCompatActivity {
                 docUri = DocumentsContract.buildDocumentUriUsingTree(uri,
                         DocumentsContract.getTreeDocumentId(uri));
             }
-            MainActivity.path = getPath(this, docUri);
+            //MainActivity.path = getPath(this, docUri);
             Log.d(TAG, "onActivityResult: "+"Path is: " + MainActivity.path);
-            //System.out.println("Path is: " + MainActivity.path);
-            //MainActivity.path = MainActivity.path; //+ "/" + MainActivity.filenamevalue;
-
+            MainActivity.path = MainActivity.path; //+ "/" + MainActivity.filenamevalue;
             Intent intent = new Intent(SettingsActivity.this, MainActivity.class);
             startActivity(intent);
         }

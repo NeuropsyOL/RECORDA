@@ -58,7 +58,7 @@
             android:orientation="vertical"
             android:textAlignment="center">
 
-            <Button
+<!--            <Button
                 android:id="@+id/locationButton"
                 android:layout_width="155dp"
                 android:layout_height="wrap_content"
@@ -66,7 +66,7 @@
                 android:gravity="center"
                 android:text="Select Location"
                 android:textAlignment="center"
-                android:textColor="#FFFFFF" />
+                android:textColor="#FFFFFF" />-->
         </LinearLayout>
     </LinearLayout>
 </android.support.constraint.ConstraintLayout>

@@ -180,7 +180,6 @@ Java_com_example_aliayubkhan_LSLReceiver_LSLService_createXdfFile(
 
     w.write_boundary_chunk();
 
-
     //for assigning  float
     jsize sz = env->GetArrayLength(arr);
     float* float_elems = env->GetFloatArrayElements(arr, 0);
@@ -193,10 +192,8 @@ Java_com_example_aliayubkhan_LSLReceiver_LSLService_createXdfFile(
 
     w.write_data_chunk(0, vDoubles, vFloats, chanelCountTotal);
 
-
     w.write_boundary_chunk();
     w.write_stream_offset(0, lastValueDouble, offsetDouble);
-
 
     w.write_stream_footer(0, footer);
     return env->NewStringUTF(convertedValue);
@@ -222,8 +219,6 @@ Java_com_example_aliayubkhan_LSLReceiver_LSLService_createXdfFileInt(
 
     std::vector<int16_t> vInts;
     std::vector<double> vDoubles;
-
-
 
     jboolean isCopy;
     const char *convertedValue = (env)->GetStringUTFChars(temp, &isCopy);
@@ -257,15 +252,11 @@ Java_com_example_aliayubkhan_LSLReceiver_LSLService_createXdfFileInt(
     XDFWriter w(convertedValue,count); //do we need to change something here??yeah i know
     const uint32_t sid = 0x02C0FFEE;
 
-
     const std::string footer(convertedstreamFooter);
-
 
     w.write_stream_header(0, convertedMetadata);
 
-
     w.write_boundary_chunk();
-
 
     //for assigning  float
     jsize sz = env->GetArrayLength(arr);
@@ -279,10 +270,8 @@ Java_com_example_aliayubkhan_LSLReceiver_LSLService_createXdfFileInt(
 
     w.write_data_chunk(0, vDoubles, vInts, chanelCountTotal);
 
-
     w.write_boundary_chunk();
     w.write_stream_offset(0, lastValueDouble, offsetDouble);
-
 
     w.write_stream_footer(0, footer);
     return env->NewStringUTF(convertedValue);
