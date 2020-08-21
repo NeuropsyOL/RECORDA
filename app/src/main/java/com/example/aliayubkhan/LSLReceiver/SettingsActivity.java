@@ -52,7 +52,15 @@ public class SettingsActivity extends AppCompatActivity {
         });
 
         filename = (EditText) findViewById(R.id.filenametext);
+        MainActivity.filenamevalue = String.valueOf(filename.getText());
+    }
 
+    // In case the user did not change the directory and left the settings view by using the back button
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        filename = (EditText) findViewById(R.id.filenametext);
+        MainActivity.filenamevalue = String.valueOf(filename.getText());
     }
 
     private static final String TAG = "SettingsActivity";
@@ -69,7 +77,7 @@ public class SettingsActivity extends AppCompatActivity {
             MainActivity.path = getPath(this, docUri);
             Log.d(TAG, "onActivityResult: "+"Path is: " + MainActivity.path);
             //System.out.println("Path is: " + MainActivity.path);
-            MainActivity.path = MainActivity.path; //+ "/" + MainActivity.filenamevalue;
+            //MainActivity.path = MainActivity.path; //+ "/" + MainActivity.filenamevalue;
 
             Intent intent = new Intent(SettingsActivity.this, MainActivity.class);
             startActivity(intent);
@@ -81,10 +89,6 @@ public class SettingsActivity extends AppCompatActivity {
     static {
         System.loadLibrary("generate_xdf");
     }
-//    static { 
-//        System.loadLibrary("generate_xdf"); 
-//    }
-
 
     static void getFileName(){
         MainActivity.filenamevalue = String.valueOf(filename.getText());

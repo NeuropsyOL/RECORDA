@@ -26,7 +26,6 @@ file(GLOB_RECURSE SRC
 	"liblsl/external/src/system/src/local_free_on_destruction.hpp"
 	"liblsl/external/src/chrono/src/chrono.cpp"
 	"liblsl/external/src/serialization/src/*.cpp"
-
 )
 
 add_library( # Sets the name of the library.

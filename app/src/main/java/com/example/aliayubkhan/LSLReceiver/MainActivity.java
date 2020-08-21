@@ -11,9 +11,11 @@ import android.content.pm.PackageManager;
 import android.graphics.PorterDuff;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
@@ -87,7 +89,6 @@ public class MainActivity extends Activity
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-
 //        tv = new TextView(this);
         setContentView(R.layout.activity_main);
         tv = (TextView)findViewById(R.id.tv);
@@ -95,7 +96,9 @@ public class MainActivity extends Activity
         stop = (Button)findViewById(R.id.stopLSL);
         refresh = (ImageButton) findViewById(R.id.refreshStreams);
         tdate = (TextView) findViewById(R.id.elapsedTime);
-        requestWritePermissions();
+        //requestWritePermissions();
+        filenamevalue = "default.xdf"; // gets changed if the user enters settings screen
+        path = Environment.getExternalStorageDirectory() + "/Download/";
         lv = (ListView) findViewById (R.id.streams);
         lv.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
         settings_button = (ImageView) findViewById(R.id.settings_btn);
@@ -117,6 +120,7 @@ public class MainActivity extends Activity
                 if(!isRunning){
                     if(!writePermission){
                         requestWritePermissions();
+                        //Log.i("Path", path);
                     }
 
                     if(path != null){
@@ -133,7 +137,8 @@ public class MainActivity extends Activity
                         }
 
                     } else {
-                        Toast.makeText(MainActivity.this, "Filepath not chosen!", Toast.LENGTH_LONG).show();
+                        //Toast.makeText(MainActivity.this, "Filepath not chosen!", Toast.LENGTH_LONG).show();
+                        Toast.makeText(MainActivity.this, "Filepath invalid: "+ path, Toast.LENGTH_LONG).show();
                     }
 
 
@@ -290,6 +295,8 @@ public class MainActivity extends Activity
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
                         MY_PERMISSIONS_WRITE_LSL);
+                path = Environment.getExternalStorageDirectory() + "/Download/";
+                filenamevalue = "hardcoded.xdf";
             }
         }
     }

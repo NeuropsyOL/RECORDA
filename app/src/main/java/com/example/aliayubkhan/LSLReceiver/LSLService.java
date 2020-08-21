@@ -23,6 +23,7 @@ import static com.example.aliayubkhan.LSLReceiver.MainActivity.selectedItems;
 
 /**
  * Created by aliayubkhan on 19/04/2018.
+ * Edited by Sarah Blum on 21/08/2020
  */
 
 public class LSLService extends Service {
@@ -42,23 +43,23 @@ public class LSLService extends Service {
     ArrayList<Double>[] lightTimestamp = new ArrayList[30];
 
 
-    //for int chanel format
+    //for int channel format
     @SuppressWarnings("unchecked")
     ArrayList<Integer>[] lightSampleInt = new ArrayList[30];// = new ArrayList[];
 
-    //for Double chanel format
+    //for Double channel format
     @SuppressWarnings("unchecked")
     ArrayList<Double>[] lightSampleDouble = new ArrayList[30];// = new ArrayList[];
 
-    //for String chanel format
+    //for String channel format
     @SuppressWarnings("unchecked")
     ArrayList<String>[] lightSampleString = new ArrayList[30];// = new ArrayList[];
 
-    //for String chanel format
+    //for String channel format
     @SuppressWarnings("unchecked")
     ArrayList<Short>[] lightSampleShort = new ArrayList[30];// = new ArrayList[];
 
-    //for String chanel format
+    //for String channel format
     @SuppressWarnings("unchecked")
     ArrayList<Byte>[] lightSampleByte = new ArrayList[30];// = new ArrayList[];
 
@@ -285,8 +286,6 @@ public class LSLService extends Service {
 
         MainActivity.path = MainActivity.path + "/" + MainActivity.filenamevalue;
 
-        System.out.println("bbreakpoint");
-
         for (int i=0; i<streamCount; i++){
 
             if(selectedItems.contains(name[i])){
@@ -453,6 +452,7 @@ public class LSLService extends Service {
                     lastValue[i] = lighttimestamps[lighttimestamps.length - 1];
 
 
+                    // forgot to pass filename here
                     String path = createXdfFileString(MainActivity.path, lightsample, lighttimestamps, streamHeader[i], streamFooter[i], String.valueOf(offset[i]), String.valueOf(lastValue[i]), i, chanelCount[i]);
 
                     if(i == selectedItems.size()-1){
