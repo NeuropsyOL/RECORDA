@@ -94,7 +94,7 @@ public class MainActivity extends Activity
         stop = (Button)findViewById(R.id.stopLSL);
         refresh = (ImageButton) findViewById(R.id.refreshStreams);
         tdate = (TextView) findViewById(R.id.elapsedTime);
-        //requestWritePermissions();
+        requestWritePermissions();
         // set filename so that is not null, it gets changed if the user enters settings screen
         filenamevalue = "default.xdf";
         path = Environment.getExternalStorageDirectory() + "/Download/";
@@ -259,7 +259,6 @@ public class MainActivity extends Activity
     We do not need to ask the user for write permissions for every single folder, since the app is
     prompting the user in the beginning for writing access to external storage.
      */
-    @Deprecated
     private void requestWritePermissions() {
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE)
