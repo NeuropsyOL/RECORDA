@@ -36,7 +36,7 @@ public class LSLService extends Service {
     LSL.StreamInlet[] inlet;
     LSL.StreamInfo[] results;
 
-    //for int chanel format
+    //for int channel format
     @SuppressWarnings("unchecked")
     ArrayList<Float>[] lightSample = new ArrayList[30];// = new ArrayList[];
     @SuppressWarnings("unchecked")
@@ -82,9 +82,7 @@ public class LSLService extends Service {
     String[] name;
     String[] format;
 
-
     double[][] timestamps;
-
 
     public LSLService(){
         super();
@@ -451,8 +449,6 @@ public class LSLService extends Service {
 
                     lastValue[i] = lighttimestamps[lighttimestamps.length - 1];
 
-
-                    // forgot to pass filename here
                     String path = createXdfFileString(MainActivity.path, lightsample, lighttimestamps, streamHeader[i], streamFooter[i], String.valueOf(offset[i]), String.valueOf(lastValue[i]), i, chanelCount[i]);
 
                     if(i == selectedItems.size()-1){
@@ -470,8 +466,6 @@ public class LSLService extends Service {
                         lightsample[i] = lightSampleShort[i].get(k).shortValue();
                     }
                     double[] lighttimestamps = ArrayUtils.toPrimitive(lightTimestamp[i].toArray(new Double[0]), 0);
-
-
 
                     lightsample = removeZerosShort(lightsample, lightsample.length);
                     lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
