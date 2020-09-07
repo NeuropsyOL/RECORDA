@@ -7,8 +7,9 @@ android {
         applicationId "com.example.aliayubkhan.LSLReceiver"
         minSdkVersion 24
         targetSdkVersion 29
-        versionCode 1
-        versionName "1.0"
+        versionCode 1       // increment with every release
+        versionName '1.0.0'   // change with every release
+        setProperty("archivesBaseName", "LSLRecorder-$versionName")
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         externalNativeBuild {
             cmake {
