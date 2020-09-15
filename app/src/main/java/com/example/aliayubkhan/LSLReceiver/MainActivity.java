@@ -105,7 +105,7 @@ public class MainActivity extends Activity
 
         Reset = (Button)findViewById(R.id.reset_button);
 
-        final Intent intent = new Intent(this, LSLService.class);
+        final Intent intent = new Intent(this, EEG2GoLSLRecorder.class);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         start.setOnClickListener(new View.OnClickListener() {
