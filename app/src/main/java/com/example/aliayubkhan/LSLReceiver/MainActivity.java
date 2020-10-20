@@ -38,8 +38,8 @@ import java.util.List;
 public class MainActivity extends Activity
 {
     public static ListView lv;
-    public static List<String> LSLStreamName = new ArrayList<String>();
-    public static ArrayList<String> selectedItems=new ArrayList<String>();
+    public static List<String> LSLStreamName = new ArrayList<>();
+    public static List<String> selectedItems = new ArrayList<>();
     public static boolean writePermission = true;
     public static String filenamevalue;
     public static String path;
@@ -105,7 +105,7 @@ public class MainActivity extends Activity
 
         Reset = (Button)findViewById(R.id.reset_button);
 
-        final Intent intent = new Intent(this, EEG2GoLSLRecorder.class);
+        final Intent intent = new Intent(this, LSLService.class);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         start.setOnClickListener(new View.OnClickListener() {

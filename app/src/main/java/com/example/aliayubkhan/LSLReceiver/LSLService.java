@@ -13,6 +13,7 @@ import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Vector;
 
 import static com.example.aliayubkhan.LSLReceiver.MainActivity.LSLStreamName;
@@ -247,8 +248,10 @@ public class LSLService extends Service {
         return Service.START_STICKY;
     }
 
+    public static native void writeStreamHeader(String fileName, int streamIndex, String headerXml);
+    public static native void writeStreamFooter(String fileName, int streamIndex, String footerXml);
 
-    public native String createXdfFile(String temp, float[] lightSample, double[] lightTimestamps, String streamMetaData, String metadata, String offset, String lastValue, int i, int i1);
+    public native String createXdfFile(String fileName, float[] lightSample, double[] lightTimestamps, String streamMetaData, String metadata, String offset, String lastValue, int i, int i1);
     public native String createXdfFileInt(String temp, int[] lightSample, double[] lightTimestamps, String streamMetaData, String metadata, String offset, String lastValue, int i, int i1);
     public native String createXdfFileDouble(String temp, double[] lightSample, double[] lightTimestamps, String streamMetaData, String metadata, String offset, String lastValue, int i, int i1);
     public native String createXdfFileString(String temp, String[] lightSample, double[] lightTimestamps, String streamMetaData, String metadata, String offset, String lastValue, int i, int i1);
@@ -274,8 +277,8 @@ public class LSLService extends Service {
 
     @Override
     public void onDestroy() {
-
         MainActivity.isRunning = false;
+        Log.i(TAG, "Service onBind");
 
         if(LSLStreamName != null){
             LSLStreamName.clear();
@@ -284,274 +287,299 @@ public class LSLService extends Service {
 
         MainActivity.path = MainActivity.path + MainActivity.filenamevalue;
 
-        for (int i=0; i<streamCount; i++){
-
-            if(selectedItems.contains(name[i])){
-
-                if (format[i].contains("float")){
-                    float[] lightsample = ArrayUtils.toPrimitive(lightSample[i].toArray(new Float[0]), 0);
-                    double[] lighttimestamps = ArrayUtils.toPrimitive(lightTimestamp[i].toArray(new Double[0]), 0);
-
-
-
-                    if(!name[i].contains("Audio")){
-                        lightsample = removeZerosFloat(lightsample, lightsample.length);
-                    }
-
-
-                    lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
-
-                    lighttimestamps = invertTimestamps(lighttimestamps);
-                    lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
-
-                    if (chanelCount[i] == 1){
-
-                        if(name[i].contains("Audio")){
-                            lightsample = appendZeros(lightsample, lighttimestamps);
-                            lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
-                        } else {
-                            lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
-                        }
-
-                    } else {
-                        lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length*chanelCount[i]);
-                    }
-                    System.out.println("lengt of timestamps is: "+ lighttimestamps.length);
-
-                    streamFooter[i] = "<?xml version=\"1.0\"?>" + "\n"+
-                            "<info>" + "\n\t" +
-                            "<first_timestamp>" + lighttimestamps[0] +"</first_timestamp>" + "\n\t" +
-                            "<last_timestamp>" + lighttimestamps[lighttimestamps.length - 1] + "</last_timestamp>" + "\n\t" +
-                            "<sample_count>"+ lightsample.length +"</sample_count>" + "\n\t" +
-                            "<clock_offsets>" +
-                            "<offset><time>"+ lighttimestamps[lighttimestamps.length - 1] +"</time><value>"+ offset[i] + "</value></offset>" +
-                            "</clock_offsets>" +"\n"+ "</info>";
-
-                    lastValue[i] = lighttimestamps[lighttimestamps.length - 1];
-
-
-                    String path = createXdfFile(MainActivity.path, lightsample, lighttimestamps, streamHeader[i], streamFooter[i], String.valueOf(offset[i]), String.valueOf(lastValue[i]), i, chanelCount[i]);
-
-                    if(i == selectedItems.size()-1){
-                        Toast.makeText(this, "File written at: " + path, Toast.LENGTH_LONG).show();
-                    } else {
-                        Toast.makeText(this, "Writing file please wait!", Toast.LENGTH_LONG).show();
-                    }
-                    //Log.d(TAG, "onActivityResult: "+"Path is: checking" +path);
-                } else if(format[i].contains("int")){
-
-                    int[] lightsample = ArrayUtils.toPrimitive(lightSampleInt[i].toArray(new Integer[0]), 0);
-
-                    double[] lighttimestamps = ArrayUtils.toPrimitive(lightTimestamp[i].toArray(new Double[0]), 0);
-
-
-                    lightsample = removeZerosInt(lightsample, lightsample.length);
-                    lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
-
-                    lighttimestamps = invertTimestamps(lighttimestamps);
-                    lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
-
-                    if (chanelCount[i] == 1){
-                        lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
-                    } else {
-                        lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length*chanelCount[i]);
-                    }
-                    System.out.println("lengt of timestamps is: "+ lighttimestamps.length);
-
-                    streamFooter[i] = "<?xml version=\"1.0\"?>" + "\n"+
-                            "<info>" + "\n\t" +
-                            "<first_timestamp>" + lighttimestamps[0] +"</first_timestamp>" + "\n\t" +
-                            "<last_timestamp>" + lighttimestamps[lighttimestamps.length - 1] + "</last_timestamp>" + "\n\t" +
-                            "<sample_count>"+ lightsample.length +"</sample_count>" + "\n\t" +
-                            "<clock_offsets>" +
-                            "<offset><time>"+ lighttimestamps[lighttimestamps.length - 1] +"</time><value>"+ offset[i] + "</value></offset>" +
-                            "</clock_offsets>" +"\n"+ "</info>";
-
-                    lastValue[i] = lighttimestamps[lighttimestamps.length - 1];
-
-
-                    String path = createXdfFileInt(MainActivity.path, lightsample, lighttimestamps, streamHeader[i], streamFooter[i], String.valueOf(offset[i]), String.valueOf(lastValue[i]), i, chanelCount[i]);
-
-                    if(i == selectedItems.size()-1){
-                        Toast.makeText(this, "File written at: " + path, Toast.LENGTH_LONG).show();
-                    } else {
-                        Toast.makeText(this, "Writing file please wait!", Toast.LENGTH_LONG).show();
-                    }
-                    //Log.d(TAG, "onActivityResult: "+"Path is: checking" +path);
-
-                } else if(format[i].contains("double")){
-
-                    double[] lightsample = ArrayUtils.toPrimitive(lightSampleDouble[i].toArray(new Double[0]), 0);
-                    double[] lighttimestamps = ArrayUtils.toPrimitive(lightTimestamp[i].toArray(new Double[0]), 0);
-
-
-
-                    lightsample = removeZerosDouble(lightsample, lightsample.length);
-                    lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
-
-                    lighttimestamps = invertTimestamps(lighttimestamps);
-                    lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
-
-                    if (chanelCount[i] == 1){
-                        lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
-                    } else {
-                        lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length*chanelCount[i]);
-                    }
-                    System.out.println("lengt of timestamps is: "+ lighttimestamps.length);
-
-                    streamFooter[i] = "<?xml version=\"1.0\"?>" + "\n"+
-                            "<info>" + "\n\t" +
-                            "<first_timestamp>" + lighttimestamps[0] +"</first_timestamp>" + "\n\t" +
-                            "<last_timestamp>" + lighttimestamps[lighttimestamps.length - 1] + "</last_timestamp>" + "\n\t" +
-                            "<sample_count>"+ lightsample.length +"</sample_count>" + "\n\t" +
-                            "<clock_offsets>" +
-                            "<offset><time>"+ lighttimestamps[lighttimestamps.length - 1] +"</time><value>"+ offset[i] + "</value></offset>" +
-                            "</clock_offsets>" +"\n"+ "</info>";
-
-                    lastValue[i] = lighttimestamps[lighttimestamps.length - 1];
-
-
-                    String path = createXdfFileDouble(MainActivity.path, lightsample, lighttimestamps, streamHeader[i], streamFooter[i], String.valueOf(offset[i]), String.valueOf(lastValue[i]), i, chanelCount[i]);
-
-                    if(i == selectedItems.size()-1){
-                        Toast.makeText(this, "File written at: " + path, Toast.LENGTH_LONG).show();
-                    } else {
-                        Toast.makeText(this, "Writing file please wait!", Toast.LENGTH_LONG).show();
-                    }
-                    //Log.d(TAG, "onActivityResult: "+"Path is: checking" +path);
-
-                } else if(format[i].contains("string")){
-
-                    String[] lightsample = lightSampleString[i].toArray(new String[0]);
-                    double[] lighttimestamps = ArrayUtils.toPrimitive(lightTimestamp[i].toArray(new Double[0]), 0);
-
-
-
-                    lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
-                    lighttimestamps = invertTimestamps(lighttimestamps);
-                    lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
-
-                    if (chanelCount[i] == 1){
-                        lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
-                    } else {
-                        lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length*chanelCount[i]);
-                    }
-                    System.out.println("lengt of timestamps is: "+ lighttimestamps.length);
-
-                    streamFooter[i] = "<?xml version=\"1.0\"?>" + "\n"+
-                            "<info>" + "\n\t" +
-                            "<first_timestamp>" + lighttimestamps[0] +"</first_timestamp>" + "\n\t" +
-                            "<last_timestamp>" + lighttimestamps[lighttimestamps.length - 1] + "</last_timestamp>" + "\n\t" +
-                            "<sample_count>"+ lightsample.length +"</sample_count>" + "\n\t" +
-                            "<clock_offsets>" +
-                            "<offset><time>"+ lighttimestamps[lighttimestamps.length - 1] +"</time><value>"+ offset[i] + "</value></offset>" +
-                            "</clock_offsets>" +"\n"+ "</info>";
-
-                    lastValue[i] = lighttimestamps[lighttimestamps.length - 1];
-
-                    String path = createXdfFileString(MainActivity.path, lightsample, lighttimestamps, streamHeader[i], streamFooter[i], String.valueOf(offset[i]), String.valueOf(lastValue[i]), i, chanelCount[i]);
-
-                    if(i == selectedItems.size()-1){
-                        Toast.makeText(this, "File written at: " + path, Toast.LENGTH_LONG).show();
-                    } else {
-                        Toast.makeText(this, "Writing file please wait!", Toast.LENGTH_LONG).show();
-                    }
-                    //Log.d(TAG, "onActivityResult: "+"Path is: checking" +path);
-
-                } else if(format[i].contains("short")){
-
-                    short[] lightsample = new short[1];
-
-                    for (int k=0; k<lightSampleShort[i].size(); k++){
-                        lightsample[i] = lightSampleShort[i].get(k).shortValue();
-                    }
-                    double[] lighttimestamps = ArrayUtils.toPrimitive(lightTimestamp[i].toArray(new Double[0]), 0);
-
-                    lightsample = removeZerosShort(lightsample, lightsample.length);
-                    lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
-
-                    lighttimestamps = invertTimestamps(lighttimestamps);
-                    lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
-
-                    if (chanelCount[i] == 1){
-                        lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
-                    } else {
-                        lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length*chanelCount[i]);
-                    }
-                    System.out.println("lengt of timestamps is: "+ lighttimestamps.length);
-
-                    streamFooter[i] = "<?xml version=\"1.0\"?>" + "\n"+
-                            "<info>" + "\n\t" +
-                            "<first_timestamp>" + lighttimestamps[0] +"</first_timestamp>" + "\n\t" +
-                            "<last_timestamp>" + lighttimestamps[lighttimestamps.length - 1] + "</last_timestamp>" + "\n\t" +
-                            "<sample_count>"+ lightsample.length +"</sample_count>" + "\n\t" +
-                            "<clock_offsets>" +
-                            "<offset><time>"+ lighttimestamps[lighttimestamps.length - 1] +"</time><value>"+ offset[i] + "</value></offset>" +
-                            "</clock_offsets>" +"\n"+ "</info>";
-
-                    lastValue[i] = lighttimestamps[lighttimestamps.length - 1];
-
-
-                    String path = createXdfFileShort(MainActivity.path, lightsample, lighttimestamps, streamHeader[i], streamFooter[i], String.valueOf(offset[i]), String.valueOf(lastValue[i]), i, chanelCount[i]);
-
-                    if(i == selectedItems.size()-1){
-                        Toast.makeText(this, "File written at: " + path, Toast.LENGTH_LONG).show();
-                    } else {
-                        Toast.makeText(this, "Writing file please wait!", Toast.LENGTH_LONG).show();
-                    }
-                    //Log.d(TAG, "onActivityResult: "+"Path is: checking" +path);
-
-                } else if(format[i].contains("byte")){
-
-                    byte[] lightsample = new byte[1];
-
-                    for (int k=0; k<lightSampleByte[i].size(); k++){
-                        lightsample[i] = lightSampleByte[i].get(k).byteValue();
-                    }
-                    double[] lighttimestamps = ArrayUtils.toPrimitive(lightTimestamp[i].toArray(new Double[0]), 0);
-
-
-                    lightsample = removeZerosByte(lightsample, lightsample.length);
-                    lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
-
-                    lighttimestamps = invertTimestamps(lighttimestamps);
-                    lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
-
-
-                    if (chanelCount[i] == 1){
-                        lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
-                    } else {
-                        lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length*chanelCount[i]);
-                    }
-                    System.out.println("lengt of timestamps is: "+ lighttimestamps.length);
-
-                    streamFooter[i] = "<?xml version=\"1.0\"?>" + "\n"+
-                            "<info>" + "\n\t" +
-                            "<first_timestamp>" + lighttimestamps[0] +"</first_timestamp>" + "\n\t" +
-                            "<last_timestamp>" + lighttimestamps[lighttimestamps.length - 1] + "</last_timestamp>" + "\n\t" +
-                            "<sample_count>"+ lightsample.length +"</sample_count>" + "\n\t" +
-                            "<clock_offsets>" +
-                            "<offset><time>"+ lighttimestamps[lighttimestamps.length - 1] +"</time><value>"+ offset[i] + "</value></offset>" +
-                            "</clock_offsets>" +"\n"+ "</info>";
-
-                    lastValue[i] = lighttimestamps[lighttimestamps.length - 1];
-
-
-                    String path = createXdfFileByte(MainActivity.path, lightsample, lighttimestamps, streamHeader[i], streamFooter[i], String.valueOf(offset[i]), String.valueOf(lastValue[i]), i, chanelCount[i]);
-
-                    if(i == selectedItems.size()-1){
-                        Toast.makeText(this, "File written at: " + path, Toast.LENGTH_LONG).show();
-                    } else {
-                        Toast.makeText(this, "Writing file please wait!", Toast.LENGTH_LONG).show();
-                    }
-
-                }
+        List<Integer> selectedStreamIndices = new ArrayList<>(streamCount);
+        for (int i = 0; i < streamCount; i++) {
+            if (selectedItems.contains(name[i])) {
+                selectedStreamIndices.add(i);
             }
+        }
 
+        int xdfStreamIndex = 0;
+        for (int i : selectedStreamIndices) {
+            writeStreamHeader(MainActivity.path, xdfStreamIndex, streamHeader[i]);
+            xdfStreamIndex++;
+        }
+
+        xdfStreamIndex = 0;
+        for (int i : selectedStreamIndices) {
+            if (format[i].contains("float")){
+                writeFloatStreamToXdf(i, xdfStreamIndex);
+            } else if(format[i].contains("int")){
+                writeIntStreamToXdf(i, xdfStreamIndex);
+            } else if(format[i].contains("double")){
+                writeDoubleStreamToXdf(i, xdfStreamIndex);
+            } else if(format[i].contains("string")){
+                writeMarkerStreamToXdf(i, xdfStreamIndex);
+            } else if(format[i].contains("short")){
+                writeShortStreamToXdf(i, xdfStreamIndex);
+            } else if(format[i].contains("byte")){
+                writeByteStreamToXdf(i, xdfStreamIndex);
+            }
+            xdfStreamIndex++;
+        }
+
+        xdfStreamIndex = 0;
+        for (int i : selectedStreamIndices) {
+            writeDoubleFooterToXdf(i, xdfStreamIndex);
+            xdfStreamIndex++;
         }
 
         isAlreadyExecuted = true;
+    }
 
+    private void writeDoubleFooterToXdf(int i, int xdfStreamIndex) {
+        double[] lighttimestamps = ArrayUtils.toPrimitive(lightTimestamp[i].toArray(new Double[0]), 0);
+        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
+        lighttimestamps = invertTimestamps(lighttimestamps);
+        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
+
+        if (chanelCount[i] == 1){ // SoJe: Maybe a non-obvious check for a marker stream?
+            lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lighttimestamps.length);
+        }
+        String footerXml = "<?xml version=\"1.0\"?>" + "\n"+
+                "<info>" + "\n\t" +
+                "<first_timestamp>" + lighttimestamps[0] +"</first_timestamp>" + "\n\t" +
+                "<last_timestamp>" + lighttimestamps[lighttimestamps.length - 1] + "</last_timestamp>" + "\n\t" +
+                "<sample_count>"+ lighttimestamps.length +"</sample_count>" + "\n\t" +
+                "<clock_offsets>" +
+                "<offset><time>"+ lighttimestamps[lighttimestamps.length - 1] +"</time><value>"+ offset[i] + "</value></offset>" +
+                "</clock_offsets>" +"\n"+ "</info>";
+
+        writeStreamFooter(MainActivity.path, xdfStreamIndex, footerXml);
+    }
+
+    private void writeByteStreamToXdf(int i, int streamIndex) {
+        byte[] lightsample = new byte[1];
+
+        for (int k=0; k<lightSampleByte[i].size(); k++){
+            lightsample[i] = lightSampleByte[i].get(k).byteValue();
+        }
+        double[] lighttimestamps = ArrayUtils.toPrimitive(lightTimestamp[i].toArray(new Double[0]), 0);
+
+        lightsample = removeZerosByte(lightsample, lightsample.length);
+        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
+        lighttimestamps = invertTimestamps(lighttimestamps);
+        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
+
+        if (chanelCount[i] == 1){
+            lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
+        } else {
+            lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length*chanelCount[i]);
+        }
+        System.out.println("lengt of timestamps is: "+ lighttimestamps.length);
+
+        streamFooter[i] = "<?xml version=\"1.0\"?>" + "\n"+
+                "<info>" + "\n\t" +
+                "<first_timestamp>" + lighttimestamps[0] +"</first_timestamp>" + "\n\t" +
+                "<last_timestamp>" + lighttimestamps[lighttimestamps.length - 1] + "</last_timestamp>" + "\n\t" +
+                "<sample_count>"+ lightsample.length +"</sample_count>" + "\n\t" +
+                "<clock_offsets>" +
+                "<offset><time>"+ lighttimestamps[lighttimestamps.length - 1] +"</time><value>"+ offset[i] + "</value></offset>" +
+                "</clock_offsets>" +"\n"+ "</info>";
+
+        lastValue[i] = lighttimestamps[lighttimestamps.length - 1];
+
+        String path = createXdfFileByte(MainActivity.path, lightsample, lighttimestamps, streamHeader[i], streamFooter[i], String.valueOf(offset[i]), String.valueOf(lastValue[i]), streamIndex, chanelCount[i]);
+
+        if(i == selectedItems.size()-1){
+            Toast.makeText(this, "File written at: " + path, Toast.LENGTH_LONG).show();
+        } else {
+            Toast.makeText(this, "Writing file please wait!", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void writeShortStreamToXdf(int i, int streamIndex) {
+        short[] lightsample = new short[1];
+
+        for (int k=0; k<lightSampleShort[i].size(); k++){
+            lightsample[i] = lightSampleShort[i].get(k).shortValue();
+        }
+        double[] lighttimestamps = ArrayUtils.toPrimitive(lightTimestamp[i].toArray(new Double[0]), 0);
+
+        lightsample = removeZerosShort(lightsample, lightsample.length);
+        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
+        lighttimestamps = invertTimestamps(lighttimestamps);
+        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
+
+        if (chanelCount[i] == 1){
+            lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
+        } else {
+            lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length*chanelCount[i]);
+        }
+        System.out.println("lengt of timestamps is: "+ lighttimestamps.length);
+
+        streamFooter[i] = "<?xml version=\"1.0\"?>" + "\n"+
+                "<info>" + "\n\t" +
+                "<first_timestamp>" + lighttimestamps[0] +"</first_timestamp>" + "\n\t" +
+                "<last_timestamp>" + lighttimestamps[lighttimestamps.length - 1] + "</last_timestamp>" + "\n\t" +
+                "<sample_count>"+ lightsample.length +"</sample_count>" + "\n\t" +
+                "<clock_offsets>" +
+                "<offset><time>"+ lighttimestamps[lighttimestamps.length - 1] +"</time><value>"+ offset[i] + "</value></offset>" +
+                "</clock_offsets>" +"\n"+ "</info>";
+
+        lastValue[i] = lighttimestamps[lighttimestamps.length - 1];
+
+        String path = createXdfFileShort(MainActivity.path, lightsample, lighttimestamps, streamHeader[i], streamFooter[i], String.valueOf(offset[i]), String.valueOf(lastValue[i]), streamIndex, chanelCount[i]);
+
+        if(i == selectedItems.size()-1){
+            Toast.makeText(this, "File written at: " + path, Toast.LENGTH_LONG).show();
+        } else {
+            Toast.makeText(this, "Writing file please wait!", Toast.LENGTH_LONG).show();
+        }
+        //Log.d(TAG, "onActivityResult: "+"Path is: checking" +path);
+    }
+
+    private void writeMarkerStreamToXdf(int i, int streamIndex) {
+        String[] lightsample = lightSampleString[i].toArray(new String[0]);
+        double[] lighttimestamps = ArrayUtils.toPrimitive(lightTimestamp[i].toArray(new Double[0]), 0);
+
+        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
+        lighttimestamps = invertTimestamps(lighttimestamps);
+        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
+
+        if (chanelCount[i] == 1){
+            lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
+        } else {
+            lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length*chanelCount[i]);
+        }
+        System.out.println("lengt of timestamps is: "+ lighttimestamps.length);
+
+        streamFooter[i] = "<?xml version=\"1.0\"?>" + "\n"+
+                "<info>" + "\n\t" +
+                "<first_timestamp>" + lighttimestamps[0] +"</first_timestamp>" + "\n\t" +
+                "<last_timestamp>" + lighttimestamps[lighttimestamps.length - 1] + "</last_timestamp>" + "\n\t" +
+                "<sample_count>"+ lightsample.length +"</sample_count>" + "\n\t" +
+                "<clock_offsets>" +
+                "<offset><time>"+ lighttimestamps[lighttimestamps.length - 1] +"</time><value>"+ offset[i] + "</value></offset>" +
+                "</clock_offsets>" +"\n"+ "</info>";
+
+        lastValue[i] = lighttimestamps[lighttimestamps.length - 1];
+
+        String path = createXdfFileString(MainActivity.path, lightsample, lighttimestamps, streamHeader[i], streamFooter[i], String.valueOf(offset[i]), String.valueOf(lastValue[i]), streamIndex, chanelCount[i]);
+
+        if(i == selectedItems.size()-1){
+            Toast.makeText(this, "File written at: " + path, Toast.LENGTH_LONG).show();
+        } else {
+            Toast.makeText(this, "Writing file please wait!", Toast.LENGTH_LONG).show();
+        }
+        //Log.d(TAG, "onActivityResult: "+"Path is: checking" +path);
+    }
+
+    private void writeDoubleStreamToXdf(int i, int streamIndex) {
+        double[] lightsample = ArrayUtils.toPrimitive(lightSampleDouble[i].toArray(new Double[0]), 0);
+        double[] lighttimestamps = ArrayUtils.toPrimitive(lightTimestamp[i].toArray(new Double[0]), 0);
+
+        lightsample = removeZerosDouble(lightsample, lightsample.length);
+        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
+        lighttimestamps = invertTimestamps(lighttimestamps);
+        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
+
+        if (chanelCount[i] == 1){
+            lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
+        } else {
+            lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length*chanelCount[i]);
+        }
+        System.out.println("lengt of timestamps is: "+ lighttimestamps.length);
+
+        streamFooter[i] = "<?xml version=\"1.0\"?>" + "\n"+
+                "<info>" + "\n\t" +
+                "<first_timestamp>" + lighttimestamps[0] +"</first_timestamp>" + "\n\t" +
+                "<last_timestamp>" + lighttimestamps[lighttimestamps.length - 1] + "</last_timestamp>" + "\n\t" +
+                "<sample_count>"+ lightsample.length +"</sample_count>" + "\n\t" +
+                "<clock_offsets>" +
+                "<offset><time>"+ lighttimestamps[lighttimestamps.length - 1] +"</time><value>"+ offset[i] + "</value></offset>" +
+                "</clock_offsets>" +"\n"+ "</info>";
+
+        lastValue[i] = lighttimestamps[lighttimestamps.length - 1];
+
+        String path = createXdfFileDouble(MainActivity.path, lightsample, lighttimestamps, streamHeader[i], streamFooter[i], String.valueOf(offset[i]), String.valueOf(lastValue[i]), streamIndex, chanelCount[i]);
+
+        if(i == selectedItems.size()-1){
+            Toast.makeText(this, "File written at: " + path, Toast.LENGTH_LONG).show();
+        } else {
+            Toast.makeText(this, "Writing file please wait!", Toast.LENGTH_LONG).show();
+        }
+        //Log.d(TAG, "onActivityResult: "+"Path is: checking" +path);
+    }
+
+    private void writeIntStreamToXdf(int i, int streamIndex) {
+        int[] lightsample = ArrayUtils.toPrimitive(lightSampleInt[i].toArray(new Integer[0]), 0);
+        double[] lighttimestamps = ArrayUtils.toPrimitive(lightTimestamp[i].toArray(new Double[0]), 0);
+
+        lightsample = removeZerosInt(lightsample, lightsample.length);
+        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
+        lighttimestamps = invertTimestamps(lighttimestamps);
+        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
+
+        if (chanelCount[i] == 1){
+            lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
+        } else {
+            lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length*chanelCount[i]);
+        }
+        System.out.println("lengt of timestamps is: "+ lighttimestamps.length);
+
+        streamFooter[i] = "<?xml version=\"1.0\"?>" + "\n"+
+                "<info>" + "\n\t" +
+                "<first_timestamp>" + lighttimestamps[0] +"</first_timestamp>" + "\n\t" +
+                "<last_timestamp>" + lighttimestamps[lighttimestamps.length - 1] + "</last_timestamp>" + "\n\t" +
+                "<sample_count>"+ lightsample.length +"</sample_count>" + "\n\t" +
+                "<clock_offsets>" +
+                "<offset><time>"+ lighttimestamps[lighttimestamps.length - 1] +"</time><value>"+ offset[i] + "</value></offset>" +
+                "</clock_offsets>" +"\n"+ "</info>";
+
+        lastValue[i] = lighttimestamps[lighttimestamps.length - 1];
+
+        String path = createXdfFileInt(MainActivity.path, lightsample, lighttimestamps, streamHeader[i], streamFooter[i], String.valueOf(offset[i]), String.valueOf(lastValue[i]), streamIndex, chanelCount[i]);
+
+        if(i == selectedItems.size()-1){
+            Toast.makeText(this, "File written at: " + path, Toast.LENGTH_LONG).show();
+        } else {
+            Toast.makeText(this, "Writing file please wait!", Toast.LENGTH_LONG).show();
+        }
+        //Log.d(TAG, "onActivityResult: "+"Path is: checking" +path);
+    }
+
+    private void writeFloatStreamToXdf(int i, int streamIndex) {
+        float[] lightsample = ArrayUtils.toPrimitive(lightSample[i].toArray(new Float[0]), 0);
+        double[] lighttimestamps = ArrayUtils.toPrimitive(lightTimestamp[i].toArray(new Double[0]), 0);
+
+        if(!name[i].contains("Audio")){
+            lightsample = removeZerosFloat(lightsample, lightsample.length);
+        }
+
+        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
+        lighttimestamps = invertTimestamps(lighttimestamps);
+        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
+
+        if (chanelCount[i] == 1){
+            if(name[i].contains("Audio")){
+                lightsample = appendZeros(lightsample, lighttimestamps);
+            }
+            lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
+        } else {
+            lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length*chanelCount[i]);
+        }
+        System.out.println("lengt of timestamps is: "+ lighttimestamps.length);
+
+        streamFooter[i] = "<?xml version=\"1.0\"?>" + "\n"+
+                "<info>" + "\n\t" +
+                "<first_timestamp>" + lighttimestamps[0] +"</first_timestamp>" + "\n\t" +
+                "<last_timestamp>" + lighttimestamps[lighttimestamps.length - 1] + "</last_timestamp>" + "\n\t" +
+                "<sample_count>"+ lightsample.length +"</sample_count>" + "\n\t" +
+                "<clock_offsets>" +
+                "<offset><time>"+ lighttimestamps[lighttimestamps.length - 1] +"</time><value>"+ offset[i] + "</value></offset>" +
+                "</clock_offsets>" +"\n"+ "</info>";
+
+        lastValue[i] = lighttimestamps[lighttimestamps.length - 1];
+
+        String path = createXdfFile(MainActivity.path, lightsample, lighttimestamps, streamHeader[i], streamFooter[i], String.valueOf(offset[i]), String.valueOf(lastValue[i]), streamIndex, chanelCount[i]);
+
+        if(i == selectedItems.size()-1){
+            Toast.makeText(this, "File written at: " + path, Toast.LENGTH_LONG).show();
+        } else {
+            Toast.makeText(this, "Writing file please wait!", Toast.LENGTH_LONG).show();
+        }
+        //Log.d(TAG, "onActivityResult: "+"Path is: checking" +path);
     }
 
     public float[] appendZeros(float[] sample, double[] timestamps){
@@ -739,7 +767,8 @@ public class LSLService extends Service {
         return b;
     }
 
-    double[] invertTimestamps(double[] array) {
+    // More like inverting the ORDER of timestamps instead of their values.
+    static double[] invertTimestamps(double[] array) {
         for (int i = 0; i < array.length / 2; i++) {
             double temp = array[i];
             array[i] = array[array.length - 1 - i];

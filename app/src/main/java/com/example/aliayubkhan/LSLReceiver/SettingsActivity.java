@@ -81,8 +81,6 @@ public class SettingsActivity extends AppCompatActivity {
         }
     }
 
-    public native String createXdfFile(String temp, int[] lightSample, int i);
-
     static {
         System.loadLibrary("generate_xdf");
     }
