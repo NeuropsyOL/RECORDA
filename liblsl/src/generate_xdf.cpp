@@ -4,6 +4,9 @@
 #include <cstring>
 #include "xdfwriter.h"
 
+// a non-zero value to skip the file header (see constructor of class XDFWriter)
+static const int SKIP_FILE_HEADER = 1;
+
 streamid_t stream_id_from_index(jint index);
 
 extern "C"
@@ -51,7 +54,7 @@ Java_com_example_aliayubkhan_LSLReceiver_LSLService_createXdfFile(
 
     unsigned int chanelCountTotal = (unsigned int)channelCount;
 
-    XDFWriter w(convertedValue, 214);
+    XDFWriter w(convertedValue, SKIP_FILE_HEADER);
 
     const streamid_t sid = count + 1;
 
@@ -122,7 +125,7 @@ Java_com_example_aliayubkhan_LSLReceiver_LSLService_createXdfFileInt(
 
     unsigned int chanelCountTotal = (unsigned int)channelCount;
 
-    XDFWriter w(convertedValue, 214);
+    XDFWriter w(convertedValue, SKIP_FILE_HEADER);
     const streamid_t sid = count + 1;
 
     //w.write_stream_header(sid, convertedMetadata);
@@ -192,7 +195,7 @@ Java_com_example_aliayubkhan_LSLReceiver_LSLService_createXdfFileDouble(
 
     unsigned int chanelCountTotal = (unsigned int)channelCount;
 
-    XDFWriter w(convertedValue, 214);
+    XDFWriter w(convertedValue, SKIP_FILE_HEADER);
     const streamid_t sid = count + 1;
 
     //w.write_stream_header(sid, convertedMetadata);
@@ -263,7 +266,7 @@ Java_com_example_aliayubkhan_LSLReceiver_LSLService_createXdfFileByte(
 
     unsigned int chanelCountTotal = (unsigned int)channelCount;
 
-    XDFWriter w(convertedValue, 214);
+    XDFWriter w(convertedValue, SKIP_FILE_HEADER);
     const streamid_t sid = count + 1;
 
     //w.write_stream_header(sid, convertedMetadata);
@@ -334,7 +337,7 @@ Java_com_example_aliayubkhan_LSLReceiver_LSLService_createXdfFileShort(
 
     unsigned int chanelCountTotal = (unsigned int)channelCount;
 
-    XDFWriter w(convertedValue, 214);
+    XDFWriter w(convertedValue, SKIP_FILE_HEADER);
     const streamid_t sid = count + 1;
 
     //w.write_stream_header(sid, convertedMetadata);
@@ -403,11 +406,11 @@ Java_com_example_aliayubkhan_LSLReceiver_LSLService_createXdfFileString(
     double lastValueDouble;
     ss1 >> lastValueDouble;
 
-    XDFWriter w(convertedValue, 214);
+    XDFWriter w(convertedValue, SKIP_FILE_HEADER);
     const streamid_t sid = count + 1;
 
     //w.write_stream_header(sid, convertedMetadata);
-    w.write_boundary_chunk();
+//    w.write_boundary_chunk();
 
     //for assigning  float
     jsize strArrayLen = env->GetArrayLength(arr);
@@ -425,8 +428,8 @@ Java_com_example_aliayubkhan_LSLReceiver_LSLService_createXdfFileString(
 
     w.write_data_chunk(sid, vDoubles, vString, 1);
 
-    w.write_boundary_chunk();
-    w.write_stream_offset(sid, lastValueDouble, offsetDouble);
+//    w.write_boundary_chunk();
+//    w.write_stream_offset(sid, lastValueDouble, offsetDouble);
 
     const std::string footer(convertedstreamFooter);
 //    w.write_stream_footer(sid, footer);
@@ -472,7 +475,7 @@ Java_com_example_aliayubkhan_LSLReceiver_LSLService_writeStreamFooter(
     const std::string file_name_string(c_file_name);
     env->ReleaseStringUTFChars(file_name, c_file_name);
 
-    XDFWriter w(file_name_string, 214);
+    XDFWriter w(file_name_string, SKIP_FILE_HEADER);
     // Most simple way to get a unique stream ID from the zero-based index,
     // considering the stream ID should start at one:
     const streamid_t sid = stream_id_from_index(stream_index);

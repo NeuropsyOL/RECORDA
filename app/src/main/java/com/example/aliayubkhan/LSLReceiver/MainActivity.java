@@ -116,6 +116,9 @@ public class MainActivity extends Activity
             @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
             @Override
             public void onClick(View v) {
+                if (selectedItems.isEmpty()) {
+                    return;
+                }
                 if(!isRunning){
                     if(!writePermission){
                         requestWritePermissions();
@@ -125,6 +128,7 @@ public class MainActivity extends Activity
                     if(path != null){
 
                         if(!isAlreadyExecuted){
+                            lv.setEnabled(false);
                             startService(intent);
                             startMillis = System.currentTimeMillis();
                             tdate.setText("00:00");
@@ -174,7 +178,6 @@ public class MainActivity extends Activity
             }
         });
 
-
         stop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -202,9 +205,6 @@ public class MainActivity extends Activity
         });
 
         tv.setText("Available Streams: ");
-
-
-
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener(){
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 // selected item
@@ -220,16 +220,18 @@ public class MainActivity extends Activity
     }
 
     public void RefreshStreams(){
-
-        streams = LSL.resolve_streams();
         LSLStreamName.clear();
-        lv.setAdapter(new ArrayAdapter<String>(this,R.layout.list_view_text , LSLStreamName));
-
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.list_view_text, LSLStreamName);
+        lv.setEnabled(true);
+        lv.setAdapter(adapter);
+        streams = LSL.resolve_streams();
         for (LSL.StreamInfo stream1 : streams) {
-            LSLStreamName.add(stream1.name());
+            adapter.add(stream1.name());
         }
-        lv.setAdapter(new ArrayAdapter<String>(this,R.layout.list_view_text , LSLStreamName));
-
+        for (int i=0; i < lv.getAdapter().getCount(); i++) {
+            lv.setItemChecked(i, true);
+        }
+        selectedItems.addAll(LSLStreamName);
     }
 
     public void ElapsedTime(){
