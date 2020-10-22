@@ -39,10 +39,10 @@ Install this application and start recording data by:
 4. Click on Start button to start recording.
 5. When you want to stop recording click on Stop to stop recording and wait for the file to be written. Once complete app will show toast with file location 
 
-<img align="left" width="227" height="500" src="./docs/Images/Settings.jpg">
-<img align="left" width="227" height="500" src="./docs/Images/Settings-Screen.jpg">
-<img align="left" width="227" height="500" src="./docs/Images/Streams.jpg">
-<img align="left" width="227" height="500" src="./docs/Images/Recording-Message.jpg">
+<img align="left" width="227" height="500" src="./docs/Images/Settings.jpeg">
+<img align="left" width="227" height="500" src="./docs/Images/Settings-Screen.jpeg">
+<img align="left" width="227" height="500" src="./docs/Images/Streams.jpeg">
+<img align="left" width="227" height="500" src="./docs/Images/Recording-Message.jpeg"><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
 
 ## XDF File Reading
 
