@@ -39,6 +39,11 @@ Install this application and start recording data by:
 4. Click on Start button to start recording.
 5. When you want to stop recording click on Stop to stop recording and wait for the file to be written. Once complete app will show toast with file location 
 
+<img align="left" width="227" height="500" src="./docs/Images/Settings.jpg">
+<img align="left" width="227" height="500" src="./docs/Images/Settings-Screen.jpg">
+<img align="left" width="227" height="500" src="./docs/Images/Streams.jpg">
+<img align="left" width="227" height="500" src="./docs/Images/Recording-Message.jpg">
+
 ## XDF File Reading
 
 Once data has been recorded, transfer the file to your computer and then you can read the recorded xdf file in Matlab. Get load_xdf function from this [repository](https://github.com/xdf-modules/xdf-Matlab/tree/87bf5117edfed420ec728c76f50bb71f3722b41c). You can directly use this load_xdf function to load xdf file recorded using the app. 
