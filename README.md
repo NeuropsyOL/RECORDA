@@ -39,6 +39,18 @@ Install this application and start recording data by:
 4. Click on Start button to start recording.
 5. When you want to stop recording click on Stop to stop recording and wait for the file to be written. Once complete app will show toast with file location 
 
+<img align="left" width="227" height="500" src="./docs/Images/Settings.jpeg">
+<img align="left" width="227" height="500" src="./docs/Images/SettingsScreen.jpeg">
+<img align="left" width="227" height="500" src="./docs/Images/Streams.jpeg">
+<img align="left" width="227" height="500" src="./docs/Images/RecordingMessage.jpeg"><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+
+## XDF File Reading
+
+Once data has been recorded, transfer the file to your computer and then you can read the recorded xdf file in Matlab. Get load_xdf function from this [repository](https://github.com/xdf-modules/xdf-Matlab/tree/87bf5117edfed420ec728c76f50bb71f3722b41c). You can directly use this load_xdf function to load xdf file recorded using the app. 
+
+```
+data = load_xdf("filename.xdf");
+```
 ## Built With
 
 * [Android Studio](https://developer.android.com/studio/) - Android development framework
@@ -55,4 +67,3 @@ Please feel free to contribute to this project by creating an issue first and th
 ## Acknowledgments
 
 [liblsl Library](https://github.com/sccn/labstreaminglayer/tree/master/LSL): I used this library to develop this application. 
-
