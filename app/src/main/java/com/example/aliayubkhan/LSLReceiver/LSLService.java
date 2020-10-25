@@ -10,7 +10,6 @@ import android.widget.Toast;
 
 import org.apache.commons.lang3.ArrayUtils;
 
-import java.io.FileWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
@@ -287,12 +286,12 @@ public class LSLService extends Service {
     public static native void writeStreamFooter(String filename, int streamIndex, String footerXml);
     public static native void writeStreamOffset(String filename, int streamIndex, double collectionTime, double offset);
 
-    public native String createXdfFile(String filename, float[] lightSample, double[] lightTimestamps, String streamMetaData, String metadata, String lastValue, int i, int i1);
-    public native String createXdfFileInt(String filename, int[] lightSample, double[] lightTimestamps, String streamMetaData, String metadata, String lastValue, int i, int i1);
-    public native String createXdfFileDouble(String filename, double[] lightSample, double[] lightTimestamps, String streamMetaData, String metadata, String lastValue, int i, int i1);
-    public native String createXdfFileString(String filename, String[] lightSample, double[] lightTimestamps, String streamMetaData, String metadata, String lastValue, int i, int i1);
-    public native String createXdfFileShort(String filename, short[] lightSample, double[] lightTimestamps, String streamMetaData, String metadata, String lastValue, int i, int i1);
-    public native String createXdfFileByte(String filename, byte[] lightSample, double[] lightTimestamps, String streamMetaData, String metadata, String lastValue, int i, int i1);
+    public native void writeDataChunkFloat(String filename, float[] lightSample, double[] lightTimestamps, int streamIndex, int channelCount);
+    public native void writeDataChunkInt(String filename, int[] lightSample, double[] lightTimestamps, int streamIndex, int channelCount);
+    public native void writeDataChunkDouble(String filename, double[] lightSample, double[] lightTimestamps, int streamIndex, int channelCount);
+    public native void writeDataChunkStringMarker(String filename, String[] lightSample, double[] lightTimestamps, int streamIndex, int channelCount);
+    public native void writeDataChunkShort(String filename, short[] lightSample, double[] lightTimestamps, int streamIndex, int channelCount);
+    public native void writeDataChunkByte(String filename, byte[] lightSample, double[] lightTimestamps, int streamIndex, int channelCount);
 
     static {
         System.loadLibrary("generate_xdf");
@@ -398,7 +397,7 @@ public class LSLService extends Service {
         streamFooter[i] = createFooterXml(lighttimestamps[0], lighttimestamps[lighttimestamps.length - 1], lightsample.length, offsetLists[i]);
         lastValue[i] = lighttimestamps[lighttimestamps.length - 1];
 
-        createXdfFileByte(MainActivity.path, lightsample, lighttimestamps, streamHeader[i], streamFooter[i], String.valueOf(lastValue[i]), xdfStreamIndex, chanelCount[i]);
+        writeDataChunkByte(MainActivity.path, lightsample, lighttimestamps, xdfStreamIndex, chanelCount[i]);
     }
 
     private void writeShortStreamToXdf(int i, int xdfStreamIndex) {
@@ -423,7 +422,7 @@ public class LSLService extends Service {
         streamFooter[i] = createFooterXml(lighttimestamps[0], lighttimestamps[lighttimestamps.length - 1], lightsample.length, offsetLists[i]);
         lastValue[i] = lighttimestamps[lighttimestamps.length - 1];
 
-        createXdfFileShort(MainActivity.path, lightsample, lighttimestamps, streamHeader[i], streamFooter[i], String.valueOf(lastValue[i]), xdfStreamIndex, chanelCount[i]);
+        writeDataChunkShort(MainActivity.path, lightsample, lighttimestamps, xdfStreamIndex, chanelCount[i]);
     }
 
     private void writeMarkerStreamToXdf(int i, int xdfStreamIndex) {
@@ -443,7 +442,7 @@ public class LSLService extends Service {
         streamFooter[i] = createFooterXml(lighttimestamps[0], lighttimestamps[lighttimestamps.length - 1], lightsample.length, offsetLists[i]);
         lastValue[i] = lighttimestamps[lighttimestamps.length - 1];
 
-        createXdfFileString(MainActivity.path, lightsample, lighttimestamps, streamHeader[i], streamFooter[i], String.valueOf(lastValue[i]), xdfStreamIndex, chanelCount[i]);
+        writeDataChunkStringMarker(MainActivity.path, lightsample, lighttimestamps, xdfStreamIndex, chanelCount[i]);
     }
 
     private void writeDoubleStreamToXdf(int i, int xdfStreamIndex) {
@@ -464,7 +463,7 @@ public class LSLService extends Service {
         streamFooter[i] = createFooterXml(lighttimestamps[0], lighttimestamps[lighttimestamps.length - 1], lightsample.length, offsetLists[i]);
         lastValue[i] = lighttimestamps[lighttimestamps.length - 1];
 
-        createXdfFileDouble(MainActivity.path, lightsample, lighttimestamps, streamHeader[i], streamFooter[i], String.valueOf(lastValue[i]), xdfStreamIndex, chanelCount[i]);
+        writeDataChunkDouble(MainActivity.path, lightsample, lighttimestamps, xdfStreamIndex, chanelCount[i]);
     }
 
     private void writeIntStreamToXdf(int i, int xdfStreamIndex) {
@@ -485,7 +484,7 @@ public class LSLService extends Service {
         streamFooter[i] = createFooterXml(lighttimestamps[0], lighttimestamps[lighttimestamps.length - 1], lightsample.length, offsetLists[i]);
         lastValue[i] = lighttimestamps[lighttimestamps.length - 1];
 
-        createXdfFileInt(MainActivity.path, lightsample, lighttimestamps, streamHeader[i], streamFooter[i], String.valueOf(lastValue[i]), xdfStreamIndex, chanelCount[i]);
+        writeDataChunkInt(MainActivity.path, lightsample, lighttimestamps, xdfStreamIndex, chanelCount[i]);
     }
 
     private void writeFloatStreamToXdf(int i, int xdfStreamIndex) {
@@ -512,7 +511,7 @@ public class LSLService extends Service {
         streamFooter[i] = createFooterXml(lighttimestamps[0], lighttimestamps[lighttimestamps.length - 1], lightsample.length, offsetLists[i]);
         lastValue[i] = lighttimestamps[lighttimestamps.length - 1];
 
-        createXdfFile(MainActivity.path, lightsample, lighttimestamps, streamHeader[i], streamFooter[i], String.valueOf(lastValue[i]), xdfStreamIndex, chanelCount[i]);
+        writeDataChunkFloat(MainActivity.path, lightsample, lighttimestamps, xdfStreamIndex, chanelCount[i]);
     }
 
     private static String createFooterXml(double firstTimestamp, double lastTimestamp, int sampleCount, List<TimingOffsetMeasurement> timingOffsets) {
