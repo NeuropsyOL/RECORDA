@@ -108,7 +108,6 @@ public class LSLService extends Service {
 
     String[] streamHeader;
     String[] streamFooter;
-    double[] lastValue;
     int streamCount;
     int[] chanelCount;
     String[] name;
@@ -140,7 +139,6 @@ public class LSLService extends Service {
         inlet = new LSL.StreamInlet[results.length];
         streamHeader = new String[results.length];
         streamFooter = new String[results.length];
-        lastValue = new double[results.length];
         chanelCount = new int[results.length];
         sample = new float[results.length][];
         sampleInt = new int[results.length][];
@@ -394,8 +392,7 @@ public class LSLService extends Service {
             lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length*chanelCount[i]);
         }
 
-        streamFooter[i] = createFooterXml(lighttimestamps[0], lighttimestamps[lighttimestamps.length - 1], lightsample.length, offsetLists[i]);
-        lastValue[i] = lighttimestamps[lighttimestamps.length - 1];
+        streamFooter[i] = createFooterXml(lighttimestamps, lightsample.length, offsetLists[i]);
 
         writeDataChunkByte(MainActivity.path, lightsample, lighttimestamps, xdfStreamIndex, chanelCount[i]);
     }
@@ -419,8 +416,7 @@ public class LSLService extends Service {
             lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length*chanelCount[i]);
         }
 
-        streamFooter[i] = createFooterXml(lighttimestamps[0], lighttimestamps[lighttimestamps.length - 1], lightsample.length, offsetLists[i]);
-        lastValue[i] = lighttimestamps[lighttimestamps.length - 1];
+        streamFooter[i] = createFooterXml(lighttimestamps, lightsample.length, offsetLists[i]);
 
         writeDataChunkShort(MainActivity.path, lightsample, lighttimestamps, xdfStreamIndex, chanelCount[i]);
     }
@@ -439,8 +435,7 @@ public class LSLService extends Service {
             lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length*chanelCount[i]);
         }
 
-        streamFooter[i] = createFooterXml(lighttimestamps[0], lighttimestamps[lighttimestamps.length - 1], lightsample.length, offsetLists[i]);
-        lastValue[i] = lighttimestamps[lighttimestamps.length - 1];
+        streamFooter[i] = createFooterXml(lighttimestamps, lightsample.length, offsetLists[i]);
 
         writeDataChunkStringMarker(MainActivity.path, lightsample, lighttimestamps, xdfStreamIndex, chanelCount[i]);
     }
@@ -460,8 +455,7 @@ public class LSLService extends Service {
             lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length*chanelCount[i]);
         }
 
-        streamFooter[i] = createFooterXml(lighttimestamps[0], lighttimestamps[lighttimestamps.length - 1], lightsample.length, offsetLists[i]);
-        lastValue[i] = lighttimestamps[lighttimestamps.length - 1];
+        streamFooter[i] = createFooterXml(lighttimestamps, lightsample.length, offsetLists[i]);
 
         writeDataChunkDouble(MainActivity.path, lightsample, lighttimestamps, xdfStreamIndex, chanelCount[i]);
     }
@@ -481,8 +475,7 @@ public class LSLService extends Service {
             lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length*chanelCount[i]);
         }
 
-        streamFooter[i] = createFooterXml(lighttimestamps[0], lighttimestamps[lighttimestamps.length - 1], lightsample.length, offsetLists[i]);
-        lastValue[i] = lighttimestamps[lighttimestamps.length - 1];
+        streamFooter[i] = createFooterXml(lighttimestamps, lightsample.length, offsetLists[i]);
 
         writeDataChunkInt(MainActivity.path, lightsample, lighttimestamps, xdfStreamIndex, chanelCount[i]);
     }
@@ -508,23 +501,24 @@ public class LSLService extends Service {
             lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length*chanelCount[i]);
         }
 
-        streamFooter[i] = createFooterXml(lighttimestamps[0], lighttimestamps[lighttimestamps.length - 1], lightsample.length, offsetLists[i]);
-        lastValue[i] = lighttimestamps[lighttimestamps.length - 1];
+        streamFooter[i] = createFooterXml(lighttimestamps, lightsample.length, offsetLists[i]);
 
         writeDataChunkFloat(MainActivity.path, lightsample, lighttimestamps, xdfStreamIndex, chanelCount[i]);
     }
 
-    private static String createFooterXml(double firstTimestamp, double lastTimestamp, int sampleCount, List<TimingOffsetMeasurement> timingOffsets) {
+    private static String createFooterXml(double[] timestamps, int sampleCount, List<TimingOffsetMeasurement> timingOffsets) {
         NumberFormat nf = DecimalFormat.getInstance(Locale.US);
         nf.setMaximumFractionDigits(8);
         nf.setGroupingUsed(false);
 
         StringBuilder footer = new StringBuilder();
         footer.append("<?xml version=\"1.0\"?>\n")
-                .append("<info>\n")
-                .append("\t<first_timestamp>").append(firstTimestamp).append("</first_timestamp>\n")
-                .append("\t<last_timestamp>").append(lastTimestamp).append("</last_timestamp>\n")
-                .append("\t<sample_count>").append(sampleCount).append("</sample_count>\n")
+                .append("<info>\n");
+        if (timestamps.length > 0) {
+            footer.append("\t<first_timestamp>").append(timestamps[0]).append("</first_timestamp>\n")
+                    .append("\t<last_timestamp>").append(timestamps[timestamps.length - 1]).append("</last_timestamp>\n");
+        }
+        footer.append("\t<sample_count>").append(sampleCount).append("</sample_count>\n")
                 .append("\t<clock_offsets>\n");
         for (TimingOffsetMeasurement timingOffset : timingOffsets) {
             double time = timingOffset.collectionTime - timingOffset.offset;
