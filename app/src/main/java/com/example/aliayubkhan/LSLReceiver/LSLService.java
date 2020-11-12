@@ -1,10 +1,17 @@
 package com.example.aliayubkhan.LSLReceiver;
 
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.IBinder;
 import android.support.annotation.RequiresApi;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -132,6 +139,8 @@ public class LSLService extends Service {
     public int onStartCommand(final Intent intent, int flags, int startId) {
         Log.i(TAG, "Service onStartCommand");
         Toast.makeText(this,"Recording LSL!", Toast.LENGTH_SHORT).show();
+        // this method is part of the mechanisms that allow this to be a foreground channel
+        createNotificationChannel();
 
         results = LSL.resolve_streams();
         streamCount = results.length;
@@ -222,34 +231,34 @@ public class LSLService extends Service {
 
                                 if (samplesRead > 0) {
                                     if (format[finalI].contains("float")){
-                                        lightTimestamp[finalI].add(0,timestamps[finalI][0]);
+                                        lightTimestamp[finalI].add(timestamps[finalI][0]);
                                         for(int k=0;k<samplesRead;k++){
-                                            lightSample[finalI].add(k,sample[finalI][k]);
+                                            lightSample[finalI].add(sample[finalI][k]);
                                         }
                                     } else if(format[finalI].contains("int")){
-                                        lightTimestamp[finalI].add(0,timestamps[finalI][0]);
+                                        lightTimestamp[finalI].add(timestamps[finalI][0]);
                                         for(int k=0;k<samplesRead;k++){
-                                            lightSampleInt[finalI].add(k,sampleInt[finalI][k]);
+                                            lightSampleInt[finalI].add(sampleInt[finalI][k]);
                                         }
                                     } else if(format[finalI].contains("double")){
-                                        lightTimestamp[finalI].add(0,timestamps[finalI][0]);
+                                        lightTimestamp[finalI].add(timestamps[finalI][0]);
                                         for(int k=0;k<samplesRead;k++){
-                                            lightSampleDouble[finalI].add(k,sampleDouble[finalI][k]);
+                                            lightSampleDouble[finalI].add(sampleDouble[finalI][k]);
                                         }
                                     } else if(format[finalI].contains("string")){
-                                        lightTimestamp[finalI].add(0,timestamps[finalI][0]);
+                                        lightTimestamp[finalI].add(timestamps[finalI][0]);
                                         for(int k=0;k<samplesRead;k++){
-                                            lightSampleString[finalI].add(k,sampleString[finalI][k]);
+                                            lightSampleString[finalI].add(sampleString[finalI][k]);
                                         }
                                     } else if(format[finalI].contains("byte")){
-                                        lightTimestamp[finalI].add(0,timestamps[finalI][0]);
+                                        lightTimestamp[finalI].add(timestamps[finalI][0]);
                                         for(int k=0;k<samplesRead;k++){
-                                            lightSampleByte[finalI].add(k,sampleByte[finalI][k]);
+                                            lightSampleByte[finalI].add(sampleByte[finalI][k]);
                                         }
                                     } else if(format[finalI].contains("short")){
-                                        lightTimestamp[finalI].add(0,timestamps[finalI][0]);
+                                        lightTimestamp[finalI].add(timestamps[finalI][0]);
                                         for(int k=0;k<samplesRead;k++){
-                                            lightSampleShort[finalI].add(k,sampleShort[finalI][k]);
+                                            lightSampleShort[finalI].add(sampleShort[finalI][k]);
                                         }
                                     }
                                 }
@@ -277,7 +286,41 @@ public class LSLService extends Service {
             }).start();
         }
         MainActivity.isRunning = true;
-        return Service.START_STICKY;
+        Intent notificationIntent = new Intent(this, MainActivity.class);
+//        PendingIntent pendingIntent = PendingIntent.getActivity(this,
+//                0, notificationIntent, 0);
+//        Notification notification = new NotificationCompat.Builder(this, "ForegroundServiceID")
+//                .setContentTitle("Foreground Service")
+//                .setContentText(intent.getStringExtra("inputExtra"))
+//                .setSmallIcon(R.mipmap.ic_launcher)
+//                .setContentIntent(pendingIntent)
+//                .build();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+            startMyOwnForeground();
+        else
+            startForeground(1, new Notification());
+        return START_NOT_STICKY;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private void startMyOwnForeground() {
+        String NOTIFICATION_CHANNEL_ID = "com.LSL_Recorder";
+        String channelName = "My Background Service";
+        NotificationChannel chan = new NotificationChannel(NOTIFICATION_CHANNEL_ID, channelName, NotificationManager.IMPORTANCE_NONE);
+        chan.setLightColor(Color.BLUE);
+        chan.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        assert manager != null;
+        manager.createNotificationChannel(chan);
+
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID);
+        Notification notification = notificationBuilder.setOngoing(true)
+                .setSmallIcon(R.mipmap.ic_launcher_round)
+                .setContentTitle("App is running in background")
+                .setPriority(NotificationManager.IMPORTANCE_MIN)
+                .setCategory(Notification.CATEGORY_SERVICE)
+                .build();
+        startForeground(2, notification);
     }
 
     public static native void writeStreamHeader(String filename, int streamIndex, String headerXml);
@@ -715,13 +758,25 @@ public class LSLService extends Service {
         return b;
     }
 
+    //TODO temporary fix, delete this method altogether! we fixed the origin of the problem, no need to invert anymore
     // More like inverting the ORDER of timestamps instead of their values.
     static double[] invertTimestamps(double[] array) {
-        for (int i = 0; i < array.length / 2; i++) {
-            double temp = array[i];
-            array[i] = array[array.length - 1 - i];
-            array[array.length - 1 - i] = temp;
-        }
+//        for (int i = 0; i < array.length / 2; i++) {
+//            double temp = array[i];
+//            array[i] = array[array.length - 1 - i];
+//            array[array.length - 1 - i] = temp;
+//        }
         return array;
+    }
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel serviceChannel = new NotificationChannel(
+                    "FOREGROUNDCHANNEL",
+                    "Foreground Service Channel",
+                    NotificationManager.IMPORTANCE_DEFAULT
+            );
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            manager.createNotificationChannel(serviceChannel);
+        }
     }
 }

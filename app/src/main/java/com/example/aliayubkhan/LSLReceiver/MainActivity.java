@@ -107,6 +107,7 @@ public class MainActivity extends Activity
         Reset = (Button)findViewById(R.id.reset_button);
 
         final Intent intent = new Intent(this, LSLService.class);
+
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         start.setOnClickListener(new View.OnClickListener() {
@@ -127,20 +128,22 @@ public class MainActivity extends Activity
                     }
 
                     if(path != null){
-
                         if(!isAlreadyExecuted){
                             lv.setEnabled(false);
-                            startService(intent);
+                            // make this a foreground service so that android does not kill it while it is in the background
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                myStartForegroundService(intent);
+                            } else { // try our best with older Androids
+                                startService(intent);
+                            }
                             startMillis = System.currentTimeMillis();
                             tdate.setText("00:00");
                             ElapsedTime();
-
                             System.out.println(path);
                         } else {
                             Toast.makeText(MainActivity.this, "Close existing inlets first!",
                                     Toast.LENGTH_LONG).show();
                         }
-
                     } else {
                         //Toast.makeText(MainActivity.this, "Filepath not chosen!", Toast.LENGTH_LONG).show();
                         Toast.makeText(MainActivity.this, "Filepath invalid: "+ path,
@@ -151,6 +154,7 @@ public class MainActivity extends Activity
         });
 
         refresh.setOnTouchListener(new View.OnTouchListener() {
+
 
 
             @Override
@@ -331,6 +335,11 @@ public class MainActivity extends Activity
         AlarmManager manager = (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
         manager.set(AlarmManager.RTC, System.currentTimeMillis() + delay, intent);
         System.exit(2);
+    }
+
+    public void myStartForegroundService(Intent intent) {
+        intent.putExtra("inputExtra", "Foreground Service Example in Android");
+        ContextCompat.startForegroundService(this, intent);
     }
 
 }
