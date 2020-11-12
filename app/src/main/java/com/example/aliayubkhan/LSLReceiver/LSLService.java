@@ -3,7 +3,6 @@ package com.example.aliayubkhan.LSLReceiver;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -67,51 +66,38 @@ public class LSLService extends Service {
     private static final String TAG = "LSLService";
     public static Thread t2;
 
-
-    static LSL.StreamOutlet accelerometerOutlet;
     LSL.StreamInlet[] inlet;
     LSL.StreamInfo[] results;
 
     //for int channel format
-    @SuppressWarnings("unchecked")
     ArrayList<Float>[] lightSample = new ArrayList[30];// = new ArrayList[];
-    @SuppressWarnings("unchecked")
     ArrayList<Double>[] lightTimestamp = new ArrayList[30];
 
 
     //for int channel format
-    @SuppressWarnings("unchecked")
     ArrayList<Integer>[] lightSampleInt = new ArrayList[30];// = new ArrayList[];
 
     //for Double channel format
-    @SuppressWarnings("unchecked")
     ArrayList<Double>[] lightSampleDouble = new ArrayList[30];// = new ArrayList[];
 
     //for String channel format
-    @SuppressWarnings("unchecked")
     ArrayList<String>[] lightSampleString = new ArrayList[30];// = new ArrayList[];
 
     //for String channel format
-    @SuppressWarnings("unchecked")
     ArrayList<Short>[] lightSampleShort = new ArrayList[30];// = new ArrayList[];
 
     //for String channel format
-    @SuppressWarnings("unchecked")
     ArrayList<Byte>[] lightSampleByte = new ArrayList[30];// = new ArrayList[];
 
     // records measured timing offsets
-    @SuppressWarnings("unchecked")
     private List<TimingOffsetMeasurement>[] offsetLists = new ArrayList[30];
 
-    static Vector<Float> lightSample2 = new Vector<Float>(4);
-    Vector<Double> lightTimestamp2 = new Vector<Double>(4);
     float[][] sample = new float[1][1];
     int[][] sampleInt = new int[1][1];
     double[][] sampleDouble = new double[1][1];
     short[][] sampleShort = new short[1][1];
     byte[][] sampleByte = new byte[1][1];
     String[][] sampleString = new String[1][1];
-    //float[][][] sample = new float[1][1][1];
 
     String[] streamHeader;
     String[] streamFooter;
@@ -139,9 +125,12 @@ public class LSLService extends Service {
     public int onStartCommand(final Intent intent, int flags, int startId) {
         Log.i(TAG, "Service onStartCommand");
         Toast.makeText(this,"Recording LSL!", Toast.LENGTH_SHORT).show();
+
         // this method is part of the mechanisms that allow this to be a foreground channel
         createNotificationChannel();
 
+        // resolve all streams that are in the network
+        //TODO only do all the things for selected streams instead of all streams
         results = LSL.resolve_streams();
         streamCount = results.length;
 
@@ -174,25 +163,25 @@ public class LSLService extends Service {
 
                 if (format[finalI].contains("float")){
                     sample[finalI] = new float[streamInlet.info().channel_count()];
-                    lightSample[finalI] = new ArrayList<Float>(4);
+                    lightSample[finalI] = new ArrayList<>(4);
                 } else if(format[finalI].contains("int")){
                     sampleInt[finalI] = new int[streamInlet.info().channel_count()];
-                    lightSampleInt[finalI] = new ArrayList<Integer>(4);
+                    lightSampleInt[finalI] = new ArrayList<>(4);
                 } else if(format[finalI].contains("double")){
                     sampleDouble[finalI] = new double[streamInlet.info().channel_count()];
-                    lightSampleDouble[finalI] = new ArrayList<Double>(4);
+                    lightSampleDouble[finalI] = new ArrayList<>(4);
                 } else if(format[finalI].contains("string")){
                     sampleString[finalI] = new String[streamInlet.info().channel_count()];
-                    lightSampleString[finalI] = new ArrayList<String>(4);
+                    lightSampleString[finalI] = new ArrayList<>(4);
                 } else if(format[finalI].contains("byte")){
                     sampleByte[finalI] = new byte[streamInlet.info().channel_count()];
-                    lightSampleByte[finalI] = new ArrayList<Byte>(4);
+                    lightSampleByte[finalI] = new ArrayList<>(4);
                 } else if(format[finalI].contains("short")){
                     sampleShort[finalI] = new short[streamInlet.info().channel_count()];
-                    lightSampleShort[finalI] = new ArrayList<Short>(4);
+                    lightSampleShort[finalI] = new ArrayList<>(4);
                 }
                 timestamps[finalI] = new double[1];
-                lightTimestamp[finalI] = new ArrayList<Double>(4);
+                lightTimestamp[finalI] = new ArrayList<>(4);
                 name[finalI] = streamInlet.info().name();
                 offsetLists[finalI] = new ArrayList<>(4);
 
@@ -201,113 +190,110 @@ public class LSLService extends Service {
                 continue;
             }
 
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    // First measurement of timing offset happens only after the first wait interval expired like LabRecorder does it.
-                    long nextTimeToMeasureOffset = OFFSET_MEASURE_INTERVAL + System.currentTimeMillis();
+            new Thread(() -> {
+                // First measurement of timing offset happens only after the first wait interval expired (5 sec) like LabRecorder does it.
+                long nextTimeToMeasureOffset = OFFSET_MEASURE_INTERVAL + System.currentTimeMillis();
 
-                    while (!MainActivity.checkFlag) {
-                        try {
+                while (!MainActivity.checkFlag) {
+                    try {
 
-                            while (true) {
+                        while (true) {
+                            final int samplesRead;
+                            // assemble data structures
+                            if (format[finalI].contains("float")){
+                                samplesRead = streamInlet.pull_chunk(sample[finalI], timestamps[finalI]);
+                            } else if(format[finalI].contains("int")){
+                                samplesRead = streamInlet.pull_chunk(sampleInt[finalI], timestamps[finalI]);
+                            } else if(format[finalI].contains("double")){
+                                samplesRead = streamInlet.pull_chunk(sampleDouble[finalI], timestamps[finalI]);
+                            } else if(format[finalI].contains("string")){
+                                samplesRead = streamInlet.pull_chunk(sampleString[finalI], timestamps[finalI]);
+                            } else if(format[finalI].contains("byte")){
+                                samplesRead = streamInlet.pull_chunk(sampleByte[finalI], timestamps[finalI]);
+                            } else if(format[finalI].contains("short")){
+                                samplesRead = streamInlet.pull_chunk(sampleShort[finalI], timestamps[finalI]);
+                            } else {
+                                samplesRead = 0;
+                            }
 
-                                final int samplesRead;
+                            // add samples and timestamps to the end of the list whenever we received a sample
+                            if (samplesRead > 0) {
                                 if (format[finalI].contains("float")){
-                                    samplesRead = streamInlet.pull_chunk(sample[finalI], timestamps[finalI]);
+                                    lightTimestamp[finalI].add(timestamps[finalI][0]);
+                                    for(int k=0;k<samplesRead;k++){
+                                        lightSample[finalI].add(sample[finalI][k]);
+                                    }
                                 } else if(format[finalI].contains("int")){
-                                    samplesRead = streamInlet.pull_chunk(sampleInt[finalI], timestamps[finalI]);
+                                    lightTimestamp[finalI].add(timestamps[finalI][0]);
+                                    for(int k=0;k<samplesRead;k++){
+                                        lightSampleInt[finalI].add(sampleInt[finalI][k]);
+                                    }
                                 } else if(format[finalI].contains("double")){
-                                    samplesRead = streamInlet.pull_chunk(sampleDouble[finalI], timestamps[finalI]);
+                                    lightTimestamp[finalI].add(timestamps[finalI][0]);
+                                    for(int k=0;k<samplesRead;k++){
+                                        lightSampleDouble[finalI].add(sampleDouble[finalI][k]);
+                                    }
                                 } else if(format[finalI].contains("string")){
-                                    samplesRead = streamInlet.pull_chunk(sampleString[finalI], timestamps[finalI]);
+                                    lightTimestamp[finalI].add(timestamps[finalI][0]);
+                                    for(int k=0;k<samplesRead;k++){
+                                        lightSampleString[finalI].add(sampleString[finalI][k]);
+                                    }
                                 } else if(format[finalI].contains("byte")){
-                                    samplesRead = streamInlet.pull_chunk(sampleByte[finalI], timestamps[finalI]);
+                                    lightTimestamp[finalI].add(timestamps[finalI][0]);
+                                    for(int k=0;k<samplesRead;k++){
+                                        lightSampleByte[finalI].add(sampleByte[finalI][k]);
+                                    }
                                 } else if(format[finalI].contains("short")){
-                                    samplesRead = streamInlet.pull_chunk(sampleShort[finalI], timestamps[finalI]);
-                                } else {
-                                    samplesRead = 0;
-                                }
-
-                                if (samplesRead > 0) {
-                                    if (format[finalI].contains("float")){
-                                        lightTimestamp[finalI].add(timestamps[finalI][0]);
-                                        for(int k=0;k<samplesRead;k++){
-                                            lightSample[finalI].add(sample[finalI][k]);
-                                        }
-                                    } else if(format[finalI].contains("int")){
-                                        lightTimestamp[finalI].add(timestamps[finalI][0]);
-                                        for(int k=0;k<samplesRead;k++){
-                                            lightSampleInt[finalI].add(sampleInt[finalI][k]);
-                                        }
-                                    } else if(format[finalI].contains("double")){
-                                        lightTimestamp[finalI].add(timestamps[finalI][0]);
-                                        for(int k=0;k<samplesRead;k++){
-                                            lightSampleDouble[finalI].add(sampleDouble[finalI][k]);
-                                        }
-                                    } else if(format[finalI].contains("string")){
-                                        lightTimestamp[finalI].add(timestamps[finalI][0]);
-                                        for(int k=0;k<samplesRead;k++){
-                                            lightSampleString[finalI].add(sampleString[finalI][k]);
-                                        }
-                                    } else if(format[finalI].contains("byte")){
-                                        lightTimestamp[finalI].add(timestamps[finalI][0]);
-                                        for(int k=0;k<samplesRead;k++){
-                                            lightSampleByte[finalI].add(sampleByte[finalI][k]);
-                                        }
-                                    } else if(format[finalI].contains("short")){
-                                        lightTimestamp[finalI].add(timestamps[finalI][0]);
-                                        for(int k=0;k<samplesRead;k++){
-                                            lightSampleShort[finalI].add(sampleShort[finalI][k]);
-                                        }
+                                    lightTimestamp[finalI].add(timestamps[finalI][0]);
+                                    for(int k=0;k<samplesRead;k++){
+                                        lightSampleShort[finalI].add(sampleShort[finalI][k]);
                                     }
                                 }
+                            }
 
-                                long currentTimeMillis = System.currentTimeMillis();
-                                if (recordTimingOffsets && currentTimeMillis >= nextTimeToMeasureOffset) {
-                                    double now = LSL.local_clock();
-                                    double offset = streamInlet.time_correction(2.0);
-                                    offsetLists[finalI].add(new TimingOffsetMeasurement(now, offset));
+                            long currentTimeMillis = System.currentTimeMillis();
+                            if (recordTimingOffsets && currentTimeMillis >= nextTimeToMeasureOffset) {
+                                double now = LSL.local_clock();
+                                double offset = streamInlet.time_correction(2.0);
+                                offsetLists[finalI].add(new TimingOffsetMeasurement(now, offset));
 
-                                    while (nextTimeToMeasureOffset <= currentTimeMillis)
-                                        nextTimeToMeasureOffset += OFFSET_MEASURE_INTERVAL;
-                                    /*
-                                     * Adding the wait interval needs to be repeated only if the recording thread skipped
-                                     * a measurement because it could not keep up.
-                                     */
+                                /*
+                                 * Adding the wait interval needs to be repeated only if the recording thread skipped
+                                 * a measurement because it could not keep up.
+                                 */
+                                while (nextTimeToMeasureOffset <= currentTimeMillis) {
+                                    nextTimeToMeasureOffset += OFFSET_MEASURE_INTERVAL;
                                 }
                             }
-                        } catch (Exception e) {
-                            e.printStackTrace();
                         }
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-                    //Stop service once it finishes its taskstopSelf();
                 }
             }).start();
         }
         MainActivity.isRunning = true;
-        Intent notificationIntent = new Intent(this, MainActivity.class);
-//        PendingIntent pendingIntent = PendingIntent.getActivity(this,
-//                0, notificationIntent, 0);
-//        Notification notification = new NotificationCompat.Builder(this, "ForegroundServiceID")
-//                .setContentTitle("Foreground Service")
-//                .setContentText(intent.getStringExtra("inputExtra"))
-//                .setSmallIcon(R.mipmap.ic_launcher)
-//                .setContentIntent(pendingIntent)
-//                .build();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+
+        // This service is killed by the OS if it is not started as background service
+        // This feature is only supported in Android 10 or higher
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startMyOwnForeground();
-        else
+            Toast.makeText(this, "LSL Recorder can safely run in background!", Toast.LENGTH_LONG).show();
+        } else {
             startForeground(1, new Notification());
+            Toast.makeText(this, "LSL Recorder will be killed when in background!", Toast.LENGTH_LONG).show();
+        }
         return START_NOT_STICKY;
     }
 
+    // From https://stackoverflow.com/questions/47531742/startforeground-fail-after-upgrade-to-android-8-1
+    // and https://androidwave.com/foreground-service-android-example/
     @RequiresApi(api = Build.VERSION_CODES.O)
     private void startMyOwnForeground() {
-        String NOTIFICATION_CHANNEL_ID = "com.LSL_Recorder";
-        String channelName = "My Background Service";
-        NotificationChannel chan = new NotificationChannel(NOTIFICATION_CHANNEL_ID, channelName, NotificationManager.IMPORTANCE_NONE);
-        chan.setLightColor(Color.BLUE);
+        String NOTIFICATION_CHANNEL_ID = "com.example.aliayubkhan.LSLReceiver";
+        String channelName = "LSLReceiver Background Service";
+        NotificationChannel chan = new NotificationChannel(NOTIFICATION_CHANNEL_ID, channelName, NotificationManager.IMPORTANCE_DEFAULT);
+        chan.setLightColor(Color.GREEN);
         chan.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
         NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         assert manager != null;
@@ -316,11 +302,12 @@ public class LSLService extends Service {
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID);
         Notification notification = notificationBuilder.setOngoing(true)
                 .setSmallIcon(R.mipmap.ic_launcher_round)
-                .setContentTitle("App is running in background")
-                .setPriority(NotificationManager.IMPORTANCE_MIN)
+                .setContentTitle("LSLReceiver is running in background!")
+                .setPriority(NotificationManager.IMPORTANCE_DEFAULT)
                 .setCategory(Notification.CATEGORY_SERVICE)
                 .build();
-        startForeground(2, notification);
+        int information_id = 2; // this must be unique and not 0, otherwise it does not have a meaning
+        startForeground(information_id, notification);
     }
 
     public static native void writeStreamHeader(String filename, int streamIndex, String headerXml);
@@ -426,8 +413,6 @@ public class LSLService extends Service {
 
         lightsample = removeZerosByte(lightsample, lightsample.length);
         lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
-        lighttimestamps = invertTimestamps(lighttimestamps);
-        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
 
         if (chanelCount[i] == 1){
             lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
@@ -450,8 +435,6 @@ public class LSLService extends Service {
 
         lightsample = removeZerosShort(lightsample, lightsample.length);
         lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
-        lighttimestamps = invertTimestamps(lighttimestamps);
-        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
 
         if (chanelCount[i] == 1){
             lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
@@ -469,7 +452,6 @@ public class LSLService extends Service {
         double[] lighttimestamps = ArrayUtils.toPrimitive(lightTimestamp[i].toArray(new Double[0]), 0);
 
         lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
-        lighttimestamps = invertTimestamps(lighttimestamps);
         lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
 
         if (chanelCount[i] == 1){
@@ -489,8 +471,6 @@ public class LSLService extends Service {
 
         lightsample = removeZerosDouble(lightsample, lightsample.length);
         lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
-        lighttimestamps = invertTimestamps(lighttimestamps);
-        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
 
         if (chanelCount[i] == 1){
             lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
@@ -508,8 +488,6 @@ public class LSLService extends Service {
         double[] lighttimestamps = ArrayUtils.toPrimitive(lightTimestamp[i].toArray(new Double[0]), 0);
 
         lightsample = removeZerosInt(lightsample, lightsample.length);
-        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
-        lighttimestamps = invertTimestamps(lighttimestamps);
         lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
 
         if (chanelCount[i] == 1){
@@ -532,7 +510,6 @@ public class LSLService extends Service {
         }
 
         lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
-        lighttimestamps = invertTimestamps(lighttimestamps);
         lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
 
         if (chanelCount[i] == 1){
@@ -600,7 +577,13 @@ public class LSLService extends Service {
         for (int i = 0; i < n; i++) {
             if (a[i] != 0) {
                 ind = i;
-                break;
+                if (i == 0){
+                    Log.i("LSLService", "No action in remove zeros");
+                    return a; // the very first element was non-zero, there is nothing else to do in this method
+                } else {
+                    Log.i("LSLService", "We have found leading zeros!");
+                    break; // leave the loop and treat the rest of the elements
+                }
             }
         }
 
@@ -634,7 +617,13 @@ public class LSLService extends Service {
         for (int i = 0; i < n; i++) {
             if (a[i] != 0) {
                 ind = i;
-                break;
+                if (i == 0){
+                    Log.i("LSLService", "No action in remove zeros");
+                    return a; // the very first element was non-zero, there is nothing else to do in this method
+                } else {
+                    Log.i("LSLService", "We have found leading zeros!");
+                    break; // leave the loop and treat the rest of the elements
+                }
             }
         }
 
@@ -652,7 +641,6 @@ public class LSLService extends Service {
         for (int i = 0; i < n - ind; i++)
             b[i] = a[ind + i];
 
-
         return b;
     }
 
@@ -669,7 +657,13 @@ public class LSLService extends Service {
         for (int i = 0; i < n; i++) {
             if (a[i] != 0) {
                 ind = i;
-                break;
+                if (i == 0){
+                    Log.i("LSLService", "No action in remove zeros");
+                    return a; // the very first element was non-zero, there is nothing else to do in this method
+                } else {
+                    Log.i("LSLService", "We have found leading zeros!");
+                    break; // leave the loop and treat the rest of the elements
+                }
             }
         }
 
@@ -703,7 +697,13 @@ public class LSLService extends Service {
         for (int i = 0; i < n; i++) {
             if (a[i] != 0) {
                 ind = i;
-                break;
+                if (i == 0){
+                    Log.i("LSLService", "No action in remove zeros");
+                    return a; // the very first element was non-zero, there is nothing else to do in this method
+                } else {
+                    Log.i("LSLService", "We have found leading zeros!");
+                    break; // leave the loop and treat the rest of the elements
+                }
             }
         }
 
@@ -737,7 +737,13 @@ public class LSLService extends Service {
         for (int i = 0; i < n; i++) {
             if (a[i] != 0) {
                 ind = i;
-                break;
+                if (i == 0){
+                    Log.i("LSLService", "No action in remove zeros");
+                    return a; // the very first element was non-zero, there is nothing else to do in this method
+                } else {
+                    Log.i("LSLService", "We have found leading zeros!");
+                    break; // leave the loop and treat the rest of the elements
+                }
             }
         }
 
@@ -758,16 +764,6 @@ public class LSLService extends Service {
         return b;
     }
 
-    //TODO temporary fix, delete this method altogether! we fixed the origin of the problem, no need to invert anymore
-    // More like inverting the ORDER of timestamps instead of their values.
-    static double[] invertTimestamps(double[] array) {
-//        for (int i = 0; i < array.length / 2; i++) {
-//            double temp = array[i];
-//            array[i] = array[array.length - 1 - i];
-//            array[array.length - 1 - i] = temp;
-//        }
-        return array;
-    }
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel serviceChannel = new NotificationChannel(
