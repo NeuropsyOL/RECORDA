@@ -43,7 +43,7 @@ void writeDataChunkAny(
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_aliayubkhan_LSLReceiver_LSLService_writeDataChunkFloat(
+Java_com_example_aliayubkhan_LSLReceiver_xdf_XdfWriter_writeDataChunkFloat(
         JNIEnv *env,
         jobject /* this */,
         jstring filename,
@@ -63,7 +63,7 @@ Java_com_example_aliayubkhan_LSLReceiver_LSLService_writeDataChunkFloat(
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_aliayubkhan_LSLReceiver_LSLService_writeDataChunkInt(
+Java_com_example_aliayubkhan_LSLReceiver_xdf_XdfWriter_writeDataChunkInt(
         JNIEnv *env,
         jobject /* this */,
         jstring filename,
@@ -83,7 +83,7 @@ Java_com_example_aliayubkhan_LSLReceiver_LSLService_writeDataChunkInt(
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_aliayubkhan_LSLReceiver_LSLService_writeDataChunkDouble(
+Java_com_example_aliayubkhan_LSLReceiver_xdf_XdfWriter_writeDataChunkDouble(
         JNIEnv *env,
         jobject /* this */,
         jstring filename,
@@ -103,7 +103,7 @@ Java_com_example_aliayubkhan_LSLReceiver_LSLService_writeDataChunkDouble(
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_aliayubkhan_LSLReceiver_LSLService_writeDataChunkByte(
+Java_com_example_aliayubkhan_LSLReceiver_xdf_XdfWriter_writeDataChunkByte(
         JNIEnv *env,
         jobject /* this */,
         jstring filename,
@@ -123,7 +123,7 @@ Java_com_example_aliayubkhan_LSLReceiver_LSLService_writeDataChunkByte(
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_aliayubkhan_LSLReceiver_LSLService_writeDataChunkShort(
+Java_com_example_aliayubkhan_LSLReceiver_xdf_XdfWriter_writeDataChunkShort(
         JNIEnv *env,
         jobject /* this */,
         jstring filename,
@@ -143,7 +143,7 @@ Java_com_example_aliayubkhan_LSLReceiver_LSLService_writeDataChunkShort(
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_aliayubkhan_LSLReceiver_LSLService_writeDataChunkStringMarker(
+Java_com_example_aliayubkhan_LSLReceiver_xdf_XdfWriter_writeDataChunkStringMarker(
         JNIEnv *env,
         jobject /* this */,
         jstring filename,
@@ -166,7 +166,7 @@ Java_com_example_aliayubkhan_LSLReceiver_LSLService_writeDataChunkStringMarker(
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_aliayubkhan_LSLReceiver_LSLService_writeStreamOffset(
+Java_com_example_aliayubkhan_LSLReceiver_xdf_XdfWriter_writeStreamOffset(
         JNIEnv *env, jclass clazz,
         jstring filename,
         jint stream_index,
@@ -184,7 +184,7 @@ Java_com_example_aliayubkhan_LSLReceiver_LSLService_writeStreamOffset(
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_aliayubkhan_LSLReceiver_LSLService_writeStreamHeader(
+Java_com_example_aliayubkhan_LSLReceiver_xdf_XdfWriter_writeStreamHeader(
         JNIEnv *env, jclass clazz,
         jstring filename,
         jint stream_index, // zero-based
@@ -205,7 +205,7 @@ Java_com_example_aliayubkhan_LSLReceiver_LSLService_writeStreamHeader(
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_aliayubkhan_LSLReceiver_LSLService_writeStreamFooter(
+Java_com_example_aliayubkhan_LSLReceiver_xdf_XdfWriter_writeStreamFooter(
         JNIEnv *env, jclass clazz,
         jstring filename,
         jint stream_index, // zero-based
