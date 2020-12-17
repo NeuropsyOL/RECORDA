@@ -42,7 +42,6 @@ public class LSLService extends Service {
     private static final int OFFSET_MEASURE_INTERVAL = 5000;
 
     private static final String TAG = "LSLService";
-    public static Thread t2;
 
     private int streamCount;
     private String[] streamNames;
@@ -51,15 +50,6 @@ public class LSLService extends Service {
 
     private final boolean recordTimingOffsets = true;
     private final boolean writeStreamFooters = true;
-
-    public LSLService(){
-        super();
-    }
-
-    @Override
-    public void onCreate() {
-        //Toast.makeText(this,"Service Created!", Toast.LENGTH_SHORT).show();
-    }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
