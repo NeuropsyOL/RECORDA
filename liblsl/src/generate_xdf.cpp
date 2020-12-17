@@ -45,7 +45,7 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_aliayubkhan_LSLReceiver_xdf_XdfWriter_writeDataChunkFloat(
         JNIEnv *env,
-        jobject /* this */,
+        jclass clazz,
         jstring filename,
         jfloatArray channel_data,
         jdoubleArray timestamps,
@@ -65,7 +65,7 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_aliayubkhan_LSLReceiver_xdf_XdfWriter_writeDataChunkInt(
         JNIEnv *env,
-        jobject /* this */,
+        jclass clazz,
         jstring filename,
         jintArray channel_data,
         jdoubleArray timestamps,
@@ -85,7 +85,7 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_aliayubkhan_LSLReceiver_xdf_XdfWriter_writeDataChunkDouble(
         JNIEnv *env,
-        jobject /* this */,
+        jclass clazz,
         jstring filename,
         jdoubleArray channel_data,
         jdoubleArray timestamps,
@@ -105,7 +105,7 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_aliayubkhan_LSLReceiver_xdf_XdfWriter_writeDataChunkByte(
         JNIEnv *env,
-        jobject /* this */,
+        jclass clazz,
         jstring filename,
         jbyteArray channel_data,
         jdoubleArray timestamps,
@@ -125,7 +125,7 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_aliayubkhan_LSLReceiver_xdf_XdfWriter_writeDataChunkShort(
         JNIEnv *env,
-        jobject /* this */,
+        jclass clazz,
         jstring filename,
         jshortArray channel_data,
         jdoubleArray timestamps,
@@ -145,7 +145,7 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_aliayubkhan_LSLReceiver_xdf_XdfWriter_writeDataChunkStringMarker(
         JNIEnv *env,
-        jobject /* this */,
+        jclass clazz,
         jstring filename,
         jobjectArray channel_data,
         jdoubleArray timestamps,

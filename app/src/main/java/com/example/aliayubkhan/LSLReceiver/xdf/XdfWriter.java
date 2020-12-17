@@ -80,10 +80,10 @@ public class XdfWriter {
     private static native void writeStreamFooter(String filename, int streamIndex, String footerXml);
     private static native void writeStreamOffset(String filename, int streamIndex, double collectionTime, double offset);
 
-    private native void writeDataChunkFloat(String filename, float[] lightSample, double[] lightTimestamps, int streamIndex, int channelCount);
-    private native void writeDataChunkInt(String filename, int[] lightSample, double[] lightTimestamps, int streamIndex, int channelCount);
-    private native void writeDataChunkDouble(String filename, double[] lightSample, double[] lightTimestamps, int streamIndex, int channelCount);
-    private native void writeDataChunkStringMarker(String filename, String[] lightSample, double[] lightTimestamps, int streamIndex, int channelCount);
-    private native void writeDataChunkShort(String filename, short[] lightSample, double[] lightTimestamps, int streamIndex, int channelCount);
-    private native void writeDataChunkByte(String filename, byte[] lightSample, double[] lightTimestamps, int streamIndex, int channelCount);
+    private static native void writeDataChunkFloat(String filename, float[] lightSample, double[] lightTimestamps, int streamIndex, int channelCount);
+    private static native void writeDataChunkInt(String filename, int[] lightSample, double[] lightTimestamps, int streamIndex, int channelCount);
+    private static native void writeDataChunkDouble(String filename, double[] lightSample, double[] lightTimestamps, int streamIndex, int channelCount);
+    private static native void writeDataChunkStringMarker(String filename, String[] lightSample, double[] lightTimestamps, int streamIndex, int channelCount);
+    private static native void writeDataChunkShort(String filename, short[] lightSample, double[] lightTimestamps, int streamIndex, int channelCount);
+    private static native void writeDataChunkByte(String filename, byte[] lightSample, double[] lightTimestamps, int streamIndex, int channelCount);
 }
