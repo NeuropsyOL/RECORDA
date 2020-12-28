@@ -116,7 +116,10 @@ public class LSLService extends Service {
 
                     long currentTimeMillis = System.currentTimeMillis();
                     if (recordTimingOffsets && currentTimeMillis >= nextTimeToMeasureOffset) {
-                        streamRecorder.takeTimeOffsetMeasurement();
+                        boolean success = streamRecorder.takeTimeOffsetMeasurement() != null;
+                        if (!success) {
+                            Log.e(TAG, "LSL failed to obtain a clock offset measurement.");
+                        }
                         /*
                          * Adding the wait interval needs to be repeated only if the recording thread skipped
                          * a measurement because it could not keep up.
@@ -174,10 +177,10 @@ public class LSLService extends Service {
 
         isAlreadyExecuted = true;
         MainActivity.isComplete = true;
-        for (StreamRecorder activeRecorder : activeRecorders) {
-            activeRecorder.close();
-        }
-        activeRecorders = null;
+//        for (StreamRecorder activeRecorder : activeRecorders) {
+//            activeRecorder.close();
+//        }
+//        activeRecorders = null;
     }
 
     private void writeXdf(Path xdfFilePath) {
