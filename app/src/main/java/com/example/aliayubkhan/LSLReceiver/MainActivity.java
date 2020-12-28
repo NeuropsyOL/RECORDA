@@ -45,12 +45,9 @@ public class MainActivity extends Activity
     public static String filenamevalue;
     public static String path;
     public static boolean isComplete = false;
-    public static boolean isAlreadyExecuted = false;
     static TextView tv;
-    static boolean isRunning  = false;
+    static volatile boolean isRunning  = false;
 
-    //Requesting run-time permissions
-    static boolean checkFlag = false;
     //Streams
     static LSL.StreamInfo[] streams;
 
@@ -128,22 +125,17 @@ public class MainActivity extends Activity
                     }
 
                     if(path != null){
-                        if(!isAlreadyExecuted){
-                            lv.setEnabled(false);
-                            // make this a foreground service so that android does not kill it while it is in the background
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                myStartForegroundService(intent);
-                            } else { // try our best with older Androids
-                                startService(intent);
-                            }
-                            startMillis = System.currentTimeMillis();
-                            tdate.setText("00:00");
-                            ElapsedTime();
-                            System.out.println(path);
-                        } else {
-                            Toast.makeText(MainActivity.this, "Close existing inlets first!",
-                                    Toast.LENGTH_LONG).show();
+                        lv.setEnabled(false);
+                        // make this a foreground service so that android does not kill it while it is in the background
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            myStartForegroundService(intent);
+                        } else { // try our best with older Androids
+                            startService(intent);
                         }
+                        startMillis = System.currentTimeMillis();
+                        tdate.setText("00:00");
+                        ElapsedTime();
+                        System.out.println(path);
                     } else {
                         //Toast.makeText(MainActivity.this, "Filepath not chosen!", Toast.LENGTH_LONG).show();
                         Toast.makeText(MainActivity.this, "Filepath invalid: "+ path,

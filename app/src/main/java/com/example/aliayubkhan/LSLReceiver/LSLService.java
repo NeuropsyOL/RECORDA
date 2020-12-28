@@ -22,9 +22,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 
-import static com.example.aliayubkhan.LSLReceiver.MainActivity.isAlreadyExecuted;
 import static com.example.aliayubkhan.LSLReceiver.MainActivity.selectedItems;
 
 
@@ -51,6 +52,8 @@ public class LSLService extends Service {
     private final boolean recordTimingOffsets = false;
     private final boolean writeStreamFooters = true;
 
+    private Collection<Thread> recordingThreads = new LinkedList<>();
+
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     public int onStartCommand(final Intent intent, int flags, int startId) {
@@ -65,13 +68,14 @@ public class LSLService extends Service {
         streamCount = results.length;
         streamNames = new String[results.length];
         activeRecorders = new StreamRecorder[results.length];
+        recordingThreads.clear();
         xdfWriter = new XdfWriter();
 
         //TODO only do all the things for selected streams instead of all streams
+        MainActivity.isRunning = true;
         for (int i=0; i<results.length; i++){
             startRecordingStream(results, i);
         }
-        MainActivity.isRunning = true;
 
         // This service is killed by the OS if it is not started as background service
         // This feature is only supported in Android 10 or higher
@@ -102,31 +106,31 @@ public class LSLService extends Service {
     }
 
     private void spawnRecorderThread(StreamRecorder streamRecorder) {
-        new Thread(() -> recordingLoop(streamRecorder)).start();
+        Thread recThread = new Thread(() -> recordingLoop(streamRecorder));
+        recordingThreads.add(recThread);
+        recThread.start();
     }
 
     private void recordingLoop(StreamRecorder streamRecorder) {
         // First measurement of timing offset happens only after the first wait interval expired (5 sec) like LabRecorder does it.
         long nextTimeToMeasureOffset = OFFSET_MEASURE_INTERVAL + System.currentTimeMillis();
 
-        while (!MainActivity.checkFlag) {
+        while (MainActivity.isRunning) {
             try {
-                while (true) {
-                    streamRecorder.pullChunk();
+                streamRecorder.pullChunk();
 
-                    long currentTimeMillis = System.currentTimeMillis();
-                    if (recordTimingOffsets && currentTimeMillis >= nextTimeToMeasureOffset) {
-                        boolean success = streamRecorder.takeTimeOffsetMeasurement() != null;
-                        if (!success) {
-                            Log.e(TAG, "LSL failed to obtain a clock offset measurement.");
-                        }
-                        /*
-                         * Adding the wait interval needs to be repeated only if the recording thread skipped
-                         * a measurement because it could not keep up.
-                         */
-                        while (nextTimeToMeasureOffset <= currentTimeMillis) {
-                            nextTimeToMeasureOffset += OFFSET_MEASURE_INTERVAL;
-                        }
+                long currentTimeMillis = System.currentTimeMillis();
+                if (recordTimingOffsets && currentTimeMillis >= nextTimeToMeasureOffset) {
+                    boolean success = streamRecorder.takeTimeOffsetMeasurement() != null;
+                    if (!success) {
+                        Log.e(TAG, "LSL failed to obtain a clock offset measurement.");
+                    }
+                    /*
+                     * Adding the wait interval needs to be repeated only if the recording thread skipped
+                     * a measurement because it could not keep up.
+                     */
+                    while (nextTimeToMeasureOffset <= currentTimeMillis) {
+                        nextTimeToMeasureOffset += OFFSET_MEASURE_INTERVAL;
                     }
                 }
             } catch (Exception e) {
@@ -169,18 +173,26 @@ public class LSLService extends Service {
     @Override
     public void onDestroy() {
         MainActivity.isRunning = false;
-        Log.i(TAG, "Service onDestroy");
+        Log.i(TAG, "Waiting for recording threads to finish.");
+        for (Thread recordingThread : recordingThreads) {
+            try {
+                recordingThread.join();
+            } catch (InterruptedException e) {
+                Log.e(TAG, "A recording thread failed to finish.", e);
+            }
+        }
+        recordingThreads.clear();
+        Log.i(TAG, "All recording threads terminated.");
 
         Path xdfFilePath = freshRecordingFilePath();
-        MainActivity.path = xdfFilePath.toString();
         writeXdf(xdfFilePath);
 
-        isAlreadyExecuted = true;
+        for (StreamRecorder activeRecorder : activeRecorders) {
+            activeRecorder.close();
+        }
+        activeRecorders = null;
+
         MainActivity.isComplete = true;
-//        for (StreamRecorder activeRecorder : activeRecorders) {
-//            activeRecorder.close();
-//        }
-//        activeRecorders = null;
     }
 
     private void writeXdf(Path xdfFilePath) {

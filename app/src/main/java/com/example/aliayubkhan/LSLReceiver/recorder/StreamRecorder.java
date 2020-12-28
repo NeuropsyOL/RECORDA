@@ -40,6 +40,7 @@ abstract class TypedStreamRecorder<SampleArray, Sample> implements StreamRecorde
     final LSL.StreamInlet inlet;
     final String streamName;
     final int channelCount;
+    final int bufferSize = 1; // FIXME Increase to pull chunk instead of single sample
 
     SampleArray sampleBuffer;
     double[] timestamps;
@@ -56,7 +57,7 @@ abstract class TypedStreamRecorder<SampleArray, Sample> implements StreamRecorde
     public TypedStreamRecorder(LSL.StreamInfo input) throws IOException {
         channelCount = input.channel_count();
         streamName = input.name();
-        timestamps = new double[channelCount];
+        timestamps = new double[bufferSize];
         streamHeaderXml = input.as_xml();
 
         inlet = new LSL.StreamInlet(input);
@@ -151,7 +152,7 @@ class FloatRecorder extends TypedStreamRecorder<float[], Float> {
 
     public FloatRecorder(LSL.StreamInfo input) throws IOException {
         super(input);
-        sampleBuffer = new float[channelCount];
+        sampleBuffer = new float[channelCount * bufferSize];
     }
 
     @Override
@@ -201,7 +202,7 @@ class DoubleRecorder extends TypedStreamRecorder<double[], Double> {
 
     public DoubleRecorder(LSL.StreamInfo input) throws IOException {
         super(input);
-        sampleBuffer = new double[channelCount];
+        sampleBuffer = new double[channelCount * bufferSize];
     }
 
     @Override
@@ -248,7 +249,7 @@ class IntRecorder extends TypedStreamRecorder<int[], Integer> {
 
     public IntRecorder(LSL.StreamInfo input) throws IOException {
         super(input);
-        sampleBuffer = new int[channelCount];
+        sampleBuffer = new int[channelCount * bufferSize];
     }
 
     @Override
@@ -295,7 +296,7 @@ class ShortRecorder extends TypedStreamRecorder<short[], Short> {
 
     public ShortRecorder(LSL.StreamInfo input) throws IOException {
         super(input);
-        sampleBuffer = new short[channelCount];
+        sampleBuffer = new short[channelCount * bufferSize];
     }
 
     @Override
@@ -342,7 +343,7 @@ class ByteRecorder extends TypedStreamRecorder<byte[], Byte> {
 
     public ByteRecorder(LSL.StreamInfo input) throws IOException {
         super(input);
-        sampleBuffer = new byte[channelCount];
+        sampleBuffer = new byte[channelCount * bufferSize];
     }
 
     @Override
@@ -389,7 +390,7 @@ class StringRecorder extends TypedStreamRecorder<String[], String> {
 
     public StringRecorder(LSL.StreamInfo input) throws IOException {
         super(input);
-        sampleBuffer = new String[channelCount];
+        sampleBuffer = new String[channelCount * bufferSize];
     }
 
     @Override
