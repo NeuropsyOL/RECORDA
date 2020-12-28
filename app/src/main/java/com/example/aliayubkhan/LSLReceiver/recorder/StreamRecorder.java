@@ -122,6 +122,19 @@ abstract class TypedStreamRecorder<SampleArray, Sample> implements StreamRecorde
         return measurement;
     }
 
+    abstract double[] processTimestampsForXdf(List<Double> unwrittenRecordedTimestamps);
+
+    abstract SampleArray processSamplesForXdf(List<Sample> unwrittenRecordedSamples);
+
+    @Override
+    public final void writeAllRecordedSamples(XdfWriter xdfWriter, int xdfStreamIndex) {
+        double[] xdfTimestamps = processTimestampsForXdf(unwrittenRecordedTimestamps);
+        SampleArray xdfSamples = processSamplesForXdf(unwrittenRecordedSamples);
+        writeStreamToXdf(xdfWriter, xdfStreamIndex, xdfSamples, xdfTimestamps);
+        unwrittenRecordedTimestamps.clear();
+        unwrittenRecordedSamples.clear();
+    }
+
     @Override
     public void close() {
         inlet.close();
@@ -157,24 +170,30 @@ class FloatRecorder extends TypedStreamRecorder<float[], Float> {
     }
 
     @Override
-    public void writeAllRecordedSamples(XdfWriter xdfWriter, int xdfStreamIndex) {
-        float[] lightsample = ArrayUtils.toPrimitive(unwrittenRecordedSamples.toArray(new Float[0]), 0);
+    double[] processTimestampsForXdf(List<Double> unwrittenRecordedTimestamps) {
         double[] lighttimestamps = ArrayUtils.toPrimitive(unwrittenRecordedTimestamps.toArray(new Double[0]), 0);
 
-        if (!isAudioRecording()) {
-            lightsample = removeZerosFloat(lightsample, lightsample.length);
-        }
+//        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
+//        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
+//
+//        if (channelCount == 1) {
+//            lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
+//        }
+        return lighttimestamps;
+    }
 
-        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
-        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
+    @Override
+    float[] processSamplesForXdf(List<Float> unwrittenRecordedSamples) {
+        float[] lightsample = ArrayUtils.toPrimitive(unwrittenRecordedSamples.toArray(new Float[0]), 0);
 
-        if (channelCount == 1) {
-            lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
-        } else {
-            lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length * channelCount);
-        }
-
-        writeStreamToXdf(xdfWriter, xdfStreamIndex, lightsample, lighttimestamps);
+//        if (!isAudioRecording()) {
+//            lightsample = removeZerosFloat(lightsample, lightsample.length);
+//        }
+//
+//        if (channelCount != 1) {
+//            lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length * channelCount);
+//        }
+        return lightsample;
     }
 }
 
@@ -201,20 +220,27 @@ class DoubleRecorder extends TypedStreamRecorder<double[], Double> {
     }
 
     @Override
-    public void writeAllRecordedSamples(XdfWriter xdfWriter, int xdfStreamIndex) {
-        double[] lightsample = ArrayUtils.toPrimitive(unwrittenRecordedSamples.toArray(new Double[0]), 0);
+    double[] processTimestampsForXdf(List<Double> unwrittenRecordedTimestamps) {
         double[] lighttimestamps = ArrayUtils.toPrimitive(unwrittenRecordedTimestamps.toArray(new Double[0]), 0);
 
-        lightsample = removeZerosDouble(lightsample, lightsample.length);
-        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
+//        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
+//
+//        if (channelCount == 1) {
+//            lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
+//        }
+        return lighttimestamps;
+    }
 
-        if (channelCount == 1) {
-            lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
-        } else {
-            lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length * channelCount);
-        }
+    @Override
+    double[] processSamplesForXdf(List<Double> unwrittenRecordedSamples) {
+        double[] lightsample = ArrayUtils.toPrimitive(unwrittenRecordedSamples.toArray(new Double[0]), 0);
 
-        writeStreamToXdf(xdfWriter, xdfStreamIndex, lightsample, lighttimestamps);
+//        lightsample = removeZerosDouble(lightsample, lightsample.length);
+//
+//        if (channelCount != 1) {
+//            lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length * channelCount);
+//        }
+        return lightsample;
     }
 }
 
@@ -241,20 +267,27 @@ class IntRecorder extends TypedStreamRecorder<int[], Integer> {
     }
 
     @Override
-    public void writeAllRecordedSamples(XdfWriter xdfWriter, int xdfStreamIndex) {
-        int[] lightsample = ArrayUtils.toPrimitive(unwrittenRecordedSamples.toArray(new Integer[0]), 0);
+    double[] processTimestampsForXdf(List<Double> unwrittenRecordedTimestamps) {
         double[] lighttimestamps = ArrayUtils.toPrimitive(unwrittenRecordedTimestamps.toArray(new Double[0]), 0);
 
-        lightsample = removeZerosInt(lightsample, lightsample.length);
-        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
+//        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
+//
+//        if (channelCount == 1) {
+//            lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
+//        }
+        return lighttimestamps;
+    }
 
-        if (channelCount == 1) {
-            lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
-        } else {
-            lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length * channelCount);
-        }
+    @Override
+    int[] processSamplesForXdf(List<Integer> unwrittenRecordedSamples) {
+        int[] lightsample = ArrayUtils.toPrimitive(unwrittenRecordedSamples.toArray(new Integer[0]), 0);
 
-        writeStreamToXdf(xdfWriter, xdfStreamIndex, lightsample, lighttimestamps);
+//        lightsample = removeZerosInt(lightsample, lightsample.length);
+//
+//        if (channelCount != 1) {
+//            lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length * channelCount);
+//        }
+        return lightsample;
     }
 }
 
@@ -281,20 +314,27 @@ class ShortRecorder extends TypedStreamRecorder<short[], Short> {
     }
 
     @Override
-    public void writeAllRecordedSamples(XdfWriter xdfWriter, int xdfStreamIndex) {
-        short[] lightsample = ArrayUtils.toPrimitive(unwrittenRecordedSamples.toArray(new Short[0]), (short) 0);
+    double[] processTimestampsForXdf(List<Double> unwrittenRecordedTimestamps) {
         double[] lighttimestamps = ArrayUtils.toPrimitive(unwrittenRecordedTimestamps.toArray(new Double[0]), 0);
 
-        lightsample = TimeSeriesUtil.removeZerosShort(lightsample, lightsample.length);
-        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
+//        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
+//
+//        if (channelCount == 1) {
+//            lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
+//        }
+        return lighttimestamps;
+    }
 
-        if (channelCount == 1) {
-            lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
-        } else {
-            lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length * channelCount);
-        }
+    @Override
+    short[] processSamplesForXdf(List<Short> unwrittenRecordedSamples) {
+        short[] lightsample = ArrayUtils.toPrimitive(unwrittenRecordedSamples.toArray(new Short[0]), (short) 0);
 
-        writeStreamToXdf(xdfWriter, xdfStreamIndex, lightsample, lighttimestamps);
+//        lightsample = TimeSeriesUtil.removeZerosShort(lightsample, lightsample.length);
+//
+//        if (channelCount != 1) {
+//            lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length * channelCount);
+//        }
+        return lightsample;
     }
 }
 
@@ -321,20 +361,27 @@ class ByteRecorder extends TypedStreamRecorder<byte[], Byte> {
     }
 
     @Override
-    public void writeAllRecordedSamples(XdfWriter xdfWriter, int xdfStreamIndex) {
-        byte[] lightsample = ArrayUtils.toPrimitive(unwrittenRecordedSamples.toArray(new Byte[0]), (byte) 0);
+    double[] processTimestampsForXdf(List<Double> unwrittenRecordedTimestamps) {
         double[] lighttimestamps = ArrayUtils.toPrimitive(unwrittenRecordedTimestamps.toArray(new Double[0]), 0);
 
-        lightsample = removeZerosByte(lightsample, lightsample.length);
-        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
+//        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
+//
+//        if (channelCount == 1) {
+//            lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
+//        }
+        return lighttimestamps;
+    }
 
-        if (channelCount == 1) {
-            lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
-        } else {
-            lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length * channelCount);
-        }
+    @Override
+    byte[] processSamplesForXdf(List<Byte> unwrittenRecordedSamples) {
+        byte[] lightsample = ArrayUtils.toPrimitive(unwrittenRecordedSamples.toArray(new Byte[0]), (byte) 0);
 
-        writeStreamToXdf(xdfWriter, xdfStreamIndex, lightsample, lighttimestamps);
+//        lightsample = removeZerosByte(lightsample, lightsample.length);
+//
+//        if (channelCount != 1) {
+//            lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length * channelCount);
+//        }
+        return lightsample;
     }
 }
 
@@ -361,19 +408,25 @@ class StringRecorder extends TypedStreamRecorder<String[], String> {
     }
 
     @Override
-    public void writeAllRecordedSamples(XdfWriter xdfWriter, int xdfStreamIndex) {
-        String[] lightsample = unwrittenRecordedSamples.toArray(new String[0]);
+    double[] processTimestampsForXdf(List<Double> unwrittenRecordedTimestamps) {
         double[] lighttimestamps = ArrayUtils.toPrimitive(unwrittenRecordedTimestamps.toArray(new Double[0]), 0);
 
-        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
-        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
+//        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
+//        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
+//
+//        if (channelCount == 1) {
+//            lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
+//        }
+        return lighttimestamps;
+    }
 
-        if (channelCount == 1) {
-            lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
-        } else {
-            lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length * channelCount);
-        }
+    @Override
+    String[] processSamplesForXdf(List<String> unwrittenRecordedSamples) {
+        String[] lightsample = unwrittenRecordedSamples.toArray(new String[0]);
 
-        writeStreamToXdf(xdfWriter, xdfStreamIndex, lightsample, lighttimestamps);
+//        if (channelCount != 1) {
+//            lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length * channelCount);
+//        }
+        return lightsample;
     }
 }
