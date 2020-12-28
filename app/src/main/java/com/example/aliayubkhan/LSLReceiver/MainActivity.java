@@ -180,6 +180,7 @@ public class MainActivity extends Activity
             public void onClick(View v) {
                 stopService(intent);
                 t.interrupt();
+                lv.setEnabled(true);
             }
         });
 
@@ -220,6 +221,7 @@ public class MainActivity extends Activity
     }
 
     public void RefreshStreams(){
+        selectedItems.clear();
         LSLStreamName.clear();
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.list_view_text, LSLStreamName);
         lv.setEnabled(true);
