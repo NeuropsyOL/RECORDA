@@ -16,14 +16,13 @@ import android.widget.Toast;
 
 import com.example.aliayubkhan.LSLReceiver.recorder.RecorderFactory;
 import com.example.aliayubkhan.LSLReceiver.recorder.StreamRecorder;
+import com.example.aliayubkhan.LSLReceiver.recorder.StreamRecording;
 import com.example.aliayubkhan.LSLReceiver.xdf.XdfWriter;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
 
 import static com.example.aliayubkhan.LSLReceiver.MainActivity.selectedItems;
@@ -37,20 +36,13 @@ import static com.example.aliayubkhan.LSLReceiver.MainActivity.selectedItems;
 
 public class LSLService extends Service {
 
-    /**
-     * Milliseconds between consecutive measurements of all stream's timing offsets.
-     */
-    private static final int OFFSET_MEASURE_INTERVAL = 5000;
-
     private static final String TAG = "LSLService";
 
-    private List<StreamRecorder> activeRecorders;
+    private List<StreamRecording> activeRecordings = new ArrayList<>();
     private XdfWriter xdfWriter;
 
     private final boolean recordTimingOffsets = false;
     private final boolean writeStreamFooters = true;
-
-    private Collection<Thread> recordingThreads = new LinkedList<>();
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
@@ -62,15 +54,14 @@ public class LSLService extends Service {
         createNotificationChannel();
 
         // resolve all streams that are in the network
-        LSL.StreamInfo[] results = LSL.resolve_streams();
-        activeRecorders = new ArrayList<>(results.length);
-        recordingThreads.clear();
+        LSL.StreamInfo[] lslStreams = LSL.resolve_streams();
         xdfWriter = new XdfWriter();
 
         MainActivity.isRunning = true;
-        for (LSL.StreamInfo availableStream : results) {
+        int xdfStreamIndex = 0;
+        for (LSL.StreamInfo availableStream : lslStreams) {
             if (selectedItems.contains(availableStream.name())) {
-                startRecordingStream(availableStream);
+                startRecording(availableStream, xdfStreamIndex++);
             }
         }
 
@@ -86,51 +77,18 @@ public class LSLService extends Service {
         return START_NOT_STICKY;
     }
 
-    private void startRecordingStream(LSL.StreamInfo inf) {
+    private void startRecording(LSL.StreamInfo lslStream, int xdfStreamIndex) {
         try {
-            System.out.println("The stream's XML meta-data is:\n" + inf.as_xml());
+            System.out.println("The stream's XML meta-data is:\n" + lslStream.as_xml());
 
-            RecorderFactory f = RecorderFactory.forLslStream(inf);
-            StreamRecorder streamRecorder = f.openInlet();
-            activeRecorders.add(streamRecorder);
-
-            spawnRecorderThread(streamRecorder);
+            RecorderFactory f = RecorderFactory.forLslStream(lslStream);
+            StreamRecorder sourceStream = f.openInlet();
+            StreamRecording recording = new StreamRecording(sourceStream, xdfWriter, xdfStreamIndex);
+            recording.setRecordTimingOffsets(recordTimingOffsets);
+            recording.spawnRecorderThread();
+            activeRecordings.add(recording);
         } catch (Exception e) {
-            Log.e(TAG, "Unable to open LSL stream named: " + inf.name(), e);
-        }
-    }
-
-    private void spawnRecorderThread(StreamRecorder streamRecorder) {
-        Thread recThread = new Thread(() -> recordingLoop(streamRecorder));
-        recordingThreads.add(recThread);
-        recThread.start();
-    }
-
-    private void recordingLoop(StreamRecorder streamRecorder) {
-        // First measurement of timing offset happens only after the first wait interval expired (5 sec) like LabRecorder does it.
-        long nextTimeToMeasureOffset = OFFSET_MEASURE_INTERVAL + System.currentTimeMillis();
-
-        while (MainActivity.isRunning) {
-            try {
-                streamRecorder.pullChunk();
-
-                long currentTimeMillis = System.currentTimeMillis();
-                if (recordTimingOffsets && currentTimeMillis >= nextTimeToMeasureOffset) {
-                    boolean success = streamRecorder.takeTimeOffsetMeasurement() != null;
-                    if (!success) {
-                        Log.e(TAG, "LSL failed to obtain a clock offset measurement.");
-                    }
-                    /*
-                     * Adding the wait interval needs to be repeated only if the recording thread skipped
-                     * a measurement because it could not keep up.
-                     */
-                    while (nextTimeToMeasureOffset <= currentTimeMillis) {
-                        nextTimeToMeasureOffset += OFFSET_MEASURE_INTERVAL;
-                    }
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "Failed to read or record stream chunk.", e);
-            }
+            Log.e(TAG, "Unable to open LSL stream named: " + lslStream.name(), e);
         }
     }
 
@@ -167,62 +125,49 @@ public class LSLService extends Service {
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void onDestroy() {
-        // Terminate stream recordings
-        MainActivity.isRunning = false;
-        Log.i(TAG, "Waiting for recording threads to finish.");
-        for (Thread recordingThread : recordingThreads) {
-            try {
-                recordingThread.join();
-            } catch (InterruptedException e) {
-                Log.e(TAG, "A recording thread failed to finish.", e);
-            }
-        }
-        recordingThreads.clear();
-        Log.i(TAG, "All recording threads terminated.");
+        stopRecordings();
 
-        // Write to XDF
         Path xdfFilePath = freshRecordingFilePath();
         writeXdf(xdfFilePath);
 
-        // Free resources
-        for (StreamRecorder activeRecorder : activeRecorders) {
-            activeRecorder.close();
-        }
-        activeRecorders = null;
-
+        // Forget about recordings after saving
+        activeRecordings.clear();
         MainActivity.isComplete = true;
+    }
+
+    /**
+     * Stop all ongoing asynchronous recordings and wait for them to finish.
+     */
+    private void stopRecordings() {
+        // Send stop signals to all recordings
+        MainActivity.isRunning = false;
+        activeRecordings.forEach(StreamRecording::stop);
+        Log.i(TAG, "Sent stop signal. Waiting for recording threads to terminate...");
+        activeRecordings.forEach(StreamRecording::waitFinished);
+        Log.i(TAG, "All recording threads terminated.");
     }
 
     private void writeXdf(Path xdfFilePath) {
         Toast.makeText(this, "Writing file please wait!", Toast.LENGTH_LONG).show();
 
         xdfWriter.setXdfFilePath(xdfFilePath);
-        int xdfStreamIndex = 0;
-        for (StreamRecorder r : activeRecorders) {
-            r.writeStreamHeader(xdfWriter, xdfStreamIndex);
-            xdfStreamIndex++;
+        for (StreamRecording r : activeRecordings) {
+            r.writeStreamHeader();
         }
 
-        xdfStreamIndex = 0;
-        for (StreamRecorder r : activeRecorders) {
-            r.writeAllRecordedSamples(xdfWriter, xdfStreamIndex);
-            xdfStreamIndex++;
+        for (StreamRecording r : activeRecordings) {
+            r.writeAllRecordedSamples();
         }
 
         if (recordTimingOffsets) {
-            xdfStreamIndex = 0;
-            for (StreamRecorder r : activeRecorders) {
-                r.writeAllRecordedTimingOffsets(xdfWriter, xdfStreamIndex);
-                xdfStreamIndex++;
+            for (StreamRecording r : activeRecordings) {
+                r.writeAllRecordedTimingOffsets();
             }
         }
 
         if (writeStreamFooters) {
-            xdfStreamIndex = 0;
-            for (StreamRecorder r : activeRecorders) {
-                String footer = r.getStreamFooterXml();
-                xdfWriter.writeStreamFooter(xdfStreamIndex, footer);
-                xdfStreamIndex++;
+            for (StreamRecording r : activeRecordings) {
+                r.writeStreamFooter();
             }
         }
 
