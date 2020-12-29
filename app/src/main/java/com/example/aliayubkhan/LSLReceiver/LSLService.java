@@ -25,7 +25,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.example.aliayubkhan.LSLReceiver.MainActivity.selectedItems;
+import static com.example.aliayubkhan.LSLReceiver.MainActivity.selectedStreamNames;
 
 
 /**
@@ -60,7 +60,8 @@ public class LSLService extends Service {
         MainActivity.isRunning = true;
         int xdfStreamIndex = 0;
         for (LSL.StreamInfo availableStream : lslStreams) {
-            if (selectedItems.contains(availableStream.name())) {
+            boolean isSelectedToBeRecorded = selectedStreamNames.contains(availableStream.name());
+            if (isSelectedToBeRecorded) {
                 startRecording(availableStream, xdfStreamIndex++);
             }
         }

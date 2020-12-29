@@ -40,7 +40,7 @@ public class MainActivity extends Activity
 {
     public static ListView lv;
     public static List<String> LSLStreamName = new ArrayList<>();
-    public static List<String> selectedItems = new ArrayList<>();
+    public static List<String> selectedStreamNames = new ArrayList<>();
     public static boolean writePermission = true;
     public static String filenamevalue;
     public static String path;
@@ -115,7 +115,7 @@ public class MainActivity extends Activity
             @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
             @Override
             public void onClick(View v) {
-                if (selectedItems.isEmpty()) {
+                if (selectedStreamNames.isEmpty()) {
                     return;
                 }
                 if(!isRunning){
@@ -207,10 +207,10 @@ public class MainActivity extends Activity
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 // selected item
                 String selectedItem = ((TextView) view).getText().toString();
-                if(selectedItems.contains(selectedItem))
-                    selectedItems.remove(selectedItem); //remove deselected item from the list of selected items
+                if(selectedStreamNames.contains(selectedItem))
+                    selectedStreamNames.remove(selectedItem); //remove deselected item from the list of selected items
                 else
-                    selectedItems.add(selectedItem); //add selected item to the list of selected items
+                    selectedStreamNames.add(selectedItem); //add selected item to the list of selected items
                 showSelectedItems();
             }
         });
@@ -221,7 +221,7 @@ public class MainActivity extends Activity
     }
 
     public void RefreshStreams(){
-        selectedItems.clear();
+        selectedStreamNames.clear();
         LSLStreamName.clear();
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.list_view_text, LSLStreamName);
         lv.setEnabled(true);
@@ -233,7 +233,7 @@ public class MainActivity extends Activity
         for (int i=0; i < lv.getAdapter().getCount(); i++) {
             lv.setItemChecked(i, true);
         }
-        selectedItems.addAll(LSLStreamName);
+        selectedStreamNames.addAll(LSLStreamName);
     }
 
     public void ElapsedTime(){
@@ -312,7 +312,7 @@ public class MainActivity extends Activity
 
     private void showSelectedItems() {
         String selItems="";
-        for(String item:selectedItems){
+        for(String item: selectedStreamNames){
             if(selItems=="")
                 selItems=item;
             else
@@ -322,7 +322,7 @@ public class MainActivity extends Activity
     }
 
     public void restart(int delay) {
-        selectedItems.clear();
+        selectedStreamNames.clear();
         isComplete = false;
         Intent launchIntent = new Intent(this, MainActivity.class);
         PendingIntent intent = PendingIntent.getActivity(getApplicationContext(), 0, launchIntent , 0);
