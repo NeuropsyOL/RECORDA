@@ -44,9 +44,7 @@ public class LSLService extends Service {
 
     private static final String TAG = "LSLService";
 
-    private int streamCount;
-    private String[] streamNames;
-    private StreamRecorder[] activeRecorders;
+    private List<StreamRecorder> activeRecorders;
     private XdfWriter xdfWriter;
 
     private final boolean recordTimingOffsets = false;
@@ -65,16 +63,15 @@ public class LSLService extends Service {
 
         // resolve all streams that are in the network
         LSL.StreamInfo[] results = LSL.resolve_streams();
-        streamCount = results.length;
-        streamNames = new String[results.length];
-        activeRecorders = new StreamRecorder[results.length];
+        activeRecorders = new ArrayList<>(results.length);
         recordingThreads.clear();
         xdfWriter = new XdfWriter();
 
-        //TODO only do all the things for selected streams instead of all streams
         MainActivity.isRunning = true;
-        for (int i=0; i<results.length; i++){
-            startRecordingStream(results, i);
+        for (LSL.StreamInfo availableStream : results) {
+            if (selectedItems.contains(availableStream.name())) {
+                startRecordingStream(availableStream);
+            }
         }
 
         // This service is killed by the OS if it is not started as background service
@@ -89,19 +86,17 @@ public class LSLService extends Service {
         return START_NOT_STICKY;
     }
 
-    private void startRecordingStream(LSL.StreamInfo[] results, int lslIndex) {
+    private void startRecordingStream(LSL.StreamInfo inf) {
         try {
-            LSL.StreamInfo inf = results[lslIndex];
-            streamNames[lslIndex] = inf.name();
             System.out.println("The stream's XML meta-data is:\n" + inf.as_xml());
 
             RecorderFactory f = RecorderFactory.forLslStream(inf);
             StreamRecorder streamRecorder = f.openInlet();
-            activeRecorders[lslIndex] = streamRecorder;
+            activeRecorders.add(streamRecorder);
 
             spawnRecorderThread(streamRecorder);
         } catch (Exception e) {
-            Log.e(TAG, "Unable to open LSL stream named: " + streamNames[lslIndex], e);
+            Log.e(TAG, "Unable to open LSL stream named: " + inf.name(), e);
         }
     }
 
@@ -172,6 +167,7 @@ public class LSLService extends Service {
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void onDestroy() {
+        // Terminate stream recordings
         MainActivity.isRunning = false;
         Log.i(TAG, "Waiting for recording threads to finish.");
         for (Thread recordingThread : recordingThreads) {
@@ -184,9 +180,11 @@ public class LSLService extends Service {
         recordingThreads.clear();
         Log.i(TAG, "All recording threads terminated.");
 
+        // Write to XDF
         Path xdfFilePath = freshRecordingFilePath();
         writeXdf(xdfFilePath);
 
+        // Free resources
         for (StreamRecorder activeRecorder : activeRecorders) {
             activeRecorder.close();
         }
@@ -198,38 +196,31 @@ public class LSLService extends Service {
     private void writeXdf(Path xdfFilePath) {
         Toast.makeText(this, "Writing file please wait!", Toast.LENGTH_LONG).show();
 
-        List<Integer> selectedStreamIndices = new ArrayList<>(streamCount);
-        for (int i = 0; i < streamCount; i++) {
-            if (selectedItems.contains(streamNames[i])) {
-                selectedStreamIndices.add(i);
-            }
-        }
-
         xdfWriter.setXdfFilePath(xdfFilePath);
         int xdfStreamIndex = 0;
-        for (int i : selectedStreamIndices) {
-            activeRecorders[i].writeStreamHeader(xdfWriter, xdfStreamIndex);
+        for (StreamRecorder r : activeRecorders) {
+            r.writeStreamHeader(xdfWriter, xdfStreamIndex);
             xdfStreamIndex++;
         }
 
         xdfStreamIndex = 0;
-        for (int i : selectedStreamIndices) {
-            activeRecorders[i].writeAllRecordedSamples(xdfWriter, xdfStreamIndex);
+        for (StreamRecorder r : activeRecorders) {
+            r.writeAllRecordedSamples(xdfWriter, xdfStreamIndex);
             xdfStreamIndex++;
         }
 
         if (recordTimingOffsets) {
             xdfStreamIndex = 0;
-            for (int i : selectedStreamIndices) {
-                activeRecorders[i].writeAllRecordedTimingOffsets(xdfWriter, xdfStreamIndex);
+            for (StreamRecorder r : activeRecorders) {
+                r.writeAllRecordedTimingOffsets(xdfWriter, xdfStreamIndex);
                 xdfStreamIndex++;
             }
         }
 
         if (writeStreamFooters) {
             xdfStreamIndex = 0;
-            for (int i : selectedStreamIndices) {
-                String footer = activeRecorders[i].getStreamFooterXml();
+            for (StreamRecorder r : activeRecorders) {
+                String footer = r.getStreamFooterXml();
                 xdfWriter.writeStreamFooter(xdfStreamIndex, footer);
                 xdfStreamIndex++;
             }
