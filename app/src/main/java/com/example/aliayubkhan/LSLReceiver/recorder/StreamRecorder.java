@@ -46,7 +46,7 @@ abstract class TypedStreamRecorder<SampleArray, Sample> implements StreamRecorde
      * Default sample buffer length in milliseconds for each stream. The actual buffer length is
      * derived from that value and depends on the sampling rate and number of channels.
      */
-    private static final int BUFFER_TIME_MILLIS = 100; //TODO reconsider using fixed buffer time
+    private static final int BUFFER_TIME_MILLIS = 750;
 
     /**
      * Minimal sample buffer capacity in number of samples.

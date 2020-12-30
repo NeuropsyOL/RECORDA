@@ -59,9 +59,9 @@ public class StreamRecording {
         isRunning = true;
         while (isRunning) {
             try {
-                int pulled = streamRecorder.pullChunk();
-                if (pulled > 0) {
-                    Log.d(TAG, "Stream " + xdfStreamIndex + ": Pulled " + pulled + " values");
+                int samples = streamRecorder.pullChunk();
+                if (samples > 0) {
+                    Log.d(TAG, "Stream " + xdfStreamIndex + ": Pulled " + samples + " values");
                     writeAllRecordedSamples();
                     long size = Files.size(Paths.get(xdfWriter.getXdfFilePath()));
                     Log.d(TAG, "XDF file size now: " + size + " bytes");
@@ -93,7 +93,7 @@ public class StreamRecording {
                 }
 
             } catch (Exception e) {
-                Log.e(TAG, "Failed to read or record stream chunk.", e);
+                Log.e(TAG, "Stream " + xdfStreamIndex + ": Failed to read or record chunk.", e);
             }
         }
     }
