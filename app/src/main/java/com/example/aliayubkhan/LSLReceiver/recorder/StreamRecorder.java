@@ -1,5 +1,7 @@
 package com.example.aliayubkhan.LSLReceiver.recorder;
 
+import android.util.Log;
+
 import com.example.aliayubkhan.LSLReceiver.LSL;
 import com.example.aliayubkhan.LSLReceiver.xdf.XdfWriter;
 
@@ -8,13 +10,9 @@ import org.apache.commons.lang3.ArrayUtils;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.function.IntFunction;
 
-import static com.example.aliayubkhan.LSLReceiver.recorder.TimeSeriesUtil.removeZerosByte;
-import static com.example.aliayubkhan.LSLReceiver.recorder.TimeSeriesUtil.removeZerosDouble;
-import static com.example.aliayubkhan.LSLReceiver.recorder.TimeSeriesUtil.removeZerosFloat;
-import static com.example.aliayubkhan.LSLReceiver.recorder.TimeSeriesUtil.removeZerosInt;
 import static com.example.aliayubkhan.LSLReceiver.xdf.XdfWriter.createFooterXml;
 
 public interface StreamRecorder extends Closeable {
@@ -44,10 +42,31 @@ abstract class TypedStreamRecorder<SampleArray, Sample> implements StreamRecorde
      */
     private static final double OFFSET_MEASURE_TIMEOUT_SECS = 2.0;
 
+    /**
+     * Default sample buffer length in milliseconds for each stream. The actual buffer length is
+     * derived from that value and depends on the sampling rate and number of channels.
+     */
+    private static final int BUFFER_TIME_MILLIS = 100; //TODO reconsider using fixed buffer time
+
+    /**
+     * Minimal sample buffer capacity in number of samples.
+     */
+    private static final int MIN_SAMPLES_TO_BUFFER = 10;
+
     final LSL.StreamInlet inlet;
     final String streamName;
     final int channelCount;
-    final int bufferSize = 1; // FIXME Increase to pull chunk instead of single sample
+
+    /**
+     * Number of samples to buffer
+     */
+    final int samplesToBuffer;
+
+    /**
+     * Length of sample buffer: sized to hold as much as {@link #samplesToBuffer} values per
+     * channel
+     */
+    final int sampleBufferCapacity;
 
     SampleArray sampleBuffer;
     double[] timestamps;
@@ -68,35 +87,52 @@ abstract class TypedStreamRecorder<SampleArray, Sample> implements StreamRecorde
      */
     int timingOffsetIndex = 0;
 
-    public TypedStreamRecorder(LSL.StreamInfo input) throws IOException {
+    public TypedStreamRecorder(LSL.StreamInfo input, IntFunction<SampleArray> bufferConstructor) throws IOException {
         channelCount = input.channel_count();
         streamName = input.name();
-        timestamps = new double[bufferSize];
         streamHeaderXml = input.as_xml();
+        if (channelCount < 1) {
+            throw new IllegalArgumentException("Stream has less than one channel: " + streamName);
+        }
+
+        double calculatedSamplesToBuffer = input.nominal_srate() * BUFFER_TIME_MILLIS / 1000.0;
+        samplesToBuffer = Math.max(MIN_SAMPLES_TO_BUFFER, (int) Math.ceil(calculatedSamplesToBuffer));
+        sampleBufferCapacity = channelCount * samplesToBuffer;
+        sampleBuffer = bufferConstructor.apply(sampleBufferCapacity);
+        timestamps = new double[samplesToBuffer];
 
         inlet = new LSL.StreamInlet(input);
     }
 
     @Override
     public int pullChunk() throws Exception {
-        int samplesRead = pullChunkImpl();
-        addToRecordBuffer(samplesRead);
+        int valuesRead = 0;
+        int totalValuesRead = 0;
+        do {
+            totalValuesRead += (valuesRead = pullChunkImpl());
+            addToRecordBuffer(valuesRead);
+        } while (valuesRead == sampleBufferCapacity);
+        int samplesRead = totalValuesRead / channelCount;
         return samplesRead;
     }
 
     void addToRecordBuffer(int dataValuesRead) {
         if (dataValuesRead > 0) {
             // add samples and timestamps to the end of the list whenever we received a sample
-            double currentTimestamp = timestamps[0];
-            unwrittenRecordedTimestamps.add(currentTimestamp);
-            lastTimestamp = currentTimestamp;
-            if (totalSamples == 0) {
-                firstTimestamp = currentTimestamp;
-            }
-            totalSamples += dataValuesRead / channelCount;
             for (int k = 0; k < dataValuesRead; k++) {
                 unwrittenRecordedSamples.add(getSampleJustRead(k));
             }
+            int samplesRead = dataValuesRead / channelCount;
+            for (int t = 0; t < samplesRead; t++) {
+                unwrittenRecordedTimestamps.add(timestamps[t]);
+            }
+
+            double mostRecentTimestamp = timestamps[samplesRead - 1];
+            lastTimestamp = mostRecentTimestamp;
+            if (totalSamples == 0) {
+                firstTimestamp = timestamps[0];
+            }
+            totalSamples += samplesRead;
         }
     }
 
@@ -175,8 +211,7 @@ abstract class TypedStreamRecorder<SampleArray, Sample> implements StreamRecorde
 class FloatRecorder extends TypedStreamRecorder<float[], Float> {
 
     public FloatRecorder(LSL.StreamInfo input) throws IOException {
-        super(input);
-        sampleBuffer = new float[channelCount * bufferSize];
+        super(input, float[]::new);
     }
 
     @Override
@@ -225,8 +260,7 @@ class FloatRecorder extends TypedStreamRecorder<float[], Float> {
 class DoubleRecorder extends TypedStreamRecorder<double[], Double> {
 
     public DoubleRecorder(LSL.StreamInfo input) throws IOException {
-        super(input);
-        sampleBuffer = new double[channelCount * bufferSize];
+        super(input, double[]::new);
     }
 
     @Override
@@ -272,8 +306,7 @@ class DoubleRecorder extends TypedStreamRecorder<double[], Double> {
 class IntRecorder extends TypedStreamRecorder<int[], Integer> {
 
     public IntRecorder(LSL.StreamInfo input) throws IOException {
-        super(input);
-        sampleBuffer = new int[channelCount * bufferSize];
+        super(input, int[]::new);
     }
 
     @Override
@@ -319,8 +352,7 @@ class IntRecorder extends TypedStreamRecorder<int[], Integer> {
 class ShortRecorder extends TypedStreamRecorder<short[], Short> {
 
     public ShortRecorder(LSL.StreamInfo input) throws IOException {
-        super(input);
-        sampleBuffer = new short[channelCount * bufferSize];
+        super(input, short[]::new);
     }
 
     @Override
@@ -366,8 +398,7 @@ class ShortRecorder extends TypedStreamRecorder<short[], Short> {
 class ByteRecorder extends TypedStreamRecorder<byte[], Byte> {
 
     public ByteRecorder(LSL.StreamInfo input) throws IOException {
-        super(input);
-        sampleBuffer = new byte[channelCount * bufferSize];
+        super(input, byte[]::new);
     }
 
     @Override
@@ -413,8 +444,7 @@ class ByteRecorder extends TypedStreamRecorder<byte[], Byte> {
 class StringRecorder extends TypedStreamRecorder<String[], String> {
 
     public StringRecorder(LSL.StreamInfo input) throws IOException {
-        super(input);
-        sampleBuffer = new String[channelCount * bufferSize];
+        super(input, String[]::new);
     }
 
     @Override

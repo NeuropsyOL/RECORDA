@@ -55,22 +55,22 @@ public class StreamRecording {
     private void recordingLoop(StreamRecorder streamRecorder) {
         // First measurement of timing offset happens only after the first wait interval expired (5 sec) like LabRecorder does it.
         long nextTimeToMeasureOffset = OFFSET_MEASURE_INTERVAL + System.currentTimeMillis();
-        long nextTimeToFlushXdf = XDF_WRITE_INTERVAL + System.currentTimeMillis();
 
         isRunning = true;
         while (isRunning) {
             try {
-                streamRecorder.pullChunk();
-
-                long currentTimeMillis = System.currentTimeMillis();
-
-                if (currentTimeMillis >= nextTimeToFlushXdf) {
+                int pulled = streamRecorder.pullChunk();
+                if (pulled > 0) {
+                    Log.d(TAG, "Stream " + xdfStreamIndex + ": Pulled " + pulled + " values");
                     writeAllRecordedSamples();
-                    nextTimeToFlushXdf = currentTimeMillis + XDF_WRITE_INTERVAL;
                     long size = Files.size(Paths.get(xdfWriter.getXdfFilePath()));
                     Log.d(TAG, "XDF file size now: " + size + " bytes");
+                } else {
+                    Log.d(TAG, "Stream " + xdfStreamIndex + ": No samples. Waiting " + XDF_WRITE_INTERVAL + " ms");
                 }
 
+
+                long currentTimeMillis = System.currentTimeMillis();
                 if (recordTimingOffsets && currentTimeMillis >= nextTimeToMeasureOffset) {
                     boolean success = streamRecorder.takeTimeOffsetMeasurement() != null;
                     if (success) {
@@ -85,6 +85,10 @@ public class StreamRecording {
                     while (nextTimeToMeasureOffset <= currentTimeMillis) {
                         nextTimeToMeasureOffset += OFFSET_MEASURE_INTERVAL;
                     }
+                }
+
+                if (pulled <= 0) {
+                    Thread.sleep(XDF_WRITE_INTERVAL);
                 }
 
             } catch (Exception e) {
