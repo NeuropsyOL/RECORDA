@@ -69,7 +69,6 @@ public class StreamRecording {
                     Log.d(TAG, "Stream " + xdfStreamIndex + ": No samples. Waiting " + XDF_WRITE_INTERVAL + " ms");
                 }
 
-
                 long currentTimeMillis = System.currentTimeMillis();
                 if (recordTimingOffsets && currentTimeMillis >= nextTimeToMeasureOffset) {
                     boolean success = streamRecorder.takeTimeOffsetMeasurement() != null;
@@ -87,8 +86,10 @@ public class StreamRecording {
                     }
                 }
 
-                if (pulled <= 0) {
+                try {
                     Thread.sleep(XDF_WRITE_INTERVAL);
+                } catch (InterruptedException ie) {
+                    // Sleep aborted.
                 }
 
             } catch (Exception e) {
@@ -99,6 +100,11 @@ public class StreamRecording {
 
     public void stop() {
         isRunning = false;
+        Thread st = sampleThread;
+        if (st != null) {
+            st.interrupt();
+        }
+        Log.i(TAG, "Stream " + xdfStreamIndex + ": Received stop signal");
     }
 
     public void waitFinished() {
@@ -112,6 +118,7 @@ public class StreamRecording {
         }
         sampleThread = null;
         streamRecorder.close();
+        Log.i(TAG, "Stream " + xdfStreamIndex + " terminated");
     }
 
     public void setRecordTimingOffsets(boolean recordTimingOffsets) {
