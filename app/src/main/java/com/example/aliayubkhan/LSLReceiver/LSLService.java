@@ -48,23 +48,30 @@ public class LSLService extends Service {
     @Override
     public int onStartCommand(final Intent intent, int flags, int startId) {
         Log.i(TAG, "Service onStartCommand");
+        MainActivity.isRunning = true;
         Toast.makeText(this,"Recording LSL!", Toast.LENGTH_SHORT).show();
 
         // this method is part of the mechanisms that allow this to be a foreground channel
         createNotificationChannel();
 
+        xdfWriter = new XdfWriter();
+        Path xdfFilePath = freshRecordingFilePath();
+        xdfWriter.setXdfFilePath(xdfFilePath);
+
         // resolve all streams that are in the network
         LSL.StreamInfo[] lslStreams = LSL.resolve_streams();
-        xdfWriter = new XdfWriter();
 
-        MainActivity.isRunning = true;
         int xdfStreamIndex = 0;
         for (LSL.StreamInfo availableStream : lslStreams) {
             boolean isSelectedToBeRecorded = selectedStreamNames.contains(availableStream.name());
             if (isSelectedToBeRecorded) {
-                startRecording(availableStream, xdfStreamIndex++);
+                StreamRecording rec = prepareRecording(availableStream, xdfStreamIndex++);
+                if (rec != null) {
+                    activeRecordings.add(rec);
+                }
             }
         }
+        activeRecordings.forEach(StreamRecording::spawnRecorderThread);
 
         // This service is killed by the OS if it is not started as background service
         // This feature is only supported in Android 10 or higher
@@ -78,7 +85,7 @@ public class LSLService extends Service {
         return START_NOT_STICKY;
     }
 
-    private void startRecording(LSL.StreamInfo lslStream, int xdfStreamIndex) {
+    private StreamRecording prepareRecording(LSL.StreamInfo lslStream, int xdfStreamIndex) {
         try {
             System.out.println("The stream's XML meta-data is:\n" + lslStream.as_xml());
 
@@ -86,10 +93,11 @@ public class LSLService extends Service {
             StreamRecorder sourceStream = f.openInlet();
             StreamRecording recording = new StreamRecording(sourceStream, xdfWriter, xdfStreamIndex);
             recording.setRecordTimingOffsets(recordTimingOffsets);
-            recording.spawnRecorderThread();
-            activeRecordings.add(recording);
+            recording.writeStreamHeader();
+            return recording;
         } catch (Exception e) {
             Log.e(TAG, "Unable to open LSL stream named: " + lslStream.name(), e);
+            return null;
         }
     }
 
@@ -127,9 +135,7 @@ public class LSLService extends Service {
     @Override
     public void onDestroy() {
         stopRecordings();
-
-        Path xdfFilePath = freshRecordingFilePath();
-        writeXdf(xdfFilePath);
+        finishXdf();
 
         // Forget about recordings after saving
         activeRecordings.clear();
@@ -148,31 +154,14 @@ public class LSLService extends Service {
         Log.i(TAG, "All recording threads terminated.");
     }
 
-    private void writeXdf(Path xdfFilePath) {
-        Toast.makeText(this, "Writing file please wait!", Toast.LENGTH_LONG).show();
-
-        xdfWriter.setXdfFilePath(xdfFilePath);
-        for (StreamRecording r : activeRecordings) {
-            r.writeStreamHeader();
-        }
-
-        for (StreamRecording r : activeRecordings) {
-            r.writeAllRecordedSamples();
-        }
-
-        if (recordTimingOffsets) {
-            for (StreamRecording r : activeRecordings) {
-                r.writeAllRecordedTimingOffsets();
-            }
-        }
-
+    private void finishXdf() {
+        Toast.makeText(this, "Finishing XDF file...", Toast.LENGTH_LONG).show();
         if (writeStreamFooters) {
             for (StreamRecording r : activeRecordings) {
                 r.writeStreamFooter();
             }
         }
-
-        Toast.makeText(this, "File written at: " + xdfFilePath, Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "File written at: " + xdfWriter.getXdfFilePath(), Toast.LENGTH_LONG).show();
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)

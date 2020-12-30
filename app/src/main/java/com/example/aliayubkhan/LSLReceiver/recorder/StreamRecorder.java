@@ -29,6 +29,8 @@ public interface StreamRecorder extends Closeable {
 
     void writeAllRecordedTimingOffsets(XdfWriter xdfWriter, int xdfStreamIndex);
 
+    void flushRecordedTimingOffsets(XdfWriter xdfWriter, int xdfStreamIndex);
+
     String getStreamFooterXml();
 
     @Override
@@ -36,6 +38,11 @@ public interface StreamRecorder extends Closeable {
 }
 
 abstract class TypedStreamRecorder<SampleArray, Sample> implements StreamRecorder {
+
+    /**
+     * Timeout in seconds for obtaining an LSL <em>timimg offset</em> measurement.
+     */
+    private static final double OFFSET_MEASURE_TIMEOUT_SECS = 2.0;
 
     final LSL.StreamInlet inlet;
     final String streamName;
@@ -50,9 +57,16 @@ abstract class TypedStreamRecorder<SampleArray, Sample> implements StreamRecorde
 
     final List<Sample> unwrittenRecordedSamples = new ArrayList<>();
     final List<Double> unwrittenRecordedTimestamps = new ArrayList<>();
-    final List<TimingOffsetMeasurement> offsetMeasurements = new ArrayList<>();
 
     private final String streamHeaderXml;
+
+    final List<TimingOffsetMeasurement> offsetMeasurements = new ArrayList<>();
+
+    /**
+     * Index into the list of {@link #offsetMeasurements} of the next timing offset not yet written
+     * into the XDF file.
+     */
+    int timingOffsetIndex = 0;
 
     public TypedStreamRecorder(LSL.StreamInfo input) throws IOException {
         channelCount = input.channel_count();
@@ -115,9 +129,18 @@ abstract class TypedStreamRecorder<SampleArray, Sample> implements StreamRecorde
     }
 
     @Override
+    public void flushRecordedTimingOffsets(XdfWriter writer, int xdfStreamIndex) {
+        while (timingOffsetIndex < offsetMeasurements.size()) {
+            TimingOffsetMeasurement m = offsetMeasurements.get(timingOffsetIndex);
+            writer.writeStreamOffset(xdfStreamIndex, m.collectionTime, m.offset);
+            timingOffsetIndex++;
+        }
+    }
+
+    @Override
     public TimingOffsetMeasurement takeTimeOffsetMeasurement() throws Exception {
         double now = LSL.local_clock();
-        double offset = inlet.time_correction(2.0);
+        double offset = inlet.time_correction(OFFSET_MEASURE_TIMEOUT_SECS);
         TimingOffsetMeasurement measurement = new TimingOffsetMeasurement(now, offset);
         offsetMeasurements.add(measurement);
         return measurement;

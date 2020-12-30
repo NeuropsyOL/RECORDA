@@ -20,6 +20,11 @@ public class StreamRecording {
      */
     private static final int OFFSET_MEASURE_INTERVAL = 5000;
 
+    /**
+     * Milliseconds between flushing current recording buffer to XDF file.
+     */
+    private static final int XDF_WRITE_INTERVAL = 500;
+
     private final StreamRecorder streamRecorder;
     private final XdfWriter xdfWriter;
     private final int xdfStreamIndex;
@@ -38,6 +43,9 @@ public class StreamRecording {
     }
 
     public void spawnRecorderThread() {
+        if (sampleThread != null) {
+            throw new IllegalStateException("Already recording.");
+        }
         sampleThread = new Thread(() -> recordingLoop(streamRecorder));
         sampleThread.start();
     }
@@ -45,6 +53,7 @@ public class StreamRecording {
     private void recordingLoop(StreamRecorder streamRecorder) {
         // First measurement of timing offset happens only after the first wait interval expired (5 sec) like LabRecorder does it.
         long nextTimeToMeasureOffset = OFFSET_MEASURE_INTERVAL + System.currentTimeMillis();
+        long nextTimeToFlushXdf = XDF_WRITE_INTERVAL + System.currentTimeMillis();
 
         isRunning = true;
         while (isRunning) {
@@ -52,9 +61,17 @@ public class StreamRecording {
                 streamRecorder.pullChunk();
 
                 long currentTimeMillis = System.currentTimeMillis();
+
+                if (currentTimeMillis >= nextTimeToFlushXdf) {
+                    writeAllRecordedSamples();
+                    nextTimeToFlushXdf = currentTimeMillis + XDF_WRITE_INTERVAL;
+                }
+
                 if (recordTimingOffsets && currentTimeMillis >= nextTimeToMeasureOffset) {
                     boolean success = streamRecorder.takeTimeOffsetMeasurement() != null;
-                    if (!success) {
+                    if (success) {
+                        flushRecordedTimingOffsets();
+                    } else {
                         Log.e(TAG, "LSL failed to obtain a clock offset measurement.");
                     }
                     /*
@@ -100,8 +117,8 @@ public class StreamRecording {
         streamRecorder.writeAllRecordedSamples(xdfWriter, xdfStreamIndex);
     }
 
-    public void writeAllRecordedTimingOffsets() {
-        streamRecorder.writeAllRecordedTimingOffsets(xdfWriter, xdfStreamIndex);
+    public void flushRecordedTimingOffsets() {
+        streamRecorder.flushRecordedTimingOffsets(xdfWriter, xdfStreamIndex);
     }
 
     public void writeStreamFooter() {
