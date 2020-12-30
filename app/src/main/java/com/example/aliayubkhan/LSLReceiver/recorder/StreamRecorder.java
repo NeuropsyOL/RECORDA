@@ -25,7 +25,7 @@ public interface StreamRecorder extends Closeable {
 
     void writeStreamHeader(XdfWriter xdfWriter, int xdfStreamIndex);
 
-    void writeAllRecordedSamples(XdfWriter xdfWriter, int xdfStreamIndex);
+    int writeAllRecordedSamples(XdfWriter xdfWriter, int xdfStreamIndex);
 
     void writeAllRecordedTimingOffsets(XdfWriter xdfWriter, int xdfStreamIndex);
 
@@ -151,12 +151,13 @@ abstract class TypedStreamRecorder<SampleArray, Sample> implements StreamRecorde
     abstract SampleArray processSamplesForXdf(List<Sample> unwrittenRecordedSamples);
 
     @Override
-    public final void writeAllRecordedSamples(XdfWriter xdfWriter, int xdfStreamIndex) {
+    public final int writeAllRecordedSamples(XdfWriter xdfWriter, int xdfStreamIndex) {
         double[] xdfTimestamps = processTimestampsForXdf(unwrittenRecordedTimestamps);
         SampleArray xdfSamples = processSamplesForXdf(unwrittenRecordedSamples);
         writeStreamToXdf(xdfWriter, xdfStreamIndex, xdfSamples, xdfTimestamps);
         unwrittenRecordedTimestamps.clear();
         unwrittenRecordedSamples.clear();
+        return xdfTimestamps.length;
     }
 
     @Override

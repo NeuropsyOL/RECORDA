@@ -4,6 +4,8 @@ import android.util.Log;
 
 import com.example.aliayubkhan.LSLReceiver.xdf.XdfWriter;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Objects;
 
 /**
@@ -65,6 +67,8 @@ public class StreamRecording {
                 if (currentTimeMillis >= nextTimeToFlushXdf) {
                     writeAllRecordedSamples();
                     nextTimeToFlushXdf = currentTimeMillis + XDF_WRITE_INTERVAL;
+                    long size = Files.size(Paths.get(xdfWriter.getXdfFilePath()));
+                    Log.d(TAG, "XDF file size now: " + size + " bytes");
                 }
 
                 if (recordTimingOffsets && currentTimeMillis >= nextTimeToMeasureOffset) {
@@ -82,6 +86,7 @@ public class StreamRecording {
                         nextTimeToMeasureOffset += OFFSET_MEASURE_INTERVAL;
                     }
                 }
+
             } catch (Exception e) {
                 Log.e(TAG, "Failed to read or record stream chunk.", e);
             }
@@ -114,7 +119,8 @@ public class StreamRecording {
     }
 
     public void writeAllRecordedSamples() {
-        streamRecorder.writeAllRecordedSamples(xdfWriter, xdfStreamIndex);
+        int samplesWritten = streamRecorder.writeAllRecordedSamples(xdfWriter, xdfStreamIndex);
+        Log.i(TAG, "Stream " + xdfStreamIndex + ": Chunk of " + samplesWritten + " samples written to XDF");
     }
 
     public void flushRecordedTimingOffsets() {
