@@ -27,38 +27,22 @@
 
             <TextView
                 android:id="@+id/filename"
-                android:layout_width="165dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="70dp"
                 android:layout_weight="1"
-                android:text="Filename: "
+                android:text="Filename:"
                 android:textSize="24sp" />
-
-            <EditText
-                android:id="@+id/filenametext"
-                android:layout_width="190dp"
-                android:layout_height="40dp"
-                android:layout_marginTop="68dp"
-                android:layout_marginEnd="28dp"
-                android:layout_marginBottom="65dp"
-                android:ems="10"
-                android:hint="Enter filename"
-                android:inputType="textLongMessage"
-                android:text="recording.xdf"
-                android:textSize="18sp"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent" />
 
         </LinearLayout>
 
         <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:layout_height="71dp"
             android:gravity="center"
-            android:orientation="vertical"
             android:textAlignment="center">
 
-<!--            <Button
+            <!--            <Button
                 android:id="@+id/locationButton"
                 android:layout_width="155dp"
                 android:layout_height="wrap_content"
@@ -67,6 +51,29 @@
                 android:text="Select Location"
                 android:textAlignment="center"
                 android:textColor="#FFFFFF" />-->
+
+            <EditText
+                android:id="@+id/filenametext"
+                android:layout_width="250dp"
+                android:layout_height="wrap_content"
+                android:ems="10"
+                android:hint="Enter filename"
+                android:inputType="textLongMessage"
+                android:singleLine="true"
+                android:text="recording"
+                android:textSize="18sp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <TextView
+                android:id="@+id/extensionLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ems="10"
+                android:inputType="none"
+                android:singleLine="true"
+                android:text=".xdf" />
         </LinearLayout>
+
     </LinearLayout>
 </android.support.constraint.ConstraintLayout>

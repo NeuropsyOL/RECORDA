@@ -28,6 +28,8 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,7 +45,6 @@ public class MainActivity extends Activity
     public static List<String> selectedStreamNames = new ArrayList<>();
     public static boolean writePermission = true;
     public static String filenamevalue;
-    public static String path;
     public static boolean isComplete = false;
     static TextView tv;
     static volatile boolean isRunning  = false;
@@ -93,8 +94,7 @@ public class MainActivity extends Activity
         tdate = (TextView) findViewById(R.id.elapsedTime);
         requestWritePermissions();
         // set filename so that is not null, it gets changed if the user enters settings screen
-        filenamevalue = "default.xdf";
-        path = Environment.getExternalStorageDirectory() + "/Download/";
+        filenamevalue = "recording";
         lv = (ListView) findViewById (R.id.streams);
         lv.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
         settings_button = (ImageView) findViewById(R.id.settings_btn);
@@ -121,23 +121,19 @@ public class MainActivity extends Activity
                         //Log.i("Path", path);
                     }
 
-                    if(path != null){
-                        lv.setEnabled(false);
-                        // make this a foreground service so that android does not kill it while it is in the background
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                            myStartForegroundService(intent);
-                        } else { // try our best with older Androids
-                            startService(intent);
-                        }
-                        startMillis = System.currentTimeMillis();
-                        tdate.setText("00:00");
-                        ElapsedTime();
-                        System.out.println(path);
-                    } else {
-                        //Toast.makeText(MainActivity.this, "Filepath not chosen!", Toast.LENGTH_LONG).show();
-                        Toast.makeText(MainActivity.this, "Filepath invalid: "+ path,
-                                Toast.LENGTH_LONG).show();
+                    if (StringUtils.isEmpty(filenamevalue)) {
+                        filenamevalue = "recording";
                     }
+                    lv.setEnabled(false);
+                    // make this a foreground service so that android does not kill it while it is in the background
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        myStartForegroundService(intent);
+                    } else { // try our best with older Androids
+                        startService(intent);
+                    }
+                    startMillis = System.currentTimeMillis();
+                    tdate.setText("00:00");
+                    ElapsedTime();
                 }
             }
         });
@@ -258,7 +254,7 @@ public class MainActivity extends Activity
             //When permission is not granted by user, show them message why this permission is needed.
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                     Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-                Toast.makeText(this, "Please grant permissions to write LSL Stream",
+                Toast.makeText(this, "Please grant permissions to write XDF file",
                         Toast.LENGTH_LONG).show();
                 writePermission = false;
 
@@ -272,7 +268,6 @@ public class MainActivity extends Activity
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
                         MY_PERMISSIONS_WRITE_LSL);
-                path = Environment.getExternalStorageDirectory() + "/Download/";
                 filenamevalue = "hardcoded.xdf";
             }
         }

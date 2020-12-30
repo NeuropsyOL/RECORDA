@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Build;
+import android.os.Environment;
 import android.os.IBinder;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.NotificationCompat;
@@ -165,7 +166,10 @@ public class LSLService extends Service {
     private static Path freshRecordingFilePath() {
         String isoTime = LocalDateTime.now().toString();
         String fileNameSafeTime = isoTime.replace(':', '-');
-        return Paths.get(MainActivity.path, "recording-" + fileNameSafeTime + ".xdf");
+        String filename = MainActivity.filenamevalue + "-" + fileNameSafeTime + ".xdf";
+
+        Path path = Environment.getExternalStorageDirectory().toPath().resolve("Download");
+        return path.resolve(filename);
     }
 
     private void createNotificationChannel() {
