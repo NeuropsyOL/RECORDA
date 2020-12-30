@@ -15,23 +15,24 @@ public class XdfWriter {
 
     private String xdfFilePath;
 
-    public void writeDataChunkFloat(int streamIndex, float[] lightSample, double[] lightTimestamps, int channelCount) {
+    public synchronized void writeDataChunkFloat(int streamIndex, float[] lightSample, double[] lightTimestamps, int channelCount) {
         writeDataChunkFloat(xdfFilePath, lightSample, lightTimestamps, streamIndex, channelCount);
     }
 
-    public void writeDataChunkInt(int streamIndex, int[] lightSample, double[] lightTimestamps, int channelCount) {
+    public synchronized void writeDataChunkInt(int streamIndex, int[] lightSample, double[] lightTimestamps, int channelCount) {
         writeDataChunkInt(xdfFilePath, lightSample, lightTimestamps, streamIndex, channelCount);
     }
-    public void writeDataChunkDouble(int streamIndex, double[] lightSample, double[] lightTimestamps, int channelCount) {
+
+    public synchronized void writeDataChunkDouble(int streamIndex, double[] lightSample, double[] lightTimestamps, int channelCount) {
         writeDataChunkDouble(xdfFilePath, lightSample, lightTimestamps, streamIndex, channelCount);
     }
-    public void writeDataChunkStringMarker(int streamIndex, String[] lightSample, double[] lightTimestamps, int channelCount) {
+    public synchronized void writeDataChunkStringMarker(int streamIndex, String[] lightSample, double[] lightTimestamps, int channelCount) {
         writeDataChunkStringMarker(xdfFilePath, lightSample, lightTimestamps, streamIndex, channelCount);
     }
-    public void writeDataChunkShort(int streamIndex, short[] lightSample, double[] lightTimestamps, int channelCount) {
+    public synchronized void writeDataChunkShort(int streamIndex, short[] lightSample, double[] lightTimestamps, int channelCount) {
         writeDataChunkShort(xdfFilePath, lightSample, lightTimestamps, streamIndex, channelCount);
     }
-    public void writeDataChunkByte(int streamIndex, byte[] lightSample, double[] lightTimestamps, int channelCount) {
+    public synchronized void writeDataChunkByte(int streamIndex, byte[] lightSample, double[] lightTimestamps, int channelCount) {
         writeDataChunkByte(xdfFilePath, lightSample, lightTimestamps, streamIndex, channelCount);
     }
     public static String createFooterXml(double firstTimeStamp, double lastTimeStamp, int sampleCount, List<TimingOffsetMeasurement> timingOffsets) {
@@ -55,24 +56,27 @@ public class XdfWriter {
                 .append("</info>\n");
         return footer.toString();
     }
-
-    public void writeStreamHeader(int xdfStreamIndex, String headerXml) {
+    public synchronized void writeStreamHeader(int xdfStreamIndex, String headerXml) {
         writeStreamHeader(xdfFilePath, xdfStreamIndex, headerXml);
     }
 
-    public void writeStreamFooter(int xdfStreamIndex, String footerXml) {
+    public synchronized void writeStreamFooter(int xdfStreamIndex, String footerXml) {
         writeStreamFooter(xdfFilePath, xdfStreamIndex, footerXml);
     }
 
-    public void writeStreamOffset(int xdfStreamIndex, double collectionTime, double offset) {
+    public synchronized void writeStreamOffset(int xdfStreamIndex, double collectionTime, double offset) {
         writeStreamOffset(xdfFilePath, xdfStreamIndex, collectionTime, offset);
     }
 
-    public void setXdfFilePath(String xdfFilePath) {
+    public String getXdfFilePath() {
+        return xdfFilePath;
+    }
+
+    public synchronized void setXdfFilePath(String xdfFilePath) {
         this.xdfFilePath = xdfFilePath;
     }
 
-    public void setXdfFilePath(Path xdfFilePath) {
+    public synchronized void setXdfFilePath(Path xdfFilePath) {
         setXdfFilePath(xdfFilePath.toString());
     }
 
