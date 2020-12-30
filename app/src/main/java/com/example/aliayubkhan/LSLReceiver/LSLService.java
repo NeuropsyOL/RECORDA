@@ -42,7 +42,6 @@ public class LSLService extends Service {
     private XdfWriter xdfWriter;
 
     private final boolean recordTimingOffsets = false;
-    private final boolean writeStreamFooters = true;
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
@@ -156,10 +155,8 @@ public class LSLService extends Service {
 
     private void finishXdf() {
         Toast.makeText(this, "Finishing XDF file...", Toast.LENGTH_LONG).show();
-        if (writeStreamFooters) {
-            for (StreamRecording r : activeRecordings) {
-                r.writeStreamFooter();
-            }
+        for (StreamRecording r : activeRecordings) {
+            r.writeStreamFooter();
         }
         Toast.makeText(this, "File written at: " + xdfWriter.getXdfFilePath(), Toast.LENGTH_LONG).show();
     }
