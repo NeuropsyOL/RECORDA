@@ -61,7 +61,7 @@ public class MainActivity extends Activity
 
     public Long startMillis;
     ArrayAdapter<String> adapter;
-    Button start, stop, Reset;
+    Button start, stop;
     List<String> stream;
     ImageView refresh;
     //Settings button
@@ -70,7 +70,6 @@ public class MainActivity extends Activity
     public static String getElapsedTimeMinutesSecondsString(Long miliseconds) {
         Long elapsedTime = miliseconds;
         @SuppressLint("DefaultLocale") String format = String.format("%%0%dd", 2);
-//        elapsedTime = elapsedTime / 1000;
         String seconds = String.format(format, (elapsedTime / 1000) % 60 );
         String minutes = String.format(format, ((elapsedTime / (1000*60)) % 60));
         String hours = String.format(format, ((elapsedTime / (1000*60*60)) % 24));
@@ -100,8 +99,6 @@ public class MainActivity extends Activity
         lv.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
         settings_button = (ImageView) findViewById(R.id.settings_btn);
         settings_button.setVisibility(View.VISIBLE);
-
-        Reset = (Button)findViewById(R.id.reset_button);
 
         final Intent intent = new Intent(this, LSLService.class);
 
@@ -189,16 +186,6 @@ public class MainActivity extends Activity
             public void onClick(View v) {
                 Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
                 startActivity(intent);
-            }
-        });
-
-        Reset.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(isComplete){
-                    restart(0);
-                }
-
             }
         });
 
@@ -319,16 +306,6 @@ public class MainActivity extends Activity
                 selItems+="/"+item;
         }
         //Toast.makeText(this, selItems, Toast.LENGTH_LONG).show();
-    }
-
-    public void restart(int delay) {
-        selectedStreamNames.clear();
-        isComplete = false;
-        Intent launchIntent = new Intent(this, MainActivity.class);
-        PendingIntent intent = PendingIntent.getActivity(getApplicationContext(), 0, launchIntent , 0);
-        AlarmManager manager = (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
-        manager.set(AlarmManager.RTC, System.currentTimeMillis() + delay, intent);
-        System.exit(2);
     }
 
     public void myStartForegroundService(Intent intent) {

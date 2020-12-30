@@ -172,14 +172,4 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
-        android:id="@+id/reset_button"
-        android:layout_width="114dp"
-        android:layout_height="38dp"
-        android:background="@drawable/shape"
-        android:text="Close Inlets"
-        android:textColor="#FFFFFF"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
 </android.support.constraint.ConstraintLayout>
