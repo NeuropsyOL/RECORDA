@@ -156,9 +156,7 @@ public class LSLService extends Service {
 
     private void finishXdf() {
         Toast.makeText(this, "Finishing XDF file...", Toast.LENGTH_LONG).show();
-        for (StreamRecording r : activeRecordings) {
-            r.writeStreamFooter();
-        }
+        activeRecordings.forEach(StreamRecording::writeStreamFooter);
         Toast.makeText(this, "File written at: " + xdfWriter.getXdfFilePath(), Toast.LENGTH_LONG).show();
     }
 
