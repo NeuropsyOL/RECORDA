@@ -6,8 +6,6 @@ import java.io.IOException;
 
 public class RecorderFactory {
 
-    private static boolean STRING_BASED_FORMAT_DETECTION = true;
-
     @FunctionalInterface
     public interface RecorderConstructor {
 
@@ -22,28 +20,10 @@ public class RecorderFactory {
         BYTE(ByteRecorder::new),
         STRING(StringRecorder::new);
 
-        private final RecorderConstructor constructor;
+        private final RecorderConstructor recorderConstructor;
 
         RecordingSampleType(RecorderConstructor constructor) {
-            this.constructor = constructor;
-        }
-
-        public static RecordingSampleType fromXmlChannelFormat(String xmlChannelFormat) {
-            if (xmlChannelFormat.contains("float")) {
-                return FLOAT;
-            } else if (xmlChannelFormat.contains("int")) {
-                return INT;
-            } else if (xmlChannelFormat.contains("double")) {
-                return DOUBLE;
-            } else if (xmlChannelFormat.contains("string")) {
-                return STRING;
-            } else if (xmlChannelFormat.contains("byte")) {
-                return BYTE;
-            } else if (xmlChannelFormat.contains("short")) {
-                return SHORT;
-            } else {
-                throw new IllegalArgumentException("Unknown LSL channel format: " + xmlChannelFormat);
-            }
+            this.recorderConstructor = constructor;
         }
 
         public static RecordingSampleType fromLslFormatConstant(int formatConstant) {
@@ -77,28 +57,12 @@ public class RecorderFactory {
     }
 
     public static RecorderFactory forLslStream(LSL.StreamInfo streamInfo) {
-        RecordingSampleType recordingType;
-        if (STRING_BASED_FORMAT_DETECTION) {
-            String format = getChannelFormatFromXml(streamInfo);
-            recordingType = RecordingSampleType.fromXmlChannelFormat(format);
-        } else {
-            int format = streamInfo.channel_format();
-            recordingType = RecordingSampleType.fromLslFormatConstant(format);
-        }
-        return new RecorderFactory(recordingType.constructor, streamInfo);
+        int format = streamInfo.channel_format();
+        RecordingSampleType streamFormat = RecordingSampleType.fromLslFormatConstant(format);
+        return new RecorderFactory(streamFormat.recorderConstructor, streamInfo);
     }
 
     public StreamRecorder openInlet() throws IOException {
         return constructor.createRecorder(streamInfo);
-    }
-
-    private static String getChannelFormatFromXml(LSL.StreamInfo inf) {
-        return getXmlNodeValue(inf.as_xml(), "channel_format");
-    }
-
-    private static String getXmlNodeValue(String xmlString, String nodeName) {
-        int start = xmlString.indexOf("<" + nodeName + ">") + nodeName.length() + 2;
-        int end = xmlString.indexOf("</" + nodeName + ">");
-        return xmlString.substring(start, end);
     }
 }
