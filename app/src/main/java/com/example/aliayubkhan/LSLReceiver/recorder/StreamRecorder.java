@@ -1,11 +1,8 @@
 package com.example.aliayubkhan.LSLReceiver.recorder;
 
-import android.util.Log;
-
 import com.example.aliayubkhan.LSLReceiver.LSL;
+import com.example.aliayubkhan.LSLReceiver.util.ListToPrimitiveArray;
 import com.example.aliayubkhan.LSLReceiver.xdf.XdfWriter;
-
-import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -74,8 +71,8 @@ abstract class TypedStreamRecorder<SampleArray, Sample> implements StreamRecorde
     int totalSamples = 0;
     double firstTimestamp = 0.0, lastTimestamp = 0.0;
 
-    final List<Sample> unwrittenRecordedSamples = new ArrayList<>();
-    final List<Double> unwrittenRecordedTimestamps = new ArrayList<>();
+    final List<Sample> unwrittenRecordedSamples;
+    final List<Double> unwrittenRecordedTimestamps;
 
     private final String streamHeaderXml;
 
@@ -100,6 +97,9 @@ abstract class TypedStreamRecorder<SampleArray, Sample> implements StreamRecorde
         sampleBufferCapacity = channelCount * samplesToBuffer;
         sampleBuffer = bufferConstructor.apply(sampleBufferCapacity);
         timestamps = new double[samplesToBuffer];
+
+        unwrittenRecordedSamples = new ArrayList<>(sampleBufferCapacity);
+        unwrittenRecordedTimestamps = new ArrayList<>(samplesToBuffer);
 
         inlet = new LSL.StreamInlet(input);
     }
@@ -134,10 +134,6 @@ abstract class TypedStreamRecorder<SampleArray, Sample> implements StreamRecorde
             }
             totalSamples += samplesRead;
         }
-    }
-
-    protected boolean isAudioRecording() {
-        return streamName != null && streamName.contains("Audio");
     }
 
     public void writeStreamHeader(XdfWriter writer, int xdfStreamIndex) {
@@ -182,7 +178,14 @@ abstract class TypedStreamRecorder<SampleArray, Sample> implements StreamRecorde
         return measurement;
     }
 
-    abstract double[] processTimestampsForXdf(List<Double> unwrittenRecordedTimestamps);
+    private double[] processTimestampsForXdf(List<Double> unwrittenRecordedTimestamps) {
+        int len = unwrittenRecordedTimestamps.size();
+        double[] timestampArray = new double[len];
+        for (int i = 0; i < len; i++) {
+            timestampArray[i] = unwrittenRecordedTimestamps.get(i);
+        }
+        return timestampArray;
+    }
 
     abstract SampleArray processSamplesForXdf(List<Sample> unwrittenRecordedSamples);
 
@@ -230,30 +233,8 @@ class FloatRecorder extends TypedStreamRecorder<float[], Float> {
     }
 
     @Override
-    double[] processTimestampsForXdf(List<Double> unwrittenRecordedTimestamps) {
-        double[] lighttimestamps = ArrayUtils.toPrimitive(unwrittenRecordedTimestamps.toArray(new Double[0]), 0);
-
-//        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
-//        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
-//
-//        if (channelCount == 1) {
-//            lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
-//        }
-        return lighttimestamps;
-    }
-
-    @Override
     float[] processSamplesForXdf(List<Float> unwrittenRecordedSamples) {
-        float[] lightsample = ArrayUtils.toPrimitive(unwrittenRecordedSamples.toArray(new Float[0]), 0);
-
-//        if (!isAudioRecording()) {
-//            lightsample = removeZerosFloat(lightsample, lightsample.length);
-//        }
-//
-//        if (channelCount != 1) {
-//            lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length * channelCount);
-//        }
-        return lightsample;
+        return ListToPrimitiveArray.toFloatArray(unwrittenRecordedSamples);
     }
 }
 
@@ -279,27 +260,8 @@ class DoubleRecorder extends TypedStreamRecorder<double[], Double> {
     }
 
     @Override
-    double[] processTimestampsForXdf(List<Double> unwrittenRecordedTimestamps) {
-        double[] lighttimestamps = ArrayUtils.toPrimitive(unwrittenRecordedTimestamps.toArray(new Double[0]), 0);
-
-//        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
-//
-//        if (channelCount == 1) {
-//            lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
-//        }
-        return lighttimestamps;
-    }
-
-    @Override
     double[] processSamplesForXdf(List<Double> unwrittenRecordedSamples) {
-        double[] lightsample = ArrayUtils.toPrimitive(unwrittenRecordedSamples.toArray(new Double[0]), 0);
-
-//        lightsample = removeZerosDouble(lightsample, lightsample.length);
-//
-//        if (channelCount != 1) {
-//            lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length * channelCount);
-//        }
-        return lightsample;
+        return ListToPrimitiveArray.toDoubleArray(unwrittenRecordedSamples);
     }
 }
 
@@ -325,27 +287,8 @@ class IntRecorder extends TypedStreamRecorder<int[], Integer> {
     }
 
     @Override
-    double[] processTimestampsForXdf(List<Double> unwrittenRecordedTimestamps) {
-        double[] lighttimestamps = ArrayUtils.toPrimitive(unwrittenRecordedTimestamps.toArray(new Double[0]), 0);
-
-//        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
-//
-//        if (channelCount == 1) {
-//            lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
-//        }
-        return lighttimestamps;
-    }
-
-    @Override
     int[] processSamplesForXdf(List<Integer> unwrittenRecordedSamples) {
-        int[] lightsample = ArrayUtils.toPrimitive(unwrittenRecordedSamples.toArray(new Integer[0]), 0);
-
-//        lightsample = removeZerosInt(lightsample, lightsample.length);
-//
-//        if (channelCount != 1) {
-//            lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length * channelCount);
-//        }
-        return lightsample;
+        return ListToPrimitiveArray.toIntArray(unwrittenRecordedSamples);
     }
 }
 
@@ -371,27 +314,8 @@ class ShortRecorder extends TypedStreamRecorder<short[], Short> {
     }
 
     @Override
-    double[] processTimestampsForXdf(List<Double> unwrittenRecordedTimestamps) {
-        double[] lighttimestamps = ArrayUtils.toPrimitive(unwrittenRecordedTimestamps.toArray(new Double[0]), 0);
-
-//        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
-//
-//        if (channelCount == 1) {
-//            lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
-//        }
-        return lighttimestamps;
-    }
-
-    @Override
     short[] processSamplesForXdf(List<Short> unwrittenRecordedSamples) {
-        short[] lightsample = ArrayUtils.toPrimitive(unwrittenRecordedSamples.toArray(new Short[0]), (short) 0);
-
-//        lightsample = TimeSeriesUtil.removeZerosShort(lightsample, lightsample.length);
-//
-//        if (channelCount != 1) {
-//            lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length * channelCount);
-//        }
-        return lightsample;
+        return ListToPrimitiveArray.toShortArray(unwrittenRecordedSamples);
     }
 }
 
@@ -400,7 +324,6 @@ class ByteRecorder extends TypedStreamRecorder<byte[], Byte> {
     public ByteRecorder(LSL.StreamInfo input) throws IOException {
         super(input, byte[]::new);
     }
-
     @Override
     public void writeStreamToXdf(XdfWriter xdfWriter, int xdfStreamIndex, byte[] samples, double[] timestamps) {
         xdfWriter.writeDataChunkByte(xdfStreamIndex, samples, timestamps, channelCount);
@@ -417,27 +340,8 @@ class ByteRecorder extends TypedStreamRecorder<byte[], Byte> {
     }
 
     @Override
-    double[] processTimestampsForXdf(List<Double> unwrittenRecordedTimestamps) {
-        double[] lighttimestamps = ArrayUtils.toPrimitive(unwrittenRecordedTimestamps.toArray(new Double[0]), 0);
-
-//        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
-//
-//        if (channelCount == 1) {
-//            lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
-//        }
-        return lighttimestamps;
-    }
-
-    @Override
     byte[] processSamplesForXdf(List<Byte> unwrittenRecordedSamples) {
-        byte[] lightsample = ArrayUtils.toPrimitive(unwrittenRecordedSamples.toArray(new Byte[0]), (byte) 0);
-
-//        lightsample = removeZerosByte(lightsample, lightsample.length);
-//
-//        if (channelCount != 1) {
-//            lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length * channelCount);
-//        }
-        return lightsample;
+        return ListToPrimitiveArray.toByteArray(unwrittenRecordedSamples);
     }
 }
 
@@ -463,25 +367,7 @@ class StringRecorder extends TypedStreamRecorder<String[], String> {
     }
 
     @Override
-    double[] processTimestampsForXdf(List<Double> unwrittenRecordedTimestamps) {
-        double[] lighttimestamps = ArrayUtils.toPrimitive(unwrittenRecordedTimestamps.toArray(new Double[0]), 0);
-
-//        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
-//        lighttimestamps = removeZerosDouble(lighttimestamps, lighttimestamps.length);
-//
-//        if (channelCount == 1) {
-//            lighttimestamps = Arrays.copyOfRange(lighttimestamps, 0, lightsample.length);
-//        }
-        return lighttimestamps;
-    }
-
-    @Override
     String[] processSamplesForXdf(List<String> unwrittenRecordedSamples) {
-        String[] lightsample = unwrittenRecordedSamples.toArray(new String[0]);
-
-//        if (channelCount != 1) {
-//            lightsample = Arrays.copyOfRange(lightsample, 0, lighttimestamps.length * channelCount);
-//        }
-        return lightsample;
+        return unwrittenRecordedSamples.toArray(new String[unwrittenRecordedSamples.size()]);
     }
 }
