@@ -2,6 +2,7 @@ package com.example.aliayubkhan.LSLReceiver.recorder;
 
 import android.util.Log;
 
+import com.example.aliayubkhan.LSLReceiver.LSL;
 import com.example.aliayubkhan.LSLReceiver.xdf.XdfWriter;
 
 import java.nio.file.Files;
@@ -34,6 +35,7 @@ public class StreamRecording {
     private boolean recordTimingOffsets = true;
 
     private Thread sampleThread;
+    private Thread timingOffsetThread;
     private volatile boolean isRunning;
 
     public StreamRecording(StreamRecorder sourceToRecord, XdfWriter xdfWriter, int xdfStreamIndex) {
@@ -45,18 +47,19 @@ public class StreamRecording {
     }
 
     public void spawnRecorderThread() {
-        if (sampleThread != null) {
+        if (isRunning || sampleThread != null) {
             throw new IllegalStateException("Already recording.");
         }
-        sampleThread = new Thread(() -> recordingLoop(streamRecorder));
+        isRunning = true;
+        sampleThread = new Thread(() -> sampleRecordingLoop(streamRecorder));
         sampleThread.start();
+        if (recordTimingOffsets) {
+            timingOffsetThread = new Thread(() -> timingOffsetLoop(streamRecorder));
+            timingOffsetThread.start();
+        }
     }
 
-    private void recordingLoop(StreamRecorder streamRecorder) {
-        // First measurement of timing offset happens only after the first wait interval expired (5 sec) like LabRecorder does it.
-        long nextTimeToMeasureOffset = OFFSET_MEASURE_INTERVAL + System.currentTimeMillis();
-
-        isRunning = true;
+    private void sampleRecordingLoop(StreamRecorder streamRecorder) {
         while (isRunning) {
             try {
                 int samples = streamRecorder.pullChunk();
@@ -67,23 +70,6 @@ public class StreamRecording {
                     Log.d(TAG, "XDF file size now: " + size + " bytes");
                 } else {
                     Log.d(TAG, "Stream " + xdfStreamIndex + ": No samples. Waiting " + XDF_WRITE_INTERVAL + " ms");
-                }
-
-                long currentTimeMillis = System.currentTimeMillis();
-                if (recordTimingOffsets && currentTimeMillis >= nextTimeToMeasureOffset) {
-                    boolean success = streamRecorder.takeTimeOffsetMeasurement() != null;
-                    if (success) {
-                        flushRecordedTimingOffsets();
-                    } else {
-                        Log.e(TAG, "LSL failed to obtain a clock offset measurement.");
-                    }
-                    /*
-                     * Adding the wait interval needs to be repeated only if the recording thread skipped
-                     * a measurement because it could not keep up.
-                     */
-                    while (nextTimeToMeasureOffset <= currentTimeMillis) {
-                        nextTimeToMeasureOffset += OFFSET_MEASURE_INTERVAL;
-                    }
                 }
 
                 try {
@@ -98,9 +84,34 @@ public class StreamRecording {
         }
     }
 
+    private void timingOffsetLoop(StreamRecorder streamRecorder) {
+        while (isRunning) {
+            try {
+                Thread.sleep(OFFSET_MEASURE_INTERVAL);
+            } catch (InterruptedException ie) {
+                // Sleep aborted.
+                if (!isRunning) {
+                    break;
+                }
+            }
+            try {
+                streamRecorder.takeTimeOffsetMeasurement();
+                flushRecordedTimingOffsets();
+            } catch (LSL.TimeoutException te) {
+                Log.e(TAG, "Stream " + xdfStreamIndex + ": Timeout trying to obtain timing offset from LSL.", te);
+            } catch (Exception e) {
+                Log.e(TAG, "Stream " + xdfStreamIndex + ": Failed to determine or record timing offset.", e);
+            }
+        }
+    }
+
     public void stop() {
         isRunning = false;
         Thread st = sampleThread;
+        if (st != null) {
+            st.interrupt();
+        }
+        st = timingOffsetThread;
         if (st != null) {
             st.interrupt();
         }
@@ -113,10 +124,12 @@ public class StreamRecording {
         }
         try {
             sampleThread.join();
+            timingOffsetThread.join();
         } catch (InterruptedException e) {
             Log.e(TAG, "Got interrupted while waiting to finish.", e);
         }
         sampleThread = null;
+        timingOffsetThread = null;
         streamRecorder.close();
         Log.i(TAG, "Stream " + xdfStreamIndex + " terminated");
     }

@@ -42,7 +42,7 @@ public class LSLService extends Service {
     private List<StreamRecording> activeRecordings = new ArrayList<>();
     private XdfWriter xdfWriter;
 
-    private final boolean recordTimingOffsets = false;
+    private final boolean recordTimingOffsets = true;
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
