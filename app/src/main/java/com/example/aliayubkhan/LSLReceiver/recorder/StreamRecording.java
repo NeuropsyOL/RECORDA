@@ -124,7 +124,10 @@ public class StreamRecording {
         }
         try {
             sampleThread.join();
-            timingOffsetThread.join();
+            Thread t = timingOffsetThread;
+            if (t != null) {
+                t.join();
+            }
         } catch (InterruptedException e) {
             Log.e(TAG, "Got interrupted while waiting to finish.", e);
         }
