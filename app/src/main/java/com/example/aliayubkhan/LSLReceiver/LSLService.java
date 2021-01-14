@@ -87,8 +87,6 @@ public class LSLService extends Service {
 
     private StreamRecording prepareRecording(LSL.StreamInfo lslStream, int xdfStreamIndex) {
         try {
-            System.out.println("The stream's XML meta-data is:\n" + lslStream.as_xml());
-
             RecorderFactory f = RecorderFactory.forLslStream(lslStream);
             StreamRecorder sourceStream = f.openInlet();
             StreamRecording recording = new StreamRecording(sourceStream, xdfWriter, xdfStreamIndex);

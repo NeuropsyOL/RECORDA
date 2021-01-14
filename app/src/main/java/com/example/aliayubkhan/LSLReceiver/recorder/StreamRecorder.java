@@ -87,7 +87,7 @@ abstract class TypedStreamRecorder<SampleArray, Sample> implements StreamRecorde
     public TypedStreamRecorder(LSL.StreamInfo input, IntFunction<SampleArray> bufferConstructor) throws IOException {
         channelCount = input.channel_count();
         streamName = input.name();
-        streamHeaderXml = input.as_xml();
+
         if (channelCount < 1) {
             throw new IllegalArgumentException("Stream has less than one channel: " + streamName);
         }
@@ -102,6 +102,13 @@ abstract class TypedStreamRecorder<SampleArray, Sample> implements StreamRecorde
         unwrittenRecordedTimestamps = new ArrayList<>(samplesToBuffer);
 
         inlet = new LSL.StreamInlet(input);
+        try {
+            // we need to get the meta-info from the inlet and not the stream object, since the stream does not contain all the information
+            streamHeaderXml = inlet.info().as_xml();
+            System.out.println("The stream's XML meta-data is:\n" + streamHeaderXml);
+        } catch (Exception e) {
+            throw new IOException("Information could not be retrieved from the Inlet", e);
+        }
     }
 
     @Override
