@@ -3,15 +3,11 @@ package com.example.aliayubkhan.LSLReceiver;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.AlarmManager;
-import android.app.PendingIntent;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.PorterDuff;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.PowerManager;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
@@ -68,18 +64,6 @@ public class MainActivity extends Activity
     //Settings button
     ImageView settings_button;
 
-    public static String getElapsedTimeMinutesSecondsString(Long miliseconds) {
-        Long elapsedTime = miliseconds;
-        @SuppressLint("DefaultLocale") String format = String.format("%%0%dd", 2);
-        String seconds = String.format(format, (elapsedTime / 1000) % 60 );
-        String minutes = String.format(format, ((elapsedTime / (1000*60)) % 60));
-        String hours = String.format(format, ((elapsedTime / (1000*60*60)) % 24));
-        return hours + ":" + minutes + ":" + seconds;
-    }
-
-    public static void showText(String s){
-        tv.setText(s);
-    }
 
     @SuppressLint({"SetTextI18n", "ClickableViewAccessibility"})
     @Override
@@ -105,7 +89,6 @@ public class MainActivity extends Activity
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         start.setOnClickListener(new View.OnClickListener() {
-
             Long tsLong = System.currentTimeMillis()/1000;
             String ts = tsLong.toString();
 
@@ -139,9 +122,6 @@ public class MainActivity extends Activity
         });
 
         refresh.setOnTouchListener(new View.OnTouchListener() {
-
-
-
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 switch (event.getAction()) {
@@ -201,6 +181,16 @@ public class MainActivity extends Activity
         assert powerManager != null;
         PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "LSLRec:MyWakelockTag");
         wakeLock.acquire();
+    }
+
+
+    public static String getElapsedTimeMinutesSecondsString(Long miliseconds) {
+        Long elapsedTime = miliseconds;
+        @SuppressLint("DefaultLocale") String format = String.format("%%0%dd", 2);
+        String seconds = String.format(format, (elapsedTime / 1000) % 60 );
+        String minutes = String.format(format, ((elapsedTime / (1000*60)) % 60));
+        String hours = String.format(format, ((elapsedTime / (1000*60*60)) % 24));
+        return hours + ":" + minutes + ":" + seconds;
     }
 
     public void RefreshStreams(){

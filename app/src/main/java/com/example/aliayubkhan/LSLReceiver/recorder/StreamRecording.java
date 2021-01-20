@@ -123,7 +123,7 @@ public class StreamRecording {
             return;
         }
         try {
-            sampleThread.join();
+            sampleThread.join(); // wait for all threads to finish
             Thread t = timingOffsetThread;
             if (t != null) {
                 t.join();

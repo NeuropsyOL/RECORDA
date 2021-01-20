@@ -103,7 +103,6 @@ abstract class TypedStreamRecorder<SampleArray, Sample> implements StreamRecorde
 
         inlet = new LSL.StreamInlet(input);
         try {
-            // we need to get the meta-info from the inlet and not the stream object, since the stream does not contain all the information
             streamHeaderXml = inlet.info().as_xml();
             System.out.println("The stream's XML meta-data is:\n" + streamHeaderXml);
         } catch (Exception e) {
