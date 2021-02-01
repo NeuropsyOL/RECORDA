@@ -11,13 +11,16 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
 
 
-    <application android:allowBackup="true" android:icon="@mipmap/ic_launcher"
-        android:label="LSLReceiver" android:supportsRtl="true" android:theme="@style/AppTheme"
+    <application android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher_round"
+        android:label="RECEIVA"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme"
         android:requestLegacyExternalStorage="true"
         tools:ignore="GoogleAppIndexingWarning"
         tools:targetApi="q">
 
-        <activity android:name=".MainActivity" android:label="LSLReceiver"
+        <activity android:name=".MainActivity" android:label="RECEIVA"
             android:theme="@style/AppTheme.NoActionBar"
             android:screenOrientation="portrait">
 
