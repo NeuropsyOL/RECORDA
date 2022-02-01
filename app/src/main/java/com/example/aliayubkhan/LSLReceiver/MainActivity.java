@@ -9,13 +9,11 @@ import android.graphics.PorterDuff;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
-import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -31,11 +29,10 @@ import java.util.List;
 
 /**
  * Edited by Sarah Blum on 21/08/2020
- *
+ * <p>
  * Changes: file handling adapted, storage location fixed
  */
-public class MainActivity extends Activity
-{
+public class MainActivity extends Activity {
     public static ListView lv;
     public static List<String> LSLStreamName = new ArrayList<>();
     public static List<String> selectedStreamNames = new ArrayList<>();
@@ -43,7 +40,7 @@ public class MainActivity extends Activity
     public static String filenamevalue;
     public static boolean isComplete = false;
     static TextView tv;
-    static volatile boolean isRunning  = false;
+    static volatile boolean isRunning = false;
 
     //Streams
     static LSL.StreamInfo[] streams;
@@ -57,29 +54,33 @@ public class MainActivity extends Activity
     public Thread t;
 
     public Long startMillis;
-    ArrayAdapter<String> adapter;
     Button start, stop;
-    List<String> stream;
     ImageView refresh;
     //Settings button
     ImageView settings_button;
 
+    public static String getElapsedTimeMinutesSecondsString(Long miliseconds) {
+        @SuppressLint("DefaultLocale") String format = String.format("%%0%dd", 2);
+        String seconds = String.format(format, (miliseconds / 1000) % 60);
+        String minutes = String.format(format, ((miliseconds / (1000 * 60)) % 60));
+        String hours = String.format(format, ((miliseconds / (1000 * 60 * 60)) % 24));
+        return hours + ":" + minutes + ":" + seconds;
+    }
 
     @SuppressLint({"SetTextI18n", "ClickableViewAccessibility"})
     @Override
-    public void onCreate(Bundle savedInstanceState)
-    {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        tv = (TextView)findViewById(R.id.tv);
-        start = (Button)findViewById(R.id.startLSL);
-        stop = (Button)findViewById(R.id.stopLSL);
+        tv = (TextView) findViewById(R.id.tv);
+        start = (Button) findViewById(R.id.startLSL);
+        stop = (Button) findViewById(R.id.stopLSL);
         refresh = (ImageButton) findViewById(R.id.refreshStreams);
         tdate = (TextView) findViewById(R.id.elapsedTime);
         requestWritePermissions();
         // set filename so that is not null, it gets changed if the user enters settings screen
         filenamevalue = "recording";
-        lv = (ListView) findViewById (R.id.streams);
+        lv = (ListView) findViewById(R.id.streams);
         lv.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
         settings_button = (ImageView) findViewById(R.id.settings_btn);
         settings_button.setVisibility(View.VISIBLE);
@@ -88,94 +89,74 @@ public class MainActivity extends Activity
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        start.setOnClickListener(new View.OnClickListener() {
-            Long tsLong = System.currentTimeMillis()/1000;
-            String ts = tsLong.toString();
-
-            @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-            @Override
-            public void onClick(View v) {
-                if (selectedStreamNames.isEmpty()) {
-                    return;
+        start.setOnClickListener(v -> {
+            if (selectedStreamNames.isEmpty()) {
+                return;
+            }
+            if (!isRunning) {
+                if (!writePermission) {
+                    requestWritePermissions();
+                    //Log.i("Path", path);
                 }
-                if(!isRunning){
-                    if(!writePermission){
-                        requestWritePermissions();
-                        //Log.i("Path", path);
-                    }
 
-                    if (StringUtils.isEmpty(filenamevalue)) {
-                        filenamevalue = "recording";
-                    }
-                    lv.setEnabled(false);
-                    // make this a foreground service so that android does not kill it while it is in the background
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        myStartForegroundService(intent);
-                    } else { // try our best with older Androids
-                        startService(intent);
-                    }
-                    startMillis = System.currentTimeMillis();
-                    tdate.setText("00:00");
-                    ElapsedTime();
+                if (StringUtils.isEmpty(filenamevalue)) {
+                    filenamevalue = "recording";
                 }
+                lv.setEnabled(false);
+                // make this a foreground service so that android does not kill it while it is in the background
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    myStartForegroundService(intent);
+                } else { // try our best with older Androids
+                    startService(intent);
+                }
+                startMillis = System.currentTimeMillis();
+                tdate.setText("00:00");
+                ElapsedTime();
             }
         });
 
-        refresh.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN: {
-                        Toast.makeText(MainActivity.this, "Refreshing Streams...",
-                                Toast.LENGTH_LONG).show();
-                        ImageButton view = (ImageButton ) v;
-                        view.getBackground().setColorFilter(0x77000000, PorterDuff.Mode.SRC_ATOP);
-                        view.invalidate();
-                        break;
-                    }
-                    case MotionEvent.ACTION_UP:
-                        RefreshStreams();
-
-                    case MotionEvent.ACTION_CANCEL: {
-                        ImageButton view = (ImageButton) v;
-                        view.getBackground().clearColorFilter();
-                        view.invalidate();
-                        break;
-                    }
-                }
-
-                return true;
+        refresh.setOnTouchListener((v, event) -> {
+            ImageButton view;
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    Toast.makeText(MainActivity.this, "Refreshing Streams...",
+                            Toast.LENGTH_LONG).show();
+                    view = (ImageButton) v;
+                    view.getBackground().setColorFilter(0x77000000, PorterDuff.Mode.SRC_ATOP);
+                    view.invalidate();
+                    break;
+                case MotionEvent.ACTION_UP:
+                    RefreshStreams();
+                    break;
+                case MotionEvent.ACTION_CANCEL:
+                    view = (ImageButton) v;
+                    view.getBackground().clearColorFilter();
+                    view.invalidate();
+                    break;
             }
+            return true;
         });
 
-        stop.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                stopService(intent);
-                t.interrupt();
-                lv.setEnabled(true);
-            }
+        stop.setOnClickListener(v -> {
+            stopService(intent);
+            t.interrupt();
+            lv.setEnabled(true);
         });
 
-        settings_button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
-                startActivity(intent);
-            }
+        settings_button.setOnClickListener(v -> {
+            Intent intent1 = new Intent(MainActivity.this, SettingsActivity.class);
+            startActivity(intent1);
         });
 
         tv.setText("Available Streams: ");
-        lv.setOnItemClickListener(new AdapterView.OnItemClickListener(){
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                // selected item
-                String selectedItem = ((TextView) view).getText().toString();
-                if(selectedStreamNames.contains(selectedItem))
-                    selectedStreamNames.remove(selectedItem); //remove deselected item from the list of selected items
-                else
-                    selectedStreamNames.add(selectedItem); //add selected item to the list of selected items
-                showSelectedItems();
-            }
+        lv.setOnItemClickListener((parent, view, position, id) -> {
+            // selected item
+            String selectedItem = ((TextView) view).getText().toString();
+            if (selectedStreamNames.contains(selectedItem))
+                selectedStreamNames.remove(selectedItem); //remove deselected item from the list of selected items
+            else
+                selectedStreamNames.add(selectedItem); //add selected item to the list of selected items
+            showSelectedItems();
         });
         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
         assert powerManager != null;
@@ -183,17 +164,7 @@ public class MainActivity extends Activity
         wakeLock.acquire();
     }
 
-
-    public static String getElapsedTimeMinutesSecondsString(Long miliseconds) {
-        Long elapsedTime = miliseconds;
-        @SuppressLint("DefaultLocale") String format = String.format("%%0%dd", 2);
-        String seconds = String.format(format, (elapsedTime / 1000) % 60 );
-        String minutes = String.format(format, ((elapsedTime / (1000*60)) % 60));
-        String hours = String.format(format, ((elapsedTime / (1000*60*60)) % 24));
-        return hours + ":" + minutes + ":" + seconds;
-    }
-
-    public void RefreshStreams(){
+    public void RefreshStreams() {
         selectedStreamNames.clear();
         LSLStreamName.clear();
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.list_view_text, LSLStreamName);
@@ -203,29 +174,26 @@ public class MainActivity extends Activity
         for (LSL.StreamInfo stream1 : streams) {
             adapter.add(stream1.name());
         }
-        for (int i=0; i < lv.getAdapter().getCount(); i++) {
+        for (int i = 0; i < lv.getAdapter().getCount(); i++) {
             lv.setItemChecked(i, true);
         }
         selectedStreamNames.addAll(LSLStreamName);
     }
 
-    public void ElapsedTime(){
+    public void ElapsedTime() {
         t = new Thread() {
             @Override
             public void run() {
                 try {
                     while (!isInterrupted()) {
                         Thread.sleep(1000);
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                long now = System.currentTimeMillis();
-                                long difference = now - startMillis;
-                                tdate.setText(getElapsedTimeMinutesSecondsString(difference));
-                            }
+                        runOnUiThread(() -> {
+                            long now = System.currentTimeMillis();
+                            long difference = now - startMillis;
+                            tdate.setText(getElapsedTimeMinutesSecondsString(difference));
                         });
                     }
-                } catch (InterruptedException e) {
+                } catch (InterruptedException ignored) {
                 }
             }
         };
@@ -266,29 +234,23 @@ public class MainActivity extends Activity
     //Handling callback
     @Override
     public void onRequestPermissionsResult(int requestCode,
-                                           String permissions[], int[] grantResults) {
-        switch (requestCode) {
-            case MY_PERMISSIONS_WRITE_LSL: {
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    writePermission = true;
-                    // permission was granted, yay!
-                } else {
-                    // permission denied, boo! Disable the
-                    // functionality that depends on this permission.
-                    writePermission = false;
-                }
-            }
+                                           String[] permissions, int[] grantResults) {
+        if (requestCode == MY_PERMISSIONS_WRITE_LSL) {
+            // permission was granted, yay!
+            // permission denied, boo! Disable the
+            // functionality that depends on this permission.
+            writePermission = grantResults.length > 0
+                    && grantResults[0] == PackageManager.PERMISSION_GRANTED;
         }
     }
 
     private void showSelectedItems() {
-        String selItems="";
-        for(String item: selectedStreamNames){
-            if(selItems=="")
-                selItems=item;
+        StringBuilder selItems = new StringBuilder();
+        for (String item : selectedStreamNames) {
+            if (selItems.toString().equals(""))
+                selItems = new StringBuilder(item);
             else
-                selItems+="/"+item;
+                selItems.append("/").append(item);
         }
         //Toast.makeText(this, selItems, Toast.LENGTH_LONG).show();
     }

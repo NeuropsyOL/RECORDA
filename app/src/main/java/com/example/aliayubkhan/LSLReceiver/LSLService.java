@@ -1,5 +1,7 @@
 package com.example.aliayubkhan.LSLReceiver;
 
+import static com.example.aliayubkhan.LSLReceiver.MainActivity.selectedStreamNames;
+
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -21,12 +23,9 @@ import com.example.aliayubkhan.LSLReceiver.recorder.StreamRecording;
 import com.example.aliayubkhan.LSLReceiver.xdf.XdfWriter;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.example.aliayubkhan.LSLReceiver.MainActivity.selectedStreamNames;
 
 
 /**
@@ -39,17 +38,25 @@ public class LSLService extends Service {
 
     private static final String TAG = "LSLService";
 
-    private List<StreamRecording> activeRecordings = new ArrayList<>();
+    private final List<StreamRecording> activeRecordings = new ArrayList<>();
     private XdfWriter xdfWriter;
 
-    private final boolean recordTimingOffsets = true;
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private static Path freshRecordingFilePath() {
+        String isoTime = LocalDateTime.now().toString();
+        String fileNameSafeTime = isoTime.replace(':', '-');
+        String filename = MainActivity.filenamevalue + "-" + fileNameSafeTime + ".xdf";
+
+        Path path = Environment.getExternalStorageDirectory().toPath().resolve("Download");
+        return path.resolve(filename);
+    }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     public int onStartCommand(final Intent intent, int flags, int startId) {
         Log.i(TAG, "Service onStartCommand");
         MainActivity.isRunning = true;
-        Toast.makeText(this,"Recording LSL!", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Recording LSL!", Toast.LENGTH_SHORT).show();
 
         // this method is part of the mechanisms that allow this to be a foreground channel
         createNotificationChannel();
@@ -74,7 +81,7 @@ public class LSLService extends Service {
         activeRecordings.forEach(StreamRecording::spawnRecorderThread);
 
         // This service is killed by the OS if it is not started as background service
-        // This feature is only supported in Android 10 or higher
+        // This feature is only supported in Android 8 or higher
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startMyOwnForeground();
             Toast.makeText(this, "LSL Recorder can safely run in background!", Toast.LENGTH_LONG).show();
@@ -90,7 +97,7 @@ public class LSLService extends Service {
             RecorderFactory f = RecorderFactory.forLslStream(lslStream);
             StreamRecorder sourceStream = f.openInlet();
             StreamRecording recording = new StreamRecording(sourceStream, xdfWriter, xdfStreamIndex);
-            recording.setRecordTimingOffsets(recordTimingOffsets);
+            recording.setRecordTimingOffsets(true);
             recording.writeStreamHeader();
             return recording;
         } catch (Exception e) {
@@ -158,20 +165,10 @@ public class LSLService extends Service {
         Toast.makeText(this, "File written at: " + xdfWriter.getXdfFilePath(), Toast.LENGTH_LONG).show();
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    private static Path freshRecordingFilePath() {
-        String isoTime = LocalDateTime.now().toString();
-        String fileNameSafeTime = isoTime.replace(':', '-');
-        String filename = MainActivity.filenamevalue + "-" + fileNameSafeTime + ".xdf";
-
-        Path path = Environment.getExternalStorageDirectory().toPath().resolve("Download");
-        return path.resolve(filename);
-    }
-
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel serviceChannel = new NotificationChannel(
-                    "FOREGROUNDCHANNEL",
+                    "FOREGROUNDING",
                     "Foreground Service Channel",
                     NotificationManager.IMPORTANCE_DEFAULT
             );

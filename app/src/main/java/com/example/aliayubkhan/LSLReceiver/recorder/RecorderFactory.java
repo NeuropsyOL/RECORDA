@@ -6,10 +6,22 @@ import java.io.IOException;
 
 public class RecorderFactory {
 
-    @FunctionalInterface
-    public interface RecorderConstructor {
+    private final RecorderConstructor constructor;
+    private final LSL.StreamInfo streamInfo;
 
-        StreamRecorder createRecorder(LSL.StreamInfo info) throws IOException;
+    private RecorderFactory(RecorderConstructor constructor, LSL.StreamInfo streamInfo) {
+        this.constructor = constructor;
+        this.streamInfo = streamInfo;
+    }
+
+    public static RecorderFactory forLslStream(LSL.StreamInfo streamInfo) {
+        int format = streamInfo.channel_format();
+        RecordingSampleType streamFormat = RecordingSampleType.fromLslFormatConstant(format);
+        return new RecorderFactory(streamFormat.recorderConstructor, streamInfo);
+    }
+
+    public StreamRecorder openInlet() throws IOException {
+        return constructor.createRecorder(streamInfo);
     }
 
     enum RecordingSampleType {
@@ -48,21 +60,9 @@ public class RecorderFactory {
         }
     }
 
-    private final RecorderConstructor constructor;
-    private final LSL.StreamInfo streamInfo;
+    @FunctionalInterface
+    public interface RecorderConstructor {
 
-    private RecorderFactory(RecorderConstructor constructor, LSL.StreamInfo streamInfo) {
-        this.constructor = constructor;
-        this.streamInfo = streamInfo;
-    }
-
-    public static RecorderFactory forLslStream(LSL.StreamInfo streamInfo) {
-        int format = streamInfo.channel_format();
-        RecordingSampleType streamFormat = RecordingSampleType.fromLslFormatConstant(format);
-        return new RecorderFactory(streamFormat.recorderConstructor, streamInfo);
-    }
-
-    public StreamRecorder openInlet() throws IOException {
-        return constructor.createRecorder(streamInfo);
+        StreamRecorder createRecorder(LSL.StreamInfo info) throws IOException;
     }
 }
