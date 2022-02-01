@@ -1,17 +1,14 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 29
-    //buildToolsVersion '26.0.3'
+    compileSdkVersion 31
     defaultConfig {
         applicationId "com.example.aliayubkhan.LSLReceiver"
         minSdkVersion 24
-        targetSdkVersion 29
         versionCode 1       // increment with every release
-        versionName '1.0.0'   // change with every release
+        versionName '1.0.1'   // change with every release
         setProperty("archivesBaseName", "LSLRecorder-$versionName")
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-        ndkVersion "14.1.3816874"
         externalNativeBuild {
             cmake {
                 cppFlags "-std=c++11 -frtti -fexceptions"
@@ -25,7 +22,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
         debug {
-            versionNameSuffix '0.9'
+            versionNameSuffix '1.0.0.9'
             ndk {
                 abiFilters "armeabi-v7a", "arm64-v8a"
             }
@@ -45,21 +42,23 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+    buildToolsVersion '32.0.0'
+    ndkVersion '14.1.3816874'
 
 }
 
 dependencies {
     implementation fileTree(dir: '../libs', include: ['*.jar'])
-    implementation 'org.apache.commons:commons-lang3:3.11'
+    implementation 'org.apache.commons:commons-lang3:3.12.0'
     androidTestImplementation('com.android.support.test.espresso:espresso-core:3.0.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
     //noinspection GradleCompatible
     implementation 'com.android.support:appcompat-v7:28.0.0'
-    testImplementation 'junit:junit:4.13'
+    testImplementation 'junit:junit:4.13.2'
     //noinspection GradleCompatible
     implementation 'com.android.support:cardview-v7:28.0.0'
-    implementation 'com.android.support.constraint:constraint-layout:1.1.3'
+    implementation 'com.android.support.constraint:constraint-layout:2.0.4'
 
 }
 
