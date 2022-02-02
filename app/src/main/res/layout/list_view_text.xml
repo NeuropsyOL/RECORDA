@@ -4,9 +4,8 @@
     android:id="@+id/txt_title"
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
-    android:gravity="center_vertical"
     android:checkMark="?android:attr/listChoiceIndicatorMultiple"
+    android:gravity="center_vertical"
     android:padding="5sp"
-    android:textSize="25sp"
     android:textColor="@color/black"
-    />
+    android:textSize="25sp" />
