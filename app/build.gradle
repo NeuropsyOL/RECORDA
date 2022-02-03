@@ -31,7 +31,7 @@ android {
         applicationId 'com.example.aliayubkhan.LSLReceiver'
         minSdkVersion 24
         versionCode 1       // increment with every release
-        versionName '1.0.1'   // change with every release
+        versionName '1.15.2'   // change with every release
         setProperty('archivesBaseName', "LSLRecorder-$versionName")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         ndk {
