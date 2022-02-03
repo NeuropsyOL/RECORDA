@@ -1,3 +1,11 @@
+// IMPORTANT:
+// -> To build directly using prebuilt libraries (*.so), comment the "externalNativeBuild" blocks
+// from below, and make sure the libs are inside (automatically copied after building from source):
+// /project-root/app/src/debug/jniLibs (for a debug build)
+// /project-root/app/src/main/jniLibs (for a release build)
+// - > To build from source, just make sure the folders above exist and uncomment the
+// "externalNativeBuild" blocks below.
+
 apply plugin: 'com.android.application'
 
 def keystoreProperties = new Properties()
@@ -26,15 +34,22 @@ android {
         versionName '1.0.1'   // change with every release
         setProperty('archivesBaseName', "LSLRecorder-$versionName")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        externalNativeBuild {
-            cmake {
-                cppFlags '-std=c++11 -frtti -fexceptions'
-            }
+        ndk {
+            // Specifies the ABI configurations of your native
+            // libraries Gradle should build and package with your app.
+            abiFilters 'x86', 'x86_64', 'armeabi', 'armeabi-v7a', 'arm64-v8a'
         }
+//        externalNativeBuild.cmake {
+//            cppFlags '-std=c++11 -frtti -fexceptions'
+//        }
     }
+//    externalNativeBuild.cmake {
+//        path '../CMakeLists.txt'
+//    }
     buildTypes {
         debug {
             debuggable true
+            jniDebuggable true
             signingConfig signingConfigs.debug
         }
         release {
@@ -47,17 +62,15 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
-    externalNativeBuild {
-        cmake {
-            path '../CMakeLists.txt'
-        }
-    }
     dexOptions {
         javaMaxHeapSize '2048m'
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+    }
+    packagingOptions {
+        pickFirst '**/lib/**'
     }
     buildToolsVersion '32.0.0'
     ndkVersion '14.1.3816874'
@@ -72,17 +85,22 @@ dependencies {
     implementation 'net.java.dev.jna:jna:5.10.0@aar'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
     testImplementation 'junit:junit:4.13.2'
-
 }
 
-//copy native libraries to per project location
-task copyJniLibs(type: Copy) {
-    from '../jniLibs'
+// copy native libraries to per project location
+task copyDebugJniLibs(type: Copy) {
+    from 'build/intermediates/cmake/debug/obj'
+    include('**/*.*')
+    into 'src/debug/jniLibs'
+}
+task copyReleaseJniLibs(type: Copy) {
+    from 'build/intermediates/cmake/release/obj'
+    include('**/*.*')
     into 'src/main/jniLibs'
 }
 
-tasks.withType(JavaCompile) {
-    compileTask -> compileTask.dependsOn(copyJniLibs)
+tasks.whenTaskAdded { task ->
+    if (task.name == 'assembleDebug') task.finalizedBy('copyDebugJniLibs')
+    if (task.name == 'assembleRelease') task.finalizedBy('copyReleaseJniLibs')
 }
 
-clean.dependsOn 'cleanCopyJniLibs'
