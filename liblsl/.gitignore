@@ -1,0 +1,12 @@
+/build*/
+/CMakeLists.txt.user
+/CMakeLists.json
+/CMakeSettings.json
+/docs/liblsl_*
+/docs/_build
+/.vs/
+.DS_Store
+/out/
+# CLion
+.idea/
+/cmake-build-*/
