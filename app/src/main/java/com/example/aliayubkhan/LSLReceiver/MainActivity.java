@@ -111,7 +111,7 @@ public class MainActivity extends Activity {
                     startService(intent);
                 }
                 startMillis = System.currentTimeMillis();
-                tdate.setText("00:00");
+                tdate.setText("00:00:00");
                 ElapsedTime();
             }
         });
