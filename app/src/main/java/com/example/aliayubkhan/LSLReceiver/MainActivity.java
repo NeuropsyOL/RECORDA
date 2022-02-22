@@ -73,17 +73,17 @@ public class MainActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        tv = (TextView) findViewById(R.id.tv);
-        start = (Button) findViewById(R.id.startLSL);
-        stop = (Button) findViewById(R.id.stopLSL);
-        refresh = (ImageButton) findViewById(R.id.refreshStreams);
-        tdate = (TextView) findViewById(R.id.elapsedTime);
+        tv = findViewById(R.id.tv);
+        start = findViewById(R.id.startLSL);
+        stop = findViewById(R.id.stopLSL);
+        refresh = findViewById(R.id.refreshStreams);
+        tdate = findViewById(R.id.elapsedTime);
         requestWritePermissions();
         // set filename so that is not null, it gets changed if the user enters settings screen
         filenamevalue = "recording";
-        lv = (ListView) findViewById(R.id.streams);
+        lv = findViewById(R.id.streams);
         lv.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
-        settings_button = (ImageView) findViewById(R.id.settings_btn);
+        settings_button = findViewById(R.id.settings_btn);
         settings_button.setVisibility(View.VISIBLE);
 
         final Intent intent = new Intent(this, LSLService.class);
@@ -140,7 +140,7 @@ public class MainActivity extends Activity {
 
         stop.setOnClickListener(v -> {
             stopService(intent);
-            t.interrupt();
+            if (t != null) t.interrupt();
             lv.setEnabled(true);
         });
 
