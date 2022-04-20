@@ -1,11 +1,15 @@
 #pragma once
 
-#include <ostream>
 #include "portable_archive_includes.hpp"
+#include <cstring>
+#include <ostream>
 
+#ifdef SLIMARCHIVE
+#include "slimarchive.hpp"
+#else
 #include <boost/archive/basic_binary_oprimitive.hpp>
 #include <boost/archive/basic_binary_oarchive.hpp>
-
+#endif
 
 namespace eos {
 
@@ -19,11 +23,8 @@ namespace eos {
 	// forward declaration
 	class portable_oarchive;
 
-	typedef lslboost::archive::basic_binary_oprimitive<
-		portable_oarchive
-		, std::ostream::char_type
-		, std::ostream::traits_type
-	> portable_oprimitive;
+	using portable_oprimitive = lslboost::archive::basic_binary_oprimitive<portable_oarchive,
+		std::ostream::char_type, std::ostream::traits_type>;
 
 	/**
 	 * \brief Portable binary output archive using little endian format.
@@ -191,6 +192,9 @@ namespace eos {
 		save(const T & t, dummy<3> = 0)
 		{
 			using traits = typename fp::detail::fp_traits<T>::type;
+			using newtraits = typename lsl::detail::fp_traits<T>::type;
+			static_assert(std::is_same<typename traits::bits, typename newtraits::bits>::value,
+				"Wrong corresponding int type");
 
 			// if the no_infnan flag is set we must throw here
 			if (get_flags() & no_infnan && !fp::isfinite(t))
@@ -203,9 +207,13 @@ namespace eos {
 			// after reading the note above you still might decide to 
 			// deactivate this static assert and try if it works out.
 			typename traits::bits bits;
-			BOOST_STATIC_ASSERT(sizeof(bits) == sizeof(T));
-			BOOST_STATIC_ASSERT(std::numeric_limits<T>::is_iec559);
-            
+			static_assert(sizeof(bits) == sizeof(T), "mismatching type sizes");
+			static_assert(std::numeric_limits<T>::is_iec559, "float representation differs from IEC559");
+
+			static_assert(traits::exponent == newtraits::exponent, "mismatching exponent");
+			static_assert(traits::significand == newtraits::significand, "mismatching significand");
+			static_assert(traits::sign == newtraits::sign, "mismatching sign bit");
+
 			switch (fp::fpclassify(t)) {
 			case FP_NAN: bits = traits::exponent | traits::significand; break;
 			case FP_INFINITE: bits = traits::exponent | (t<0) * traits::sign; break;

@@ -2,15 +2,19 @@
 #define UDP_SERVER_H
 
 #include "forward.h"
-#include <boost/asio/ip/udp.hpp>
+#include "socket_utils.h"
+#include <asio/ip/udp.hpp>
+#include <cstdint>
+#include <exception>
 #include <memory>
+#include <string>
 
 using asio::ip::udp;
-using err_t = const lslboost::system::error_code &;
+using err_t = const asio::error_code &;
 
 namespace lsl {
 /// shared pointer to a socket
-using udp_socket_p = std::shared_ptr<udp::socket>;
+using udp_socket_p = std::shared_ptr<udp_socket>;
 
 /**
  * A lightweight UDP responder service.
@@ -34,7 +38,7 @@ public:
 	 * @param io asio::io_context that runs the server's async operations
 	 * @param protocol The protocol stack to use (tcp::v4() or tcp::v6()).
 	 */
-	udp_server(const stream_info_impl_p &info, asio::io_context &io, udp protocol);
+	udp_server(stream_info_impl_p info, asio::io_context &io, udp protocol);
 
 	/**
 	 * Create a new UDP server in multicast mode.
@@ -42,7 +46,7 @@ public:
 	 * This server will listen on a multicast address and responds only to LSL:shortinfo requests.
 	 * This is for multicast/broadcast (and optionally unicast) local service discovery.
 	 */
-	udp_server(const stream_info_impl_p &info, asio::io_context &io, const std::string &address,
+	udp_server(stream_info_impl_p info, asio::io_context &io, asio::ip::address addr,
 		uint16_t port, int ttl, const std::string &listen_address);
 
 

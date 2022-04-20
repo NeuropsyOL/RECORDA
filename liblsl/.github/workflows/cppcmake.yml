@@ -3,8 +3,12 @@ name: C/C++ CI
 on:
   push:
     branches: ['*']
-    tags: 
-    paths_ignore: ['docs/**', '.travis.yml']
+    tags: ['*']
+    paths:
+      - '**'
+      - '!docs/**'
+      - '!.github/**'
+      - '.github/workflows/cppcmake.yml'
   pull_request:
   release:
     types: ['created']
@@ -30,8 +34,8 @@ jobs:
         config:
         - {name: "ubuntu-20.04", os: "ubuntu-20.04",   cmake_extra: "-DLSL_BUNDLED_PUGIXML=OFF"}
         - {name: "ubuntu-18.04", os: "ubuntu-latest",  docker: "ubuntu:18.04" }
-        - {name: "windows-x64",  os: "windows-latest", cmake_extra: "-T v140,host=x86"}
-        - {name: "windows-32",   os: "windows-latest", cmake_extra: "-T v140,host=x86 -A Win32"}
+        - {name: "windows-x64",  os: "windows-2019", cmake_extra: "-T v140,host=x86"}
+        - {name: "windows-32",   os: "windows-2019", cmake_extra: "-T v140,host=x86 -A Win32"}
         - {name: "macOS-latest", os: "macOS-latest"}
     
     # runs all steps in the container configured in config.docker or as subprocesses when empty
@@ -55,11 +59,13 @@ jobs:
                 -DCMAKE_BUILD_TYPE=Release \
                 -DCMAKE_INSTALL_PREFIX=${PWD}/install \
                 -DLSL_UNITTESTS=ON \
+                -DLSL_BENCHMARKS=ON \
                 -DLSL_BUILD_EXAMPLES=ON \
                 -DCPACK_PACKAGE_DIRECTORY=${PWD}/package \
                 -Dlslgitrevision=${{ github.sha }} \
                 -Dlslgitbranch=${{ github.ref }} \
-                ${{ matrix.config.cmake_extra }} 
+                ${{ matrix.config.cmake_extra }} \
+                ${{ github.event.inputs.cmakeextra }}
             echo ${PWD}
     - name: make
       run: cmake --build build --target install --config Release -j
@@ -81,6 +87,7 @@ jobs:
               dpkg -I package/liblsl*.deb
            fi
            cmake -E remove_directory package/_CPack_Packages
+           cp testing/lslcfgs/default.cfg .
     - name: upload install dir
       uses: actions/upload-artifact@master
       with:

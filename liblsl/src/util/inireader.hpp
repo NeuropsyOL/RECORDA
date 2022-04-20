@@ -1,5 +1,6 @@
 #include "cast.hpp"
 #include <iosfwd>
+#include <string>
 #include <unordered_map>
 
 // Reads an INI file from a stream into a map
@@ -17,9 +18,7 @@ public:
 		auto it = values.find(key);
 		if (it == values.end())
 			return defaultval;
-		else {
-			return convert<T>(it->second);
-		}
+		return convert<T>(it->second);
 	}
 };
 

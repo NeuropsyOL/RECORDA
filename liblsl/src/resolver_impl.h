@@ -5,18 +5,25 @@
 #include "common.h"
 #include "forward.h"
 #include "stream_info_impl.h"
-#include <boost/asio/ip/tcp.hpp>
-#include <boost/asio/ip/udp.hpp>
-#include <boost/asio/steady_timer.hpp>
+#include <asio/ip/tcp.hpp>
+#include <asio/ip/udp.hpp>
+#include <asio/steady_timer.hpp>
+#include <atomic>
+#include <map>
+#include <memory>
 #include <mutex>
+#include <string>
 #include <thread>
+#include <vector>
 
 using asio::ip::tcp;
 using asio::ip::udp;
-using err_t = const lslboost::system::error_code &;
+using err_t = const asio::error_code &;
 
 namespace lsl {
 class api_config;
+
+using steady_timer = asio::basic_waitable_timer<asio::chrono::steady_clock, asio::wait_traits<asio::chrono::steady_clock>, asio::io_context::executor_type>;
 
 /// A container for resolve results (map from stream instance UID onto (stream_info,receive-time)).
 typedef std::map<std::string, std::pair<stream_info_impl, double>> result_container;
@@ -35,7 +42,7 @@ typedef std::map<std::string, std::pair<stream_info_impl, double>> result_contai
  * by calling resolve_continuous() and the list is retrieved in parallel when desired via results().
  * In this case a new resolver instance must be created to issue a new query.
  */
-class resolver_impl : public cancellable_registry {
+class resolver_impl final : public cancellable_registry {
 public:
 	/**
 	 * Instantiate a new resolver and configure timing parameters.
@@ -72,7 +79,7 @@ public:
 		const char *value = nullptr) noexcept;
 
 	/// Destructor. Cancels any ongoing processes and waits until they finish.
-	~resolver_impl();
+	~resolver_impl() final;
 
 	resolver_impl(const resolver_impl &) = delete;
 
@@ -119,7 +126,13 @@ public:
 	 */
 	void cancel();
 
+	enum class resolver_status {
+		empty, started_oneshot, running_continuous
+	};
+
 private:
+	friend class resolve_attempt_udp;
+
 	/// This function starts a new wave of resolves.
 	void next_resolve_wave();
 
@@ -128,6 +141,9 @@ private:
 
 	/// Start a new resolver attempt on the known peers.
 	void udp_unicast_burst(err_t err);
+
+	/// Check if cancellation criteria (minimum number of results, timeout) are met
+	bool check_cancellation_criteria();
 
 	/// Cancel the currently ongoing resolve, if any.
 	void cancel_ongoing_resolve();
@@ -138,8 +154,6 @@ private:
 	const api_config *cfg_;
 	/// UDP protocols under consideration
 	std::vector<udp> udp_protocols_;
-	/// TCP protocols under consideration
-	std::vector<tcp> tcp_protocols_;
 	/// the list of multicast endpoints under consideration
 	std::vector<udp::endpoint> mcast_endpoints_;
 	/// the list of per-host UDP endpoints under consideration
@@ -152,6 +166,7 @@ private:
 	std::atomic<bool> expired_;
 
 	// reinitialized for each query
+	resolver_status status{resolver_status::empty};
 	/// our current query string
 	std::string query_;
 	/// the minimum number of results that we want
@@ -174,11 +189,11 @@ private:
 	/// a thread that runs background IO if we are performing a resolve_continuous
 	std::shared_ptr<std::thread> background_io_;
 	/// the overall timeout for a query
-	asio::steady_timer resolve_timeout_expired_;
+	steady_timer resolve_timeout_expired_;
 	/// a timer that fires when a new wave should be scheduled
-	asio::steady_timer wave_timer_;
+	steady_timer wave_timer_;
 	/// a timer that fires when the unicast wave should be scheduled
-	asio::steady_timer unicast_timer_;
+	steady_timer unicast_timer_;
 };
 
 } // namespace lsl

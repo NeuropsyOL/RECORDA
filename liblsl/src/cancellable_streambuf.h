@@ -15,30 +15,28 @@
 
 #define BOOST_ASIO_NO_DEPRECATED
 #include "cancellation.h"
-#include <boost/asio/basic_stream_socket.hpp>
-#include <boost/asio/io_context.hpp>
-#include <boost/asio/ip/tcp.hpp>
+#include <asio/basic_stream_socket.hpp>
+#include <asio/io_context.hpp>
+#include <asio/ip/tcp.hpp>
 #include <exception>
 #include <streambuf>
 
-namespace asio = lslboost::asio;
-using lslboost::system::error_code;
 using asio::io_context;
 
 namespace lsl {
 using Protocol = asio::ip::tcp;
-using Socket = asio::basic_stream_socket<Protocol>;
+using Socket = asio::basic_stream_socket<Protocol, asio::io_context::executor_type>;
 /// Iostream streambuf for a socket.
-class cancellable_streambuf : public std::streambuf,
-							  private asio::io_context,
-							  private Socket,
-							  public lsl::cancellable_obj {
+class cancellable_streambuf final : public std::streambuf,
+									private asio::io_context,
+									private Socket,
+									public lsl::cancellable_obj {
 public:
 	/// Construct a cancellable_streambuf without establishing a connection.
-	cancellable_streambuf() : io_context(), Socket(as_context()) { init_buffers(); }
+	cancellable_streambuf() : io_context(1), Socket(as_context()) { init_buffers(); }
 
 	/// Destructor flushes buffered data.
-	virtual ~cancellable_streambuf() override {
+	~cancellable_streambuf() override {
 		// no cancel() can fire after this call
 		unregister_from_all();
 		if (pptr() != pbase()) overflow(traits_type::eof());
@@ -73,7 +71,8 @@ public:
 
 			init_buffers();
 			socket().close(ec_);
-			socket().async_connect(endpoint, [this](const error_code &ec) { this->ec_ = ec; });
+			socket().async_connect(
+				endpoint, [this](const asio::error_code &ec) { this->ec_ = ec; });
 			this->as_context().restart();
 		}
 		ec_ = asio::error::would_block;
@@ -98,7 +97,7 @@ public:
 	 * @return An \c error_code corresponding to the last error from the stream
 	 * buffer.
 	 */
-	const error_code &error() const { return ec_; }
+	const asio::error_code &error() const { return ec_; }
 
 protected:
 	/// Close the socket if it's open.
@@ -131,7 +130,7 @@ protected:
 			std::size_t bytes_transferred_;
 			socket().async_receive(asio::buffer(asio::buffer(get_buffer_) + putback_max),
 				[this, &bytes_transferred_](
-					const error_code &ec, std::size_t bytes_transferred = 0) {
+					const asio::error_code &ec, std::size_t bytes_transferred = 0) {
 					this->ec_ = ec;
 					bytes_transferred_ = bytes_transferred;
 				});
@@ -154,8 +153,9 @@ protected:
 		asio::const_buffer buffer = asio::buffer(pbase(), pptr() - pbase());
 		while (asio::buffer_size(buffer) > 0) {
 			std::size_t bytes_transferred_;
-			socket().async_send(asio::buffer(buffer),
-				[this, &bytes_transferred_](const error_code &ec, std::size_t bytes_transferred) {
+			socket().async_send(
+				asio::buffer(buffer), [this, &bytes_transferred_](const asio::error_code &ec,
+										  std::size_t bytes_transferred) {
 					this->ec_ = ec;
 					bytes_transferred_ = bytes_transferred;
 				});
@@ -190,9 +190,9 @@ protected:
 	}
 
 	enum { putback_max = 8 };
-	enum { buffer_size = 512 };
+	enum { buffer_size = 16384 };
 	char get_buffer_[buffer_size], put_buffer_[buffer_size];
-	error_code ec_;
+	asio::error_code ec_;
 	std::atomic<bool> cancel_issued_{false};
 	bool cancel_started_{false};
 	std::recursive_mutex cancel_mut_;

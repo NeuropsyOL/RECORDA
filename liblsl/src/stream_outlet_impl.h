@@ -4,8 +4,12 @@
 #include "common.h"
 #include "forward.h"
 #include "stream_info_impl.h"
+#include <cstdint>
 #include <loguru.hpp>
+#include <memory>
+#include <string>
 #include <thread>
+#include <vector>
 
 using asio::ip::tcp;
 using asio::ip::udp;
@@ -28,12 +32,14 @@ public:
 	 * @param chunk_size The preferred chunk size, in samples, at which data shall be transmitted
 	 * over the network. Can be selectively overridden by the inlet. If 0 (=default), the chunk size
 	 * is determined by the pushthrough flag in push_sample or push_chunk.
-	 * @param max_capacity The maximum number of samples buffered for unresponsive receivers. If
-	 * more samples get pushed, the oldest will be dropped. The default is sufficient to hold a bit
-	 * more than 15 minutes of data at 512Hz, while consuming not more than ca. 512MB of RAM.
+	 * @param requested_size The maximum number of seconds/samples buffered for unresponsive
+	 * receivers. If more samples get pushed, the oldest will be dropped. The default is sufficient
+	 * to hold a bit more than 15 minutes of data at 512Hz, while consuming not more than ca. 512MB
+	 * of RAM. Depends on `flags` as calculated in `stream_info_impl::calc_transport_buf_samples()`
+	 * @param flags Bitwise-OR'd flags from lsl_transport_options_t
 	 */
-	stream_outlet_impl(
-		const stream_info_impl &info, int32_t chunk_size = 0, int32_t max_capacity = 512000);
+	stream_outlet_impl(const stream_info_impl &info, int32_t chunk_size = 0,
+		int32_t requested_bufsize = 900, lsl_transport_options_t flags = transp_default);
 
 	/**
 	 * Destructor.
@@ -290,7 +296,7 @@ public:
 
 private:
 	/// Instantiate a new server stack.
-	void instantiate_stack(tcp tcp_protocol, udp udp_protocol);
+	void instantiate_stack(udp udp_protocol);
 
 	/// Allocate and enqueue a new sample into the send buffer.
 	template <class T> void enqueue(const T *data, double timestamp, bool pushthrough);
@@ -313,11 +319,11 @@ private:
 	stream_info_impl_p info_;
 	/// the single-producer, multiple-receiver send buffer
 	send_buffer_p send_buffer_;
-	/// the IO service objects (two per stack: one for UDP and one for TCP)
-	std::vector<io_context_p> ios_;
+	/// the IO service objects
+	io_context_p io_ctx_data_, io_ctx_service_;
 
-	/// the threaded TCP data server(s); two if using both IP stacks
-	std::vector<tcp_server_p> tcp_servers_;
+	/// the threaded TCP data server
+	tcp_server_p tcp_server_;
 	/// the UDP timing & ident service(s); two if using both IP stacks
 	std::vector<udp_server_p> udp_servers_;
 	/// UDP multicast responders for service discovery (time features disabled);
