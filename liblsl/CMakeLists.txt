@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.12)
 project (liblsl
-	VERSION 1.16.0
+	VERSION 1.16.2
 	LANGUAGES C CXX
 	DESCRIPTION "Labstreaminglayer C/C++ library"
 	HOMEPAGE_URL "https://github.com/sccn/liblsl"
@@ -353,7 +353,7 @@ add_executable(lslver testing/lslver.c)
 target_link_libraries(lslver PRIVATE lsl)
 installLSLApp(lslver)
 
-if(LSL_TOOLS)
+if(NOT WIN32 AND LSL_TOOLS)
 	add_executable(blackhole testing/blackhole.cpp)
 	target_link_libraries(blackhole PRIVATE Threads::Threads)
 	target_include_directories(blackhole PRIVATE "thirdparty/asio/")

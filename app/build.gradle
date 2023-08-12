@@ -26,12 +26,12 @@ android {
             keyPassword keystoreProperties['keyPassword']
         }
     }
-    compileSdkVersion 31
+    compileSdk 33
     defaultConfig {
         applicationId 'com.example.aliayubkhan.LSLReceiver'
         minSdkVersion 26
         versionCode 1       // increment with every release
-        versionName '1.16.0'   // change with every release
+        versionName '1.16.2'   // change with every release
         setProperty('archivesBaseName', "LSLRecorder-$versionName")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         ndk {
@@ -64,8 +64,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
     packagingOptions {
         jniLibs {
@@ -75,34 +75,35 @@ android {
             pickFirsts += ['**/lib/**']
         }
     }
-    buildToolsVersion '32.0.0'
-    ndkVersion '23.1.7779620'
+    buildToolsVersion = '34.0.0'
+    ndkVersion '25.2.9519653'
+    namespace 'com.example.aliayubkhan.LSLReceiver'
 }
 
 dependencies {
     implementation fileTree(dir: '../libs', include: ['*.jar'])
-    implementation 'org.apache.commons:commons-lang3:3.12.0'
-    implementation 'androidx.appcompat:appcompat:1.4.1'
+    implementation 'org.apache.commons:commons-lang3:3.13.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'androidx.cardview:cardview:1.0.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.3'
-    implementation 'net.java.dev.jna:jna:5.11.0@aar'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'net.java.dev.jna:jna:5.13.0@aar'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
     testImplementation 'junit:junit:4.13.2'
 }
 
 // copy native libraries to per project location
-task copyDebugJniLibs(type: Copy) {
+tasks.register('copyDebugJniLibs', Copy) {
     from 'build/intermediates/cmake/debug/obj'
     include('**/*.*')
     into 'src/debug/jniLibs'
 }
-task copyReleaseJniLibs(type: Copy) {
+tasks.register('copyReleaseJniLibs', Copy) {
     from 'build/intermediates/cmake/release/obj'
     include('**/*.*')
     into 'src/main/jniLibs'
 }
 
-tasks.whenTaskAdded { task ->
+tasks.configureEach { task ->
     if (task.name == 'assembleDebug') task.finalizedBy('copyDebugJniLibs')
     if (task.name == 'assembleRelease') task.finalizedBy('copyReleaseJniLibs')
 }

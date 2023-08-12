@@ -1,10 +1,13 @@
 /build*/
+/install/
+/package/
 /CMakeLists.txt.user
 /CMakeLists.json
 /CMakeSettings.json
 /docs/liblsl_*
 /docs/_build
 /.vs/
+/.cache/
 .DS_Store
 /out/
 # CLion

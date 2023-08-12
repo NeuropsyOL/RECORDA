@@ -87,7 +87,7 @@ std::vector<lsl::netif> lsl::get_local_interfaces() {
 		// No address? Skip.
 		if (addr->ifa_addr == nullptr) continue;
 		LOG_F(INFO, "netif '%s' (status: %d, multicast: %d, broadcast: %d)", addr->ifa_name,
-			addr->ifa_flags & IFF_MULTICAST, addr->ifa_flags & IFF_UP,
+			addr->ifa_flags & IFF_UP, addr->ifa_flags & IFF_MULTICAST,
 			addr->ifa_flags & IFF_BROADCAST);
 		// Interface doesn't support multicast? Skip.
 		if (!(addr->ifa_flags & IFF_MULTICAST)) continue;
@@ -114,7 +114,7 @@ std::vector<lsl::netif> lsl::get_local_interfaces() {
 }
 #else
 
-std::vector<lsl::netif> get_interface_addresses() {
+std::vector<lsl::netif> lsl::get_local_interfaces() {
 	LOG_F(WARNING, "No implementation to enumerate network interfaces found.");
 	return std::vector<lsl::netif>();
 }
