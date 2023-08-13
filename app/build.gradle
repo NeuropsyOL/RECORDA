@@ -1,10 +1,16 @@
 // IMPORTANT:
 // -> To build directly using prebuilt libraries (*.so), comment the "externalNativeBuild" blocks
-// from below, and make sure the libs are inside (automatically copied after building from source):
+// from below. Also make sure the prebuilt libs (.so) are inside the following folders
+// (automatically generated and copied after building from source):
 // /project-root/app/src/debug/jniLibs (for a debug build)
 // /project-root/app/src/main/jniLibs (for a release build)
-// - > To build from source, just make sure the folders above exist and uncomment the
-// "externalNativeBuild" blocks below.
+// Note: A backup of these prebuilt native libraries is on /project-root/libs/[debug/release]
+//
+// -> To build from source, make sure the "externalNativeBuild" blocks below are uncommented. Also,
+// ensure you have the liblsl source code folder on the project-root, including the modification of
+// CMakeLists.txt on it (it includes the "generate_xdf" target, which is not included by default).
+// Last but not least, do not forget to include the .cpp and .h files inside liblsl/src/xdfwriter
+// (from LabRecorder app source code) and the custom generate_xdf.cpp file from this project.
 
 apply plugin: 'com.android.application'
 
@@ -39,14 +45,14 @@ android {
             // libraries Gradle should build and package with your app.
             abiFilters 'x86', 'x86_64', 'armeabi-v7a', 'arm64-v8a'
         }
-        externalNativeBuild.cmake {
-            arguments "-DANDROID_CPP_FEATURES=rtti exceptions", "-DLSL_NO_FANCY_LIBNAME=1", "-DANDROID_PLATFORM=24"
-            targets "lsl", "generate_xdf"
-        }
+//        externalNativeBuild.cmake {
+//            arguments "-DANDROID_CPP_FEATURES=rtti exceptions", "-DANDROID_PLATFORM=24"
+//            targets "lsl", "generate_xdf"
+//        }
     }
-    externalNativeBuild.cmake {
-        path "../liblsl/CMakeLists.txt"
-    }
+//    externalNativeBuild.cmake {
+//        path "../liblsl/CMakeLists.txt"
+//    }
     buildTypes {
         debug {
             debuggable true
@@ -75,6 +81,7 @@ android {
             pickFirsts += ['**/lib/**']
         }
     }
+
     buildToolsVersion = '34.0.0'
     ndkVersion '25.2.9519653'
     namespace 'com.example.aliayubkhan.LSLReceiver'
@@ -93,18 +100,33 @@ dependencies {
 
 // copy native libraries to per project location
 tasks.register('copyDebugJniLibs', Copy) {
-    from 'build/intermediates/cmake/debug/obj'
+    from '../app/build/intermediates/merged_native_libs/debug/out/lib'
+    into '../app/src/debug/jniLibs'
     include('**/*.*')
-    into 'src/debug/jniLibs'
+    exclude 'mips*', 'armeabi'
 }
 tasks.register('copyReleaseJniLibs', Copy) {
-    from 'build/intermediates/cmake/release/obj'
+    from '../app/build/intermediates/stripped_native_libs/release/out/lib'
+    into '../app/src/main/jniLibs'
     include('**/*.*')
-    into 'src/main/jniLibs'
+    exclude 'mips*', 'armeabi'
+}
+
+// backup native libraries to per project location
+tasks.register('backupDebugJniLibs', Copy) {
+    from '../app/src/debug/jniLibs'
+    into '../libs/debug'
+    include('**/*.*')
+}
+tasks.register('backupReleaseJniLibs', Copy) {
+    from '../app/src/main/jniLibs'
+    into '../libs/release'
+    include('**/*.*')
 }
 
 tasks.configureEach { task ->
     if (task.name == 'assembleDebug') task.finalizedBy('copyDebugJniLibs')
     if (task.name == 'assembleRelease') task.finalizedBy('copyReleaseJniLibs')
+    if (task.name == 'copyDebugJniLibs') task.finalizedBy('backupDebugJniLibs')
+    if (task.name == 'copyReleaseJniLibs') task.finalizedBy('backupReleaseJniLibs')
 }
-
