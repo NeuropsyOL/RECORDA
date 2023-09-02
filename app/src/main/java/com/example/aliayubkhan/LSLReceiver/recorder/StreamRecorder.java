@@ -1,6 +1,5 @@
 package com.example.aliayubkhan.LSLReceiver.recorder;
 
-import com.example.aliayubkhan.LSLReceiver.LSL;
 import com.example.aliayubkhan.LSLReceiver.util.ListToPrimitiveArray;
 import com.example.aliayubkhan.LSLReceiver.xdf.XdfWriter;
 
@@ -11,6 +10,8 @@ import java.util.List;
 import java.util.function.IntFunction;
 
 import static com.example.aliayubkhan.LSLReceiver.xdf.XdfWriter.createFooterXml;
+
+import edu.ucsd.sccn.LSL;
 
 public interface StreamRecorder extends Closeable {
 

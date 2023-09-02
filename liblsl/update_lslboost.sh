@@ -1,8 +1,15 @@
-BOOSTPATH=/tmp/boost_1_65_1
-# to update this, use boost bcp as follows (on windows, you need to install a unix shell):
-rm -rf lslboost/{boost,src}
-bcp --unix-lines --boost=$BOOSTPATH --namespace=lslboost --scan `find src -regex ".+\.[ch]p*"` lslboost/additional_headers.h lslboost/
-rm lslboost/Jamroot
-# optionally: remove superfluous directories:
-find lslboost -type d -name build -or -name test -print0 | xargs -0 rm -rf
+# the absolute path to the extracted boost source archive (https://www.boost.org/users/download/)
+set -e
+set -x
+BOOSTPATH=/tmp/boost_1_78_0
+TMPPATH=/tmp/lslboost
+
+# copy all needed boost files and rename all mentions of boost to lslboost
+mkdir -p $TMPPATH
+bcp --unix-lines --boost=$BOOSTPATH --namespace=lslboost --scan `find src -regex ".+\.[ch]p*"` $TMPPATH
+# remove superfluous directories:
+rm -f $TMPPATH/Jamroot
+find $TMPPATH -type d -and \( -name build -o -name test -o -name edg -o -name dmc -o -name msvc?0 -o -name bcc* \) -print0 | xargs -0 rm -rf
+
+rsync -HAXavr --del $TMPPATH/{boost,libs} lslboost
 

@@ -76,13 +76,13 @@ namespace lsl {
 		* @param channel_count Number of channels per sample. This stays constant for the lifetime of the stream.
 		* @param nominal_srate The sampling rate (in Hz) as advertised by the data source, if regular (otherwise set to IRREGULAR_RATE).
 		* @param channel_format Format/type of each channel. If your channels have different formats, consider supplying 
-		*                       multiple streams or use the largest type that can hold them all (such as cf_double64).
+		*                       multiple streams or use the largest type that can hold them all (such as cft_double64).
 		* @param source_id Unique identifier of the device or source of the data, if available (such as the serial number). 
 		*                  This is critical for system robustness since it allows recipients to recover from failure even after the 
 		*				   serving app, device or computer crashes (just by finding a stream with the same source id on the network again).
 		*				   Therefore, it is highly recommended to always try to provide whatever information can uniquely identify the data source itself.
 		*/
-		stream_info(const std::string &name, const std::string &type, int channel_count=1, double nominal_srate=IRREGULAR_RATE, channel_format_t channel_format=cf_float32, const std::string &source_id=std::string());
+		stream_info(const std::string &name, const std::string &type, int channel_count=1, double nominal_srate=IRREGULAR_RATE, lsl_channel_format_t channel_format=cft_float32, const std::string &source_id=std::string());
 
 		// ========================
 		// === Core Information ===
@@ -128,7 +128,7 @@ namespace lsl {
 		* All channels in a stream have the same format. However, a device might offer multiple time-synched streams 
 		* each with its own format.
 		*/
-		channel_format_t channel_format() const;
+		lsl_channel_format_t channel_format() const;
 
 		/**
 		* Unique identifier of the stream's source, if available.
@@ -143,9 +143,7 @@ namespace lsl {
 		// ======================================
 		// (these fields are implicitly assigned once bound to an outlet/inlet)
 
-		/**
-		* Protocol version used to deliver the stream.
-		*/
+		///  Protocol version used to deliver the stream.
 		int version() const;
 
 		/**
@@ -171,9 +169,7 @@ namespace lsl {
 		*/
 		const std::string &session_id() const;
 
-		/**
-		* Hostname of the providing machine.
-		*/
+		///  Hostname of the providing machine.
 		const std::string &hostname() const;
 
 
@@ -276,7 +272,7 @@ namespace lsl {
 		*/
 		void push_sample(const std::vector<float> &data, double timestamp=0.0, bool pushthrough=true);
 		void push_sample(const std::vector<double> &data, double timestamp=0.0, bool pushthrough=true);
-		void push_sample(const std::vector<long> &data, double timestamp=0.0, bool pushthrough=true);
+		void push_sample(const std::vector<int64_t> &data, double timestamp=0.0, bool pushthrough=true);
 		void push_sample(const std::vector<int> &data, double timestamp=0.0, bool pushthrough=true);
 		void push_sample(const std::vector<short> &data, double timestamp=0.0, bool pushthrough=true);
 		void push_sample(const std::vector<char> &data, double timestamp=0.0, bool pushthrough=true);
@@ -293,7 +289,7 @@ namespace lsl {
 		*/
 		void push_sample(const float *data, double timestamp=0.0, bool pushthrough=true);
 		void push_sample(const double *data, double timestamp=0.0, bool pushthrough=true);
-		void push_sample(const long *data, double timestamp=0.0, bool pushthrough=true);
+		void push_sample(const int64_t *data, double timestamp=0.0, bool pushthrough=true);
 		void push_sample(const int *data, double timestamp=0.0, bool pushthrough=true);
 		void push_sample(const short *data, double timestamp=0.0, bool pushthrough=true);
 		void push_sample(const char *data, double timestamp=0.0, bool pushthrough=true);
@@ -539,7 +535,7 @@ namespace lsl {
 		*/
 		double pull_sample(std::vector<float> &sample, double timeout=FOREVER);
 		double pull_sample(std::vector<double> &sample, double timeout=FOREVER);
-		double pull_sample(std::vector<long> &sample, double timeout=FOREVER);
+		double pull_sample(std::vector<int64_t> &sample, double timeout=FOREVER);
 		double pull_sample(std::vector<int> &sample, double timeout=FOREVER);
 		double pull_sample(std::vector<short> &sample, double timeout=FOREVER);
 		double pull_sample(std::vector<char> &sample, double timeout=FOREVER);
@@ -557,7 +553,7 @@ namespace lsl {
 		*/
 		double pull_sample(float *buffer, int buffer_elements, double timeout=FOREVER);
 		double pull_sample(double *buffer, int buffer_elements, double timeout=FOREVER);
-		double pull_sample(long *buffer, int buffer_elements, double timeout=FOREVER);
+		double pull_sample(int64_t *buffer, int buffer_elements, double timeout=FOREVER);
 		double pull_sample(int *buffer, int buffer_elements, double timeout=FOREVER);
 		double pull_sample(short *buffer, int buffer_elements, double timeout=FOREVER);
 		double pull_sample(char *buffer, int buffer_elements, double timeout=FOREVER);
@@ -670,19 +666,13 @@ namespace lsl {
 
 		// === Modification ===
 
-		/**
-		* Append a child node with a given name, which has a (nameless) plain-text child with the given text value.
-		*/
+		///  Append a child node with a given name, which has a (nameless) plain-text child with the given text value.
 		xml_element append_child_value(const char *name, const char *value);
 
-		/**
-		* Prepend a child node with a given name, which has a (nameless) plain-text child with the given text value.
-		*/
+		///  Prepend a child node with a given name, which has a (nameless) plain-text child with the given text value.
 		xml_element prepend_child_value(const char *name, const char *value);
 
-		/**
-		* Set the text value of the (nameless) plain-text child of a named child node.
-		*/
+		///  Set the text value of the (nameless) plain-text child of a named child node.
 		bool set_child_value(const char *name, const char *value);
 
 		/**

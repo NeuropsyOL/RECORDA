@@ -1,8 +1,8 @@
 package com.example.aliayubkhan.LSLReceiver.recorder;
 
-import com.example.aliayubkhan.LSLReceiver.LSL;
-
 import java.io.IOException;
+
+import edu.ucsd.sccn.LSL;
 
 public class RecorderFactory {
 
@@ -54,6 +54,7 @@ public class RecorderFactory {
     private RecorderFactory(RecorderConstructor constructor, LSL.StreamInfo streamInfo) {
         this.constructor = constructor;
         this.streamInfo = streamInfo;
+
     }
 
     public static RecorderFactory forLslStream(LSL.StreamInfo streamInfo) {

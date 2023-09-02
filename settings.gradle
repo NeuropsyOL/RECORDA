@@ -1,1 +1,15 @@
 include ':app'
+
+// Add a project stub for liblsl-Java
+include 'liblsl-Java'
+
+// Tell gradle where to find liblsl-Java
+if(hasProperty("liblsl_java_dir")) {
+    println("Looking for liblsl-Java in " + liblsl_java_dir)
+    project(':liblsl-Java').projectDir = new File(liblsl_java_dir)
+}
+else {
+    println("Looking for liblsl-Java in the default path.")
+    println("Change this via 'gradle -Pliblsl_java_dir=path/here if this fails")
+    project(':liblsl-Java').projectDir = new File("./liblsl-Java")
+}

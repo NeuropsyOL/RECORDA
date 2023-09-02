@@ -1,7 +1,5 @@
 package com.example.aliayubkhan.LSLReceiver.recorder;
 
-import com.example.aliayubkhan.LSLReceiver.LSL;
-
 /**
  * One measurement sample of the offset of a stream's time compared to a reference clock.
  */

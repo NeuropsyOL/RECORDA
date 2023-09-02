@@ -1,22 +1,17 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 29
-    //buildToolsVersion '26.0.3'
+    compileSdkVersion 31
+    ndkVersion "25.2.9519653"
     defaultConfig {
         applicationId "com.example.aliayubkhan.LSLReceiver"
         minSdkVersion 24
-        targetSdkVersion 29
+        targetSdkVersion 31
         versionCode 1       // increment with every release
         versionName '1.0.0'   // change with every release
         setProperty("archivesBaseName", "LSLRecorder-$versionName")
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-        ndkVersion "14.1.3816874"
-        externalNativeBuild {
-            cmake {
-                cppFlags "-std=c++11 -frtti -fexceptions"
-            }
-        }
+
     }
 
     buildTypes {
@@ -31,25 +26,11 @@ android {
             }
         }
     }
-    externalNativeBuild {
-        cmake {
-            path "../CMakeLists.txt"
-        }
-    }
-
-    dexOptions {
-        javaMaxHeapSize "2048m"
-    }
-
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-    }
 
 }
 
 dependencies {
-    implementation fileTree(dir: '../libs', include: ['*.jar'])
+    implementation project(':liblsl-Java')
     implementation 'org.apache.commons:commons-lang3:3.11'
     androidTestImplementation('com.android.support.test.espresso:espresso-core:3.0.2', {
         exclude group: 'com.android.support', module: 'support-annotations'

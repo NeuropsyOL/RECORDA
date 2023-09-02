@@ -1,8 +1,9 @@
 package com.example.aliayubkhan.LSLReceiver.recorder;
 
+import edu.ucsd.sccn.LSL;
+
 import android.util.Log;
 
-import com.example.aliayubkhan.LSLReceiver.LSL;
 import com.example.aliayubkhan.LSLReceiver.xdf.XdfWriter;
 
 import java.nio.file.Files;

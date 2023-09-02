@@ -1,10 +1,11 @@
-#include "../common.h"
-#include "../stream_outlet_impl.h"
-#include "../stream_inlet_impl.h"
-#include "../stream_info_impl.h"
 #include "legacy_abi.h"
+#include "../common.h"
 #include "../resolver_impl.h"
-#include "../pugixml/pugixml.hpp"
+#include "../stream_info_impl.h"
+#include "../stream_inlet_impl.h"
+#include "../stream_outlet_impl.h"
+#include <pugixml.hpp>
+#include <sstream>
 
 #define NO_EXPLICIT_TEMPLATE_INSTANTIATION
 
@@ -17,7 +18,7 @@ using namespace pugi;
 // boilerplate code calling the private implementation
 stream_info::stream_info(): impl_(new stream_info_impl())  {  }
 stream_info::stream_info(const stream_info &rhs): impl_(new stream_info_impl(*rhs.impl_)) {  }
-stream_info::stream_info(const std::string &name, const std::string &type, int channel_count, double nominal_srate, channel_format_t channel_format, const std::string &source_id): impl_(new stream_info_impl(name,type,channel_count,nominal_srate,channel_format,source_id)) { }
+stream_info::stream_info(const std::string &name, const std::string &type, int channel_count, double nominal_srate, lsl_channel_format_t channel_format, const std::string &source_id): impl_(new stream_info_impl(name,type,channel_count,nominal_srate,channel_format,source_id)) { }
 stream_info::stream_info(const stream_info_impl *impl): impl_(new stream_info_impl(*impl)) { }
 stream_info::stream_info(const stream_info_impl &impl): impl_(new stream_info_impl(impl)) { }
 stream_info::~stream_info() { delete impl_; }
@@ -25,7 +26,7 @@ const std::string &stream_info::name() const { return impl_->name(); }
 const std::string &stream_info::type() const { return impl_->type(); }
 int stream_info::channel_count() const { return impl_->channel_count(); }
 double stream_info::nominal_srate() const { return impl_->nominal_srate(); }
-channel_format_t stream_info::channel_format() const { return impl_->channel_format(); }
+lsl_channel_format_t stream_info::channel_format() const { return impl_->channel_format(); }
 const std::string &stream_info::source_id() const { return impl_->source_id(); }
 int stream_info::version() const { return impl_->version(); }
 const std::string &stream_info::uid() const { return impl_->uid(); }
@@ -101,14 +102,14 @@ stream_outlet::~stream_outlet() { delete impl_; }
 stream_info stream_outlet::info() const { return stream_info(&impl_->info()); }
 void stream_outlet::push_sample(const std::vector<float> &data, double timestamp, bool pushthrough) { impl_->push_sample(data,timestamp,pushthrough); }
 void stream_outlet::push_sample(const std::vector<double> &data, double timestamp, bool pushthrough) { impl_->push_sample(data,timestamp,pushthrough); }
-void stream_outlet::push_sample(const std::vector<long> &data, double timestamp, bool pushthrough) { impl_->push_sample(data,timestamp,pushthrough); }
+void stream_outlet::push_sample(const std::vector<int64_t> &data, double timestamp, bool pushthrough) { impl_->push_sample(data,timestamp,pushthrough); }
 void stream_outlet::push_sample(const std::vector<int> &data, double timestamp, bool pushthrough) { impl_->push_sample(data,timestamp,pushthrough); }
 void stream_outlet::push_sample(const std::vector<short> &data, double timestamp, bool pushthrough) { impl_->push_sample(data,timestamp,pushthrough); }
 void stream_outlet::push_sample(const std::vector<char> &data, double timestamp, bool pushthrough) { impl_->push_sample(data,timestamp,pushthrough); }
 void stream_outlet::push_sample(const std::vector<std::string> &data, double timestamp, bool pushthrough) { impl_->push_sample(data,timestamp,pushthrough); }
 void stream_outlet::push_sample(const float *data, double timestamp, bool pushthrough) { impl_->push_sample(data,timestamp,pushthrough); }
 void stream_outlet::push_sample(const double *data, double timestamp, bool pushthrough) { impl_->push_sample(data,timestamp,pushthrough); }
-void stream_outlet::push_sample(const long *data, double timestamp, bool pushthrough) { impl_->push_sample(data,timestamp,pushthrough); }
+void stream_outlet::push_sample(const int64_t *data, double timestamp, bool pushthrough) { impl_->push_sample(data,timestamp,pushthrough); }
 void stream_outlet::push_sample(const int *data, double timestamp, bool pushthrough) { impl_->push_sample(data,timestamp,pushthrough); }
 void stream_outlet::push_sample(const short *data, double timestamp, bool pushthrough) { impl_->push_sample(data,timestamp,pushthrough); }
 void stream_outlet::push_sample(const char *data, double timestamp, bool pushthrough) { impl_->push_sample(data,timestamp,pushthrough); }
@@ -130,14 +131,14 @@ void stream_inlet::close_stream() { impl_->close_stream(); }
 double stream_inlet::time_correction(double timeout) { return impl_->time_correction(timeout); }
 double stream_inlet::pull_sample(std::vector<float> &sample, double timeout) { return impl_->pull_sample(sample,timeout); }
 double stream_inlet::pull_sample(std::vector<double> &sample, double timeout) { return impl_->pull_sample(sample,timeout); }
-double stream_inlet::pull_sample(std::vector<long> &sample, double timeout) { return impl_->pull_sample(sample,timeout); }
+double stream_inlet::pull_sample(std::vector<int64_t> &sample, double timeout) { return impl_->pull_sample(sample,timeout); }
 double stream_inlet::pull_sample(std::vector<int> &sample, double timeout) { return impl_->pull_sample(sample,timeout); }
 double stream_inlet::pull_sample(std::vector<short> &sample, double timeout) { return impl_->pull_sample(sample,timeout); }
 double stream_inlet::pull_sample(std::vector<char> &sample, double timeout) { return impl_->pull_sample(sample,timeout); }
 double stream_inlet::pull_sample(std::vector<std::string> &sample, double timeout) { return impl_->pull_sample(sample,timeout); }
 double stream_inlet::pull_sample(float *buffer, int buffer_elements, double timeout) { return impl_->pull_sample(buffer,buffer_elements,timeout); }
 double stream_inlet::pull_sample(double *buffer, int buffer_elements, double timeout) { return impl_->pull_sample(buffer,buffer_elements,timeout); }
-double stream_inlet::pull_sample(long *buffer, int buffer_elements, double timeout) { return impl_->pull_sample(buffer,buffer_elements,timeout); }
+double stream_inlet::pull_sample(int64_t *buffer, int buffer_elements, double timeout) { return impl_->pull_sample(buffer,buffer_elements,timeout); }
 double stream_inlet::pull_sample(int *buffer, int buffer_elements, double timeout) { return impl_->pull_sample(buffer,buffer_elements,timeout); }
 double stream_inlet::pull_sample(short *buffer, int buffer_elements, double timeout) { return impl_->pull_sample(buffer,buffer_elements,timeout); }
 double stream_inlet::pull_sample(char *buffer, int buffer_elements, double timeout) { return impl_->pull_sample(buffer,buffer_elements,timeout); }

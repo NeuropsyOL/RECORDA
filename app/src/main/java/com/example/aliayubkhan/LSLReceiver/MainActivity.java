@@ -1,5 +1,7 @@
 package com.example.aliayubkhan.LSLReceiver;
 
+import edu.ucsd.sccn.LSL;
+
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
