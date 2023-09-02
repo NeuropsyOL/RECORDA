@@ -39,4 +39,4 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: app-debug  # Change this to your desired artifact name
-          path: app/build/outputs/apk/debug/app-debug.apk  # Change the path to the location of your APK file
+          path: ./app/build/outputs/apk/debug/LSLRecorder-1.0.0-debug.apk
