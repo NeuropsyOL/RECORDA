@@ -1,4 +1,4 @@
-package com.example.aliayubkhan.LSLReceiver.recorder;
+package de.uol.neuropsy.LSLReceiver.recorder;
 
 import java.io.IOException;
 

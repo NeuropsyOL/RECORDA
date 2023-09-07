@@ -1,4 +1,4 @@
-package com.example.aliayubkhan.LSLReceiver;
+package de.uol.neuropsy.LSLReceiver;
 
 import android.annotation.SuppressLint;
 import android.content.ContentUris;
@@ -16,6 +16,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
+
+import com.example.aliayubkhan.LSLReceiver.R;
 
 public class SettingsActivity extends AppCompatActivity {
 

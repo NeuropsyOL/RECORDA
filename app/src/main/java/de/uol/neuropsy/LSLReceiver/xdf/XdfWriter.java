@@ -1,6 +1,6 @@
-package com.example.aliayubkhan.LSLReceiver.xdf;
+package de.uol.neuropsy.LSLReceiver.xdf;
 
-import com.example.aliayubkhan.LSLReceiver.recorder.TimingOffsetMeasurement;
+import de.uol.neuropsy.LSLReceiver.recorder.TimingOffsetMeasurement;
 
 import java.nio.file.Path;
 import java.text.DecimalFormat;

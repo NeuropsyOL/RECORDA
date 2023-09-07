@@ -1,15 +1,13 @@
-package com.example.aliayubkhan.LSLReceiver.recorder;
+package de.uol.neuropsy.LSLReceiver.recorder;
 
-import com.example.aliayubkhan.LSLReceiver.util.ListToPrimitiveArray;
-import com.example.aliayubkhan.LSLReceiver.xdf.XdfWriter;
+import de.uol.neuropsy.LSLReceiver.util.ListToPrimitiveArray;
+import de.uol.neuropsy.LSLReceiver.xdf.XdfWriter;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.IntFunction;
-
-import static com.example.aliayubkhan.LSLReceiver.xdf.XdfWriter.createFooterXml;
 
 import edu.ucsd.sccn.LSL;
 
@@ -157,7 +155,7 @@ abstract class TypedStreamRecorder<SampleArray, Sample> implements StreamRecorde
 
     @Override
     public String getStreamFooterXml() {
-        return createFooterXml(firstTimestamp, lastTimestamp, totalSamples, offsetMeasurements);
+        return XdfWriter.createFooterXml(firstTimestamp, lastTimestamp, totalSamples, offsetMeasurements);
     }
 
     @Override

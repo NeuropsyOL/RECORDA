@@ -1,4 +1,4 @@
-package com.example.aliayubkhan.LSLReceiver.util;
+package de.uol.neuropsy.LSLReceiver.util;
 
 import java.util.List;
 

@@ -1,5 +1,8 @@
-package com.example.aliayubkhan.LSLReceiver;
+package de.uol.neuropsy.LSLReceiver;
 
+import de.uol.neuropsy.LSLReceiver.recorder.RecorderFactory;
+import de.uol.neuropsy.LSLReceiver.recorder.StreamRecording;
+import de.uol.neuropsy.LSLReceiver.xdf.XdfWriter;
 import edu.ucsd.sccn.LSL;
 
 import android.app.Notification;
@@ -17,18 +20,16 @@ import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.example.aliayubkhan.LSLReceiver.recorder.RecorderFactory;
-import com.example.aliayubkhan.LSLReceiver.recorder.StreamRecorder;
-import com.example.aliayubkhan.LSLReceiver.recorder.StreamRecording;
-import com.example.aliayubkhan.LSLReceiver.xdf.XdfWriter;
+import com.example.aliayubkhan.LSLReceiver.R;
+
+import de.uol.neuropsy.LSLReceiver.recorder.StreamRecorder;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.example.aliayubkhan.LSLReceiver.MainActivity.selectedStreamNames;
+import static de.uol.neuropsy.LSLReceiver.MainActivity.selectedStreamNames;
 
 
 /**

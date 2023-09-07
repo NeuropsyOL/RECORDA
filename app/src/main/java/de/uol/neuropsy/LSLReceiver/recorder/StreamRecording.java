@@ -1,10 +1,10 @@
-package com.example.aliayubkhan.LSLReceiver.recorder;
+package de.uol.neuropsy.LSLReceiver.recorder;
 
 import edu.ucsd.sccn.LSL;
 
 import android.util.Log;
 
-import com.example.aliayubkhan.LSLReceiver.xdf.XdfWriter;
+import de.uol.neuropsy.LSLReceiver.xdf.XdfWriter;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;

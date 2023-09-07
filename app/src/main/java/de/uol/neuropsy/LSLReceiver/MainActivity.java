@@ -1,4 +1,4 @@
-package com.example.aliayubkhan.LSLReceiver;
+package de.uol.neuropsy.LSLReceiver;
 
 import edu.ucsd.sccn.LSL;
 
@@ -25,6 +25,8 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.example.aliayubkhan.LSLReceiver.R;
 
 import org.apache.commons.lang3.StringUtils;
 

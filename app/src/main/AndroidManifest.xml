@@ -20,7 +20,7 @@
         tools:ignore="GoogleAppIndexingWarning"
         tools:targetApi="q">
 
-        <activity android:name=".MainActivity" android:label="RECEIVA"
+        <activity android:name="de.uol.neuropsy.LSLReceiver.MainActivity" android:label="RECEIVA"
             android:theme="@style/AppTheme.NoActionBar"
             android:screenOrientation="portrait"
             android:exported="true">
@@ -32,12 +32,12 @@
         </activity>
 
         <activity
-            android:name=".SettingsActivity"
+            android:name="de.uol.neuropsy.LSLReceiver.SettingsActivity"
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme.NoActionBar"/>
 
         <service
-            android:name=".LSLService"
+            android:name="de.uol.neuropsy.LSLReceiver.LSLService"
             android:enabled="true"
             android:exported="true"></service>
     </application>

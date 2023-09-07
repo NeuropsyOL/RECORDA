@@ -1,4 +1,4 @@
-package com.example.aliayubkhan.LSLReceiver.recorder;
+package de.uol.neuropsy.LSLReceiver.recorder;
 
 /**
  * One measurement sample of the offset of a stream's time compared to a reference clock.
