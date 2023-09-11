@@ -11,7 +11,12 @@ android {
         versionName '1.0.0'   // change with every release
         setProperty("archivesBaseName", "LSLRecorder-$versionName")
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-
+        externalNativeBuild {
+            cmake {
+                cppFlags "-std=c++11 -frtti -fexceptions"
+                arguments '-DANDROID_STL=c++_shared'
+            }
+        }
     }
 
     buildTypes {
@@ -24,6 +29,11 @@ android {
             ndk {
                 abiFilters "armeabi-v7a", "arm64-v8a"
             }
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path "../libxdf/CMakeLists.txt"
         }
     }
 
@@ -43,15 +53,3 @@ dependencies {
     implementation 'com.android.support.constraint:constraint-layout:1.1.3'
 
 }
-
-//copy native libraries to per project location
-task copyJniLibs(type: Copy) {
-    from '../jniLibs'
-    into 'src/main/jniLibs'
-}
-tasks.withType(JavaCompile) {
-    compileTask -> compileTask.dependsOn(copyJniLibs)
-}
-clean.dependsOn 'cleanCopyJniLibs'
-
-
