@@ -43,7 +43,7 @@ void writeDataChunkAny(
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_aliayubkhan_LSLReceiver_xdf_XdfWriter_writeDataChunkFloat(
+Java_de_uol_neuropsy_LSLReceiver_xdf_XdfWriter_writeDataChunkFloat(
         JNIEnv *env,
         jclass clazz,
         jstring filename,
@@ -63,7 +63,7 @@ Java_com_example_aliayubkhan_LSLReceiver_xdf_XdfWriter_writeDataChunkFloat(
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_aliayubkhan_LSLReceiver_xdf_XdfWriter_writeDataChunkInt(
+Java_de_uol_neuropsy_LSLReceiver_xdf_XdfWriter_writeDataChunkInt(
         JNIEnv *env,
         jclass clazz,
         jstring filename,
@@ -83,7 +83,7 @@ Java_com_example_aliayubkhan_LSLReceiver_xdf_XdfWriter_writeDataChunkInt(
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_aliayubkhan_LSLReceiver_xdf_XdfWriter_writeDataChunkDouble(
+Java_de_uol_neuropsy_LSLReceiver_xdf_XdfWriter_writeDataChunkDouble(
         JNIEnv *env,
         jclass clazz,
         jstring filename,
@@ -103,7 +103,7 @@ Java_com_example_aliayubkhan_LSLReceiver_xdf_XdfWriter_writeDataChunkDouble(
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_aliayubkhan_LSLReceiver_xdf_XdfWriter_writeDataChunkByte(
+Java_de_uol_neuropsy_LSLReceiver_xdf_XdfWriter_writeDataChunkByte(
         JNIEnv *env,
         jclass clazz,
         jstring filename,
@@ -123,7 +123,7 @@ Java_com_example_aliayubkhan_LSLReceiver_xdf_XdfWriter_writeDataChunkByte(
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_aliayubkhan_LSLReceiver_xdf_XdfWriter_writeDataChunkShort(
+Java_de_uol_neuropsy_LSLReceiver_xdf_XdfWriter_writeDataChunkShort(
         JNIEnv *env,
         jclass clazz,
         jstring filename,
@@ -143,7 +143,7 @@ Java_com_example_aliayubkhan_LSLReceiver_xdf_XdfWriter_writeDataChunkShort(
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_aliayubkhan_LSLReceiver_xdf_XdfWriter_writeDataChunkStringMarker(
+Java_de_uol_neuropsy_LSLReceiver_xdf_XdfWriter_writeDataChunkStringMarker(
         JNIEnv *env,
         jclass clazz,
         jstring filename,
@@ -166,7 +166,7 @@ Java_com_example_aliayubkhan_LSLReceiver_xdf_XdfWriter_writeDataChunkStringMarke
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_aliayubkhan_LSLReceiver_xdf_XdfWriter_writeStreamOffset(
+Java_de_uol_neuropsy_LSLReceiver_xdf_XdfWriter_writeStreamOffset(
         JNIEnv *env, jclass clazz,
         jstring filename,
         jint stream_index,
@@ -184,7 +184,7 @@ Java_com_example_aliayubkhan_LSLReceiver_xdf_XdfWriter_writeStreamOffset(
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_aliayubkhan_LSLReceiver_xdf_XdfWriter_writeStreamHeader(
+Java_de_uol_neuropsy_LSLReceiver_xdf_XdfWriter_writeStreamHeader(
         JNIEnv *env, jclass clazz,
         jstring filename,
         jint stream_index, // zero-based
@@ -205,7 +205,7 @@ Java_com_example_aliayubkhan_LSLReceiver_xdf_XdfWriter_writeStreamHeader(
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_aliayubkhan_LSLReceiver_xdf_XdfWriter_writeStreamFooter(
+Java_de_uol_neuropsy_LSLReceiver_xdf_XdfWriter_writeStreamFooter(
         JNIEnv *env, jclass clazz,
         jstring filename,
         jint stream_index, // zero-based
