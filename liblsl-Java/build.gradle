@@ -32,6 +32,7 @@ dependencies {
 
 android {
     compileSdkVersion 33
+    namespace "edu.ucsd.sccn"
     defaultConfig {
         minSdkVersion 24
         externalNativeBuild.cmake {
