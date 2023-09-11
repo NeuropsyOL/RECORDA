@@ -26,7 +26,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import de.uol.neuropsy.LSLReceiver.R;
+import com.example.aliayubkhan.LSLReceiver.R;
 
 import org.apache.commons.lang3.StringUtils;
 

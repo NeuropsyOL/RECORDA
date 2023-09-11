@@ -17,7 +17,7 @@ import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 
-import de.uol.neuropsy.LSLReceiver.R;
+import com.example.aliayubkhan.LSLReceiver.R;
 
 public class SettingsActivity extends AppCompatActivity {
 

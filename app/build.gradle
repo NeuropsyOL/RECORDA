@@ -1,7 +1,6 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "de.uol.neuropsy.LSLReceiver"
     compileSdkVersion 33
     ndkVersion "25.2.9519653"
     defaultConfig {
@@ -27,6 +26,7 @@ android {
             }
         }
     }
+
 }
 
 dependencies {
@@ -43,3 +43,15 @@ dependencies {
     implementation 'com.android.support.constraint:constraint-layout:1.1.3'
 
 }
+
+//copy native libraries to per project location
+task copyJniLibs(type: Copy) {
+    from '../jniLibs'
+    into 'src/main/jniLibs'
+}
+tasks.withType(JavaCompile) {
+    compileTask -> compileTask.dependsOn(copyJniLibs)
+}
+clean.dependsOn 'cleanCopyJniLibs'
+
+
