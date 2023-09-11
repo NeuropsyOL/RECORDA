@@ -35,11 +35,10 @@ import java.util.List;
 
 /**
  * Edited by Sarah Blum on 21/08/2020
- *
+ * <p>
  * Changes: file handling adapted, storage location fixed
  */
-public class MainActivity extends Activity
-{
+public class MainActivity extends Activity {
     public static ListView lv;
     public static List<String> LSLStreamName = new ArrayList<>();
     public static List<String> selectedStreamNames = new ArrayList<>();
@@ -47,7 +46,7 @@ public class MainActivity extends Activity
     public static String filenamevalue;
     public static boolean isComplete = false;
     static TextView tv;
-    static volatile boolean isRunning  = false;
+    static volatile boolean isRunning = false;
 
     //Streams
     static LSL.StreamInfo[] streams;
@@ -71,19 +70,18 @@ public class MainActivity extends Activity
 
     @SuppressLint({"SetTextI18n", "ClickableViewAccessibility"})
     @Override
-    public void onCreate(Bundle savedInstanceState)
-    {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        tv = (TextView)findViewById(R.id.tv);
-        start = (Button)findViewById(R.id.startLSL);
-        stop = (Button)findViewById(R.id.stopLSL);
+        tv = (TextView) findViewById(R.id.tv);
+        start = (Button) findViewById(R.id.startLSL);
+        stop = (Button) findViewById(R.id.stopLSL);
         refresh = (ImageButton) findViewById(R.id.refreshStreams);
         tdate = (TextView) findViewById(R.id.elapsedTime);
         requestWritePermissions();
         // set filename so that is not null, it gets changed if the user enters settings screen
         filenamevalue = "recording";
-        lv = (ListView) findViewById (R.id.streams);
+        lv = (ListView) findViewById(R.id.streams);
         lv.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
         settings_button = (ImageView) findViewById(R.id.settings_btn);
         settings_button.setVisibility(View.VISIBLE);
@@ -93,7 +91,7 @@ public class MainActivity extends Activity
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         start.setOnClickListener(new View.OnClickListener() {
-            Long tsLong = System.currentTimeMillis()/1000;
+            Long tsLong = System.currentTimeMillis() / 1000;
             String ts = tsLong.toString();
 
             @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -102,8 +100,8 @@ public class MainActivity extends Activity
                 if (selectedStreamNames.isEmpty()) {
                     return;
                 }
-                if(!isRunning){
-                    if(!writePermission){
+                if (!isRunning) {
+                    if (!writePermission) {
                         requestWritePermissions();
                         //Log.i("Path", path);
                     }
@@ -132,7 +130,7 @@ public class MainActivity extends Activity
                     case MotionEvent.ACTION_DOWN: {
                         Toast.makeText(MainActivity.this, "Refreshing Streams...",
                                 Toast.LENGTH_LONG).show();
-                        ImageButton view = (ImageButton ) v;
+                        ImageButton view = (ImageButton) v;
                         view.getBackground().setColorFilter(0x77000000, PorterDuff.Mode.SRC_ATOP);
                         view.invalidate();
                         break;
@@ -155,9 +153,11 @@ public class MainActivity extends Activity
         stop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                stopService(intent);
-                t.interrupt();
-                lv.setEnabled(true);
+                if (intent != null && t!=null) {
+                    stopService(intent);
+                    t.interrupt();
+                    lv.setEnabled(true);
+                }
             }
         });
 
@@ -170,11 +170,11 @@ public class MainActivity extends Activity
         });
 
         tv.setText("Available Streams: ");
-        lv.setOnItemClickListener(new AdapterView.OnItemClickListener(){
+        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 // selected item
                 String selectedItem = ((TextView) view).getText().toString();
-                if(selectedStreamNames.contains(selectedItem))
+                if (selectedStreamNames.contains(selectedItem))
                     selectedStreamNames.remove(selectedItem); //remove deselected item from the list of selected items
                 else
                     selectedStreamNames.add(selectedItem); //add selected item to the list of selected items
@@ -191,13 +191,13 @@ public class MainActivity extends Activity
     public static String getElapsedTimeMinutesSecondsString(Long miliseconds) {
         Long elapsedTime = miliseconds;
         @SuppressLint("DefaultLocale") String format = String.format("%%0%dd", 2);
-        String seconds = String.format(format, (elapsedTime / 1000) % 60 );
-        String minutes = String.format(format, ((elapsedTime / (1000*60)) % 60));
-        String hours = String.format(format, ((elapsedTime / (1000*60*60)) % 24));
+        String seconds = String.format(format, (elapsedTime / 1000) % 60);
+        String minutes = String.format(format, ((elapsedTime / (1000 * 60)) % 60));
+        String hours = String.format(format, ((elapsedTime / (1000 * 60 * 60)) % 24));
         return hours + ":" + minutes + ":" + seconds;
     }
 
-    public void RefreshStreams(){
+    public void RefreshStreams() {
         selectedStreamNames.clear();
         LSLStreamName.clear();
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.list_view_text, LSLStreamName);
@@ -207,13 +207,13 @@ public class MainActivity extends Activity
         for (LSL.StreamInfo stream1 : streams) {
             adapter.add(stream1.name());
         }
-        for (int i=0; i < lv.getAdapter().getCount(); i++) {
+        for (int i = 0; i < lv.getAdapter().getCount(); i++) {
             lv.setItemChecked(i, true);
         }
         selectedStreamNames.addAll(LSLStreamName);
     }
 
-    public void ElapsedTime(){
+    public void ElapsedTime() {
         t = new Thread() {
             @Override
             public void run() {
@@ -287,12 +287,12 @@ public class MainActivity extends Activity
     }
 
     private void showSelectedItems() {
-        String selItems="";
-        for(String item: selectedStreamNames){
-            if(selItems=="")
-                selItems=item;
+        String selItems = "";
+        for (String item : selectedStreamNames) {
+            if (selItems == "")
+                selItems = item;
             else
-                selItems+="/"+item;
+                selItems += "/" + item;
         }
         //Toast.makeText(this, selItems, Toast.LENGTH_LONG).show();
     }
