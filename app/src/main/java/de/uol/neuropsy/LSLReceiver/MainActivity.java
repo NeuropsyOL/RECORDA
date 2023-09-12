@@ -1,7 +1,5 @@
 package de.uol.neuropsy.LSLReceiver;
 
-import edu.ucsd.sccn.LSL;
-
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -14,6 +12,7 @@ import android.os.PowerManager;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
@@ -31,7 +30,13 @@ import com.example.aliayubkhan.LSLReceiver.R;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+
+import de.uol.neuropsy.LSLReceiver.recorder.RecorderFactory;
+import de.uol.neuropsy.LSLReceiver.recorder.StreamRecorder;
+import de.uol.neuropsy.LSLReceiver.recorder.StreamRecording;
+import edu.ucsd.sccn.LSL;
 
 /**
  * Edited by Sarah Blum on 21/08/2020
@@ -47,6 +52,7 @@ public class MainActivity extends Activity {
     public static boolean isComplete = false;
     static TextView tv;
     static volatile boolean isRunning = false;
+    private static final String TAG = "MainActivity";
 
     //Streams
     static LSL.StreamInfo[] streams;
@@ -204,6 +210,8 @@ public class MainActivity extends Activity {
         lv.setEnabled(true);
         lv.setAdapter(adapter);
         streams = LSL.resolve_streams();
+        // start fake xdfwriter to check stream quality
+        spawnListeningToStreamsWithoutRecording();
         for (LSL.StreamInfo stream1 : streams) {
             adapter.add(stream1.name());
         }
@@ -211,6 +219,32 @@ public class MainActivity extends Activity {
             lv.setItemChecked(i, true);
         }
         selectedStreamNames.addAll(LSLStreamName);
+    }
+
+    private void spawnListeningToStreamsWithoutRecording() {
+        int xdfStreamIndex = 0;
+        List<StreamRecording> activeRecordings = new ArrayList<>();
+        for (LSL.StreamInfo availableStream : streams) {
+            StreamRecording rec = prepareRecording(availableStream, xdfStreamIndex++);
+            if (rec != null) {
+                activeRecordings.add(rec);
+            } else {
+                // TODO mark stream as bad (quality)
+            }
+        }
+        activeRecordings.forEach(StreamRecording::spawnRecorderThread);
+    }
+
+    private StreamRecording prepareRecording(LSL.StreamInfo lslStream, int xdfStreamIndex) {
+        try {
+            RecorderFactory f = RecorderFactory.forLslStream(lslStream);
+            StreamRecorder sourceStream = f.openInlet();
+            StreamRecording recording = new StreamRecording(sourceStream, null, xdfStreamIndex);
+            return recording;
+        } catch (Exception e) {
+            Log.e(TAG, "Unable to open LSL stream named: " + lslStream.name(), e);
+            return null;
+        }
     }
 
     public void ElapsedTime() {

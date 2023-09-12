@@ -39,8 +39,15 @@ public class StreamRecording {
     private Thread timingOffsetThread;
     private volatile boolean isRunning;
 
+    /**
+     * Constructor for stream recording
+     *
+     * @param sourceToRecord
+     * @param xdfWriter may be null, in that case, nothing is written to file, but samples are received
+     *                  for purposes of quality assessment
+     * @param xdfStreamIndex
+     */
     public StreamRecording(StreamRecorder sourceToRecord, XdfWriter xdfWriter, int xdfStreamIndex) {
-        Objects.requireNonNull(xdfWriter);
         Objects.requireNonNull(sourceToRecord);
         this.streamRecorder = sourceToRecord;
         this.xdfStreamIndex = xdfStreamIndex;
@@ -67,8 +74,10 @@ public class StreamRecording {
                 if (samples > 0) {
                     Log.d(TAG, "Stream " + xdfStreamIndex + ": Pulled " + samples + " values");
                     writeAllRecordedSamples();
-                    long size = Files.size(Paths.get(xdfWriter.getXdfFilePath()));
-                    Log.d(TAG, "XDF file size now: " + size + " bytes");
+                    if (xdfWriter != null) {
+                        long size = Files.size(Paths.get(xdfWriter.getXdfFilePath()));
+                        Log.d(TAG, "XDF file size now: " + size + " bytes");
+                    }
                 } else {
                     Log.d(TAG, "Stream " + xdfStreamIndex + ": No samples. Waiting " + XDF_WRITE_INTERVAL + " ms");
                 }
@@ -143,20 +152,28 @@ public class StreamRecording {
     }
 
     public void writeStreamHeader() {
-        streamRecorder.writeStreamHeader(xdfWriter, xdfStreamIndex);
+        if (xdfWriter != null) {
+            streamRecorder.writeStreamHeader(xdfWriter, xdfStreamIndex);
+        }
     }
 
     public void writeAllRecordedSamples() {
-        int samplesWritten = streamRecorder.writeAllRecordedSamples(xdfWriter, xdfStreamIndex);
-        Log.i(TAG, "Stream " + xdfStreamIndex + ": Chunk of " + samplesWritten + " samples written to XDF");
+        if (xdfWriter != null) {
+            int samplesWritten = streamRecorder.writeAllRecordedSamples(xdfWriter, xdfStreamIndex);
+            Log.i(TAG, "Stream " + xdfStreamIndex + ": Chunk of " + samplesWritten + " samples written to XDF");
+        }
     }
 
     public void flushRecordedTimingOffsets() {
-        streamRecorder.flushRecordedTimingOffsets(xdfWriter, xdfStreamIndex);
+        if (xdfWriter != null) {
+            streamRecorder.flushRecordedTimingOffsets(xdfWriter, xdfStreamIndex);
+        }
     }
 
     public void writeStreamFooter() {
-        String footerXml = streamRecorder.getStreamFooterXml();
-        xdfWriter.writeStreamFooter(xdfStreamIndex, footerXml);
+        if (xdfWriter != null) {
+            String footerXml = streamRecorder.getStreamFooterXml();
+            xdfWriter.writeStreamFooter(xdfStreamIndex, footerXml);
+        }
     }
 }
