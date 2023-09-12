@@ -50,4 +50,5 @@ android {
         path(properties['liblsl_path'] ?: '../liblsl/CMakeLists.txt')
 
     }
+    ndkVersion '25.2.9519653'
 }
