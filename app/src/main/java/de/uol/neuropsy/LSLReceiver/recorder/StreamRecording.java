@@ -1,14 +1,12 @@
 package de.uol.neuropsy.LSLReceiver.recorder;
 
-import edu.ucsd.sccn.LSL;
-
 import android.util.Log;
 
-import de.uol.neuropsy.LSLReceiver.xdf.XdfWriter;
-
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.io.File;
 import java.util.Objects;
+
+import de.uol.neuropsy.LSLReceiver.xdf.XdfWriter;
+import edu.ucsd.sccn.LSL;
 
 /**
  * An ongoing asynchronous recording of one LSL stream into an XDF file.
@@ -75,7 +73,7 @@ public class StreamRecording {
                     Log.d(TAG, "Stream " + xdfStreamIndex + ": Pulled " + samples + " values");
                     writeAllRecordedSamples();
                     if (xdfWriter != null) {
-                        long size = Files.size(Paths.get(xdfWriter.getXdfFilePath()));
+                        long size = new File(xdfWriter.getXdfFilePath()).length();
                         Log.d(TAG, "XDF file size now: " + size + " bytes");
                     }
                 } else {
