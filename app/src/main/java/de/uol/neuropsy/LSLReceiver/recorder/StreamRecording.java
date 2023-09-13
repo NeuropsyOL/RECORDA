@@ -6,6 +6,7 @@ import android.util.Log;
 
 import de.uol.neuropsy.LSLReceiver.xdf.XdfWriter;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Objects;
@@ -67,7 +68,7 @@ public class StreamRecording {
                 if (samples > 0) {
                     Log.d(TAG, "Stream " + xdfStreamIndex + ": Pulled " + samples + " values");
                     writeAllRecordedSamples();
-                    long size = Files.size(Paths.get(xdfWriter.getXdfFilePath()));
+                    long size = new File(xdfWriter.getXdfFilePath()).length();
                     Log.d(TAG, "XDF file size now: " + size + " bytes");
                 } else {
                     Log.d(TAG, "Stream " + xdfStreamIndex + ": No samples. Waiting " + XDF_WRITE_INTERVAL + " ms");
