@@ -1,4 +1,4 @@
-package de.uol.neuropsy.LSLReceiver;
+package de.uol.neuropsy.recorda;
 
 import android.annotation.SuppressLint;
 import android.content.ContentUris;
@@ -19,6 +19,7 @@ import android.widget.EditText;
 
 import com.example.aliayubkhan.LSLReceiver.R;
 
+import de.uol.neuropsy.recorda.R;
 public class SettingsActivity extends AppCompatActivity {
 
     public static Boolean samplingRate_set_Check = Boolean.FALSE;

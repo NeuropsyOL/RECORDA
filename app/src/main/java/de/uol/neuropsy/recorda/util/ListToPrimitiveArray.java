@@ -1,4 +1,4 @@
-package de.uol.neuropsy.LSLReceiver.util;
+package de.uol.neuropsy.recorda.util;
 
 import java.util.List;
 

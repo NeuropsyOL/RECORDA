@@ -1,4 +1,4 @@
-package de.uol.neuropsy.LSLReceiver;
+package de.uol.neuropsy.recorda;
 
 import edu.ucsd.sccn.LSL;
 

@@ -1,6 +1,6 @@
-package de.uol.neuropsy.LSLReceiver.xdf;
+package de.uol.neuropsy.recorda.xdf;
 
-import de.uol.neuropsy.LSLReceiver.recorder.TimingOffsetMeasurement;
+import de.uol.neuropsy.recorda.recorder.TimingOffsetMeasurement;
 
 import java.nio.file.Path;
 import java.text.DecimalFormat;

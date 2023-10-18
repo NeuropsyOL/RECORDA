@@ -1,8 +1,8 @@
-package de.uol.neuropsy.LSLReceiver;
+package de.uol.neuropsy.recorda;
 
-import de.uol.neuropsy.LSLReceiver.recorder.RecorderFactory;
-import de.uol.neuropsy.LSLReceiver.recorder.StreamRecording;
-import de.uol.neuropsy.LSLReceiver.xdf.XdfWriter;
+import de.uol.neuropsy.recorda.recorder.RecorderFactory;
+import de.uol.neuropsy.recorda.recorder.StreamRecording;
+import de.uol.neuropsy.recorda.xdf.XdfWriter;
 import edu.ucsd.sccn.LSL;
 
 import android.app.Notification;
@@ -22,14 +22,14 @@ import android.widget.Toast;
 
 import com.example.aliayubkhan.LSLReceiver.R;
 
-import de.uol.neuropsy.LSLReceiver.recorder.StreamRecorder;
+import de.uol.neuropsy.recorda.recorder.StreamRecorder;
 
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import static de.uol.neuropsy.LSLReceiver.MainActivity.selectedStreamNames;
+import static de.uol.neuropsy.recorda.MainActivity.selectedStreamNames;
 
 
 /**
