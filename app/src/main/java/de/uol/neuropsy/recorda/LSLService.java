@@ -20,7 +20,7 @@ import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.example.aliayubkhan.LSLReceiver.R;
+import de.uol.neuropsy.recorda.R;
 
 import de.uol.neuropsy.recorda.recorder.StreamRecorder;
 
