@@ -1,5 +1,6 @@
 package de.uol.neuropsy.recorda;
 
+import de.uol.neuropsy.recorda.util.ResolveStreamsTask;
 import edu.ucsd.sccn.LSL;
 
 import android.Manifest;
@@ -14,6 +15,7 @@ import android.os.PowerManager;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
@@ -47,9 +49,6 @@ public class MainActivity extends Activity {
     public static boolean isComplete = false;
     static TextView tv;
     static volatile boolean isRunning = false;
-
-    //Streams
-    static LSL.StreamInfo[] streams;
 
     //Elapsed Time
     //Create placeholder for user's consent to record_audio permission.
@@ -200,10 +199,13 @@ public class MainActivity extends Activity {
     public void RefreshStreams() {
         selectedStreamNames.clear();
         LSLStreamName.clear();
+        new ResolveStreamsTask().execute(this);
+    }
+
+    public void onStreamRefresh(LSL.StreamInfo[] streams){
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.list_view_text, LSLStreamName);
         lv.setEnabled(true);
         lv.setAdapter(adapter);
-        streams = LSL.resolve_streams();
         for (LSL.StreamInfo stream1 : streams) {
             adapter.add(stream1.name());
         }
@@ -212,7 +214,6 @@ public class MainActivity extends Activity {
         }
         selectedStreamNames.addAll(LSLStreamName);
     }
-
     public void ElapsedTime() {
         t = new Thread() {
             @Override
