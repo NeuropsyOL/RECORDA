@@ -1,6 +1,6 @@
-# LSL_RECORDER
+# RECORDA
 
-LSL recorder is an android application to record real time LSL streams over the network. It's mainly tested with an Android LSL streams generating app which stream followin sensor readings: 
+Recorda is an android application to record real time LSL streams over the network. It's mainly tested with an Android LSL streams generating app which stream followin sensor readings: 
 
 - Accelerometer
 - Light
@@ -10,7 +10,7 @@ LSL recorder is an android application to record real time LSL streams over the 
 - Rotation Vector
 - Step Count
 
-Using LSL Recorder you can record any kind of LSL streams over the network. It support recording of following types of stream data: 
+Using Recorda you can record any kind of LSL streams over the network. It support recording of following types of stream data: 
 
 - Byte
 - Short
@@ -63,6 +63,9 @@ Please feel free to contribute to this project by creating an issue first and th
 ## Authors
 
 * **Ali Ayub Khan** - [AliAyub007](https://github.com/AliAyub007)
+* **Sarah Blum** - [AliAyub007](https://github.com/s4rify)
+* **Paul Maanen** - [AliAyub007](https://github.com/pmaanen)
+
 
 ## Acknowledgments
 

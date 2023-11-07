@@ -20,7 +20,7 @@
         tools:ignore="GoogleAppIndexingWarning"
         tools:targetApi="q">
 
-        <activity android:name="de.uol.neuropsy.recorda.MainActivity" android:label="recorda"
+        <activity android:name="de.uol.neuropsy.recorda.MainActivity" android:label="RECORDA"
             android:theme="@style/AppTheme.NoActionBar"
             android:screenOrientation="portrait"
             android:exported="true">
