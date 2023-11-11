@@ -1,13 +1,14 @@
-package de.uol.neuropsy.LSLReceiver.recorder;
+package de.uol.neuropsy.recorda.recorder;
 
 import android.util.Log;
+
+import de.uol.neuropsy.recorda.xdf.XdfWriter;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import de.uol.neuropsy.LSLReceiver.xdf.XdfWriter;
 import edu.ucsd.sccn.LSL;
 
 /**

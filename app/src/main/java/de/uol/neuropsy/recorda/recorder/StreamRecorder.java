@@ -1,7 +1,7 @@
-package de.uol.neuropsy.LSLReceiver.recorder;
+package de.uol.neuropsy.recorda.recorder;
 
-import de.uol.neuropsy.LSLReceiver.util.ListToPrimitiveArray;
-import de.uol.neuropsy.LSLReceiver.xdf.XdfWriter;
+import de.uol.neuropsy.recorda.util.ListToPrimitiveArray;
+import de.uol.neuropsy.recorda.xdf.XdfWriter;
 
 import java.io.Closeable;
 import java.io.IOException;
