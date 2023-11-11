@@ -16,7 +16,6 @@ import android.os.PowerManager;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
@@ -34,14 +33,9 @@ import com.example.aliayubkhan.LSLReceiver.R;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 
 import de.uol.neuropsy.LSLReceiver.recorder.QualityState;
-import de.uol.neuropsy.LSLReceiver.recorder.RecorderFactory;
-import de.uol.neuropsy.LSLReceiver.recorder.StreamQualityListener;
-import de.uol.neuropsy.LSLReceiver.recorder.StreamRecorder;
-import de.uol.neuropsy.LSLReceiver.recorder.StreamRecording;
 import edu.ucsd.sccn.LSL;
 
 /**
@@ -216,8 +210,6 @@ public class MainActivity extends Activity {
         lv.setEnabled(true);
         lv.setAdapter(adapter);
         streams = LSL.resolve_streams();
-        // start fake xdfwriter to check stream quality
-        spawnListeningToStreamsWithoutRecording();
         for (LSL.StreamInfo stream1 : streams) {
             adapter.add(stream1.name());
         }
@@ -227,39 +219,10 @@ public class MainActivity extends Activity {
         selectedStreamNames.addAll(LSLStreamName);
     }
 
-    private void spawnListeningToStreamsWithoutRecording() {
-        int xdfStreamIndex = 0;
-        List<StreamRecording> activeRecordings = new ArrayList<>();
-        for (LSL.StreamInfo availableStream : streams) {
-            StreamRecording rec = prepareRecording(availableStream, xdfStreamIndex++);
-            if (rec != null) {
-                rec.registerQualityListener((QualityState streamQualityNow) -> {
-                    indicateQualityInUi(availableStream.name(), streamQualityNow);
-                });
-                activeRecordings.add(rec);
-            } else {
-                // TODO mark stream as bad (quality)
-            }
-        }
-        activeRecordings.forEach(StreamRecording::spawnRecorderThread);
-    }
-
     private void indicateQualityInUi(String name, QualityState streamQualityNow) {
         View streamListItem = lv.getChildAt(LSLStreamName.indexOf(name));
         streamListItem.setBackgroundColor(streamQualityNow == OK ? Color.GREEN :
                 streamQualityNow == LAGGY ? Color.YELLOW : Color.RED);
-    }
-
-    private StreamRecording prepareRecording(LSL.StreamInfo lslStream, int xdfStreamIndex) {
-        try {
-            RecorderFactory f = RecorderFactory.forLslStream(lslStream);
-            StreamRecorder sourceStream = f.openInlet();
-            StreamRecording recording = new StreamRecording(sourceStream, null, xdfStreamIndex);
-            return recording;
-        } catch (Exception e) {
-            Log.e(TAG, "Unable to open LSL stream named: " + lslStream.name(), e);
-            return null;
-        }
     }
 
     public void ElapsedTime() {
