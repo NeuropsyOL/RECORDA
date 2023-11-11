@@ -3,6 +3,8 @@ package de.uol.neuropsy.LSLReceiver.recorder;
 import android.util.Log;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 import de.uol.neuropsy.LSLReceiver.xdf.XdfWriter;
@@ -65,10 +67,16 @@ public class StreamRecording {
         }
     }
 
+    private final List<StreamQualityListener> qualityListeners = new ArrayList<>();
+
+    private QualityState lastObservedQuality = QualityState.OK;
+
     private void sampleRecordingLoop(StreamRecorder streamRecorder) {
         while (isRunning) {
             try {
                 int samples = streamRecorder.pullChunk();
+                notifyQualityListeners();
+
                 if (samples > 0) {
                     Log.d(TAG, "Stream " + xdfStreamIndex + ": Pulled " + samples + " values");
                     writeAllRecordedSamples();
@@ -90,6 +98,18 @@ public class StreamRecording {
                 Log.e(TAG, "Stream " + xdfStreamIndex + ": Failed to read or record chunk.", e);
             }
         }
+    }
+
+    private void notifyQualityListeners() {
+        QualityState newState = getCurrentQuality();
+        if (newState != lastObservedQuality) {
+            qualityListeners.forEach(l -> l.streamQualityChanged(newState));
+            lastObservedQuality = newState;
+        }
+    }
+
+    public void registerQualityListener(StreamQualityListener newListener) {
+        qualityListeners.add(newListener);
     }
 
     private void timingOffsetLoop(StreamRecorder streamRecorder) {
@@ -173,5 +193,9 @@ public class StreamRecording {
             String footerXml = streamRecorder.getStreamFooterXml();
             xdfWriter.writeStreamFooter(xdfStreamIndex, footerXml);
         }
+    }
+
+    public QualityState getCurrentQuality() {
+        return QualityState.values()[(int) (((System.currentTimeMillis() / 5_000) + xdfStreamIndex) % 3) ];
     }
 }

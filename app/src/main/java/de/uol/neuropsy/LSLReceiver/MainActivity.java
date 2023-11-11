@@ -1,10 +1,14 @@
 package de.uol.neuropsy.LSLReceiver;
 
+import static de.uol.neuropsy.LSLReceiver.recorder.QualityState.LAGGY;
+import static de.uol.neuropsy.LSLReceiver.recorder.QualityState.OK;
+
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.os.Build;
 import android.os.Bundle;
@@ -33,7 +37,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+import de.uol.neuropsy.LSLReceiver.recorder.QualityState;
 import de.uol.neuropsy.LSLReceiver.recorder.RecorderFactory;
+import de.uol.neuropsy.LSLReceiver.recorder.StreamQualityListener;
 import de.uol.neuropsy.LSLReceiver.recorder.StreamRecorder;
 import de.uol.neuropsy.LSLReceiver.recorder.StreamRecording;
 import edu.ucsd.sccn.LSL;
@@ -227,12 +233,21 @@ public class MainActivity extends Activity {
         for (LSL.StreamInfo availableStream : streams) {
             StreamRecording rec = prepareRecording(availableStream, xdfStreamIndex++);
             if (rec != null) {
+                rec.registerQualityListener((QualityState streamQualityNow) -> {
+                    indicateQualityInUi(availableStream.name(), streamQualityNow);
+                });
                 activeRecordings.add(rec);
             } else {
                 // TODO mark stream as bad (quality)
             }
         }
         activeRecordings.forEach(StreamRecording::spawnRecorderThread);
+    }
+
+    private void indicateQualityInUi(String name, QualityState streamQualityNow) {
+        View streamListItem = lv.getChildAt(LSLStreamName.indexOf(name));
+        streamListItem.setBackgroundColor(streamQualityNow == OK ? Color.GREEN :
+                streamQualityNow == LAGGY ? Color.YELLOW : Color.RED);
     }
 
     private StreamRecording prepareRecording(LSL.StreamInfo lslStream, int xdfStreamIndex) {
