@@ -1,7 +1,5 @@
 package de.uol.neuropsy.recorda;
 
-import static de.uol.neuropsy.recorda.MainActivity.selectedStreamNames;
-
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -20,9 +18,10 @@ import android.widget.Toast;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
-import de.uol.neuropsy.recorda.R;
 import de.uol.neuropsy.recorda.recorder.RecorderFactory;
 import de.uol.neuropsy.recorda.recorder.StreamRecorder;
 import de.uol.neuropsy.recorda.recorder.StreamRecording;
@@ -62,9 +61,13 @@ public class LSLService extends Service {
         // resolve all streams that are in the network
         LSL.StreamInfo[] lslStreams = LSL.resolve_streams();
 
+        Collection<String> selectedLslStreams = MainActivity.selectedStreamNames.stream()
+                .map(stream -> stream.lslName)
+                .collect(Collectors.toSet());
+
         int xdfStreamIndex = 0;
         for (LSL.StreamInfo availableStream : lslStreams) {
-            boolean isSelectedToBeRecorded = selectedStreamNames.contains(availableStream.name());
+            boolean isSelectedToBeRecorded = selectedLslStreams.contains(availableStream.name());
             if (isSelectedToBeRecorded) {
                 StreamRecording rec = prepareRecording(availableStream, xdfStreamIndex++);
                 if (rec != null) {

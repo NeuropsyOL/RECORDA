@@ -32,6 +32,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import de.uol.neuropsy.recorda.recorder.QualityState;
 import de.uol.neuropsy.recorda.util.ResolveStreamsTask;
@@ -43,9 +44,42 @@ import edu.ucsd.sccn.LSL;
  * Changes: file handling adapted, storage location fixed
  */
 public class MainActivity extends Activity {
+
+    /**
+     * An LSL stream's name which is used to identify which stream to record, paired with a display
+     * string that includes its nominal sampling rate.
+     */
+    static final class StreamName {
+        public final String lslName;
+        public final String displayName;
+
+        public StreamName(LSL.StreamInfo streamInfo) {
+            lslName = Objects.requireNonNull(streamInfo.name());
+            displayName = streamDisplayNameOf(streamInfo);
+        }
+
+        @Override
+        public String toString() {
+            return displayName;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            StreamName that = (StreamName) o;
+            return lslName.equals(that.lslName) && displayName.equals(that.displayName);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(lslName, displayName);
+        }
+    }
+
     public static ListView lv;
-    public static List<String> LSLStreamName = new ArrayList<>();
-    public static List<String> selectedStreamNames = new ArrayList<>();
+    public static List<StreamName> LSLStreamName = new ArrayList<>();
+    public static List<StreamName> selectedStreamNames = new ArrayList<>();
     public static boolean writePermission = true;
     public static String filenamevalue;
     public static boolean isComplete = false;
@@ -175,7 +209,8 @@ public class MainActivity extends Activity {
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 // selected item
-                String selectedItem = ((TextView) view).getText().toString();
+                ArrayAdapter<StreamName> adapter = (ArrayAdapter<StreamName>) parent.getAdapter();
+                StreamName selectedItem = adapter.getItem (position);
                 if (selectedStreamNames.contains(selectedItem))
                     selectedStreamNames.remove(selectedItem); //remove deselected item from the list of selected items
                 else
@@ -206,16 +241,30 @@ public class MainActivity extends Activity {
     }
 
     public void onStreamRefresh(LSL.StreamInfo[] streams){
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.list_view_text, LSLStreamName);
+        ArrayAdapter<StreamName> adapter = new ArrayAdapter<>(this, R.layout.list_view_text, LSLStreamName);
         lv.setEnabled(true);
         lv.setAdapter(adapter);
         for (LSL.StreamInfo stream1 : streams) {
-            adapter.add(stream1.name());
+            adapter.add(new StreamName(stream1));
         }
         for (int i = 0; i < lv.getAdapter().getCount(); i++) {
             lv.setItemChecked(i, true);
         }
         selectedStreamNames.addAll(LSLStreamName);
+    }
+
+    private static String streamDisplayNameOf(LSL.StreamInfo streamInfo) {
+        double nominalRate = streamInfo.nominal_srate();
+        String samplingRateAsString;
+        if (nominalRate == LSL.IRREGULAR_RATE) {
+            samplingRateAsString = "(irreg.)";
+        } else if (nominalRate < 10_000) {
+            samplingRateAsString = (int)nominalRate + " Hz";
+        } else {
+            samplingRateAsString = String.format("%.1f kHz", nominalRate / 1000.0);
+        }
+        String streamDisplayName = streamInfo.name() + " " + samplingRateAsString;
+        return streamDisplayName;
     }
 
     private void indicateQualityInUi(String name, QualityState streamQualityNow) {
@@ -299,9 +348,9 @@ public class MainActivity extends Activity {
 
     private void showSelectedItems() {
         String selItems = "";
-        for (String item : selectedStreamNames) {
+        for (StreamName item : selectedStreamNames) {
             if (selItems == "")
-                selItems = item;
+                selItems = item.lslName;
             else
                 selItems += "/" + item;
         }
