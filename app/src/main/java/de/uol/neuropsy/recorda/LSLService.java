@@ -22,7 +22,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import de.uol.neuropsy.recorda.recorder.QualityState;
 import de.uol.neuropsy.recorda.recorder.RecorderFactory;
+import de.uol.neuropsy.recorda.recorder.StreamQualityListener;
 import de.uol.neuropsy.recorda.recorder.StreamRecorder;
 import de.uol.neuropsy.recorda.recorder.StreamRecording;
 import de.uol.neuropsy.recorda.xdf.XdfWriter;
@@ -75,7 +77,20 @@ public class LSLService extends Service {
                 }
             }
         }
-        activeRecordings.forEach(StreamRecording::spawnRecorderThread);
+        activeRecordings.forEach(streamRecording -> {
+            streamRecording.spawnRecorderThread();
+            streamRecording.registerQualityListener(qualityNow -> {
+                // TODO Identify the stream of this quality notification
+
+                /*
+                 * TODO Switch to UI thread. This listener is called from the recording thread and
+                 * that thread must not be blocked by the UI.
+                 *
+                 * Solution: Call back into MainActivity and use runOnUiThread (inherited from Activity) there.
+                 */
+                Log.i(TAG, "Stream quality changed to " + qualityNow);
+            });
+        });
 
         // This service is killed by the OS if it is not started as background service
         // This feature is only supported in Android 10 or higher

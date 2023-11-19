@@ -267,7 +267,7 @@ public class MainActivity extends Activity {
         return streamDisplayName;
     }
 
-    private void indicateQualityInUi(String name, QualityState streamQualityNow) {
+    public void indicateQualityInUi(String name, QualityState streamQualityNow) {
         View streamListItem = lv.getChildAt(LSLStreamName.indexOf(name));
         streamListItem.setBackgroundColor(streamQualityNow == OK ? Color.GREEN :
                 streamQualityNow == LAGGY ? Color.YELLOW : Color.RED);

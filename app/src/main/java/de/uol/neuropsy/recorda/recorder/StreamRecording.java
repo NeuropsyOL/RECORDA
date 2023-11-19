@@ -29,6 +29,7 @@ public class StreamRecording {
      * Milliseconds between flushing current recording buffer to XDF file.
      */
     private static final int XDF_WRITE_INTERVAL = 500;
+    private static final long DEFAULT_MILLIS_THRESHOLD_NOT_RESPONDING = 3000;
 
     private final StreamRecorder streamRecorder;
     private final XdfWriter xdfWriter;
@@ -70,16 +71,47 @@ public class StreamRecording {
 
     private final List<StreamQualityListener> qualityListeners = new ArrayList<>();
 
+    /*
+     * Stream quality indicators
+     */
+
+    private long lastMillisAnySamplesReceived;
+
+    private long millisThresholdNotResponding = DEFAULT_MILLIS_THRESHOLD_NOT_RESPONDING;
+
     private QualityState lastObservedQuality = QualityState.OK;
 
     private void sampleRecordingLoop(StreamRecorder streamRecorder) {
+        lastMillisAnySamplesReceived = System.currentTimeMillis();
         while (isRunning) {
             try {
                 int samples = streamRecorder.pullChunk();
-                notifyQualityListeners();
+
+                /*
+                 * Calculate stream quality
+                 *
+                 * Stream quality has three possible values and is determined as follows:
+                 *
+                 * - If 'pullChunk' throws, the quality is NOT_RESPONDING
+                 * - If no samples have been received for certain (configurable) amount of time,
+                 *   the quality is NOT_RESPONDING
+                 *
+                 * Otherwise, the stream quality is either OK or LAGGY depending on the actual
+                 * number of samples recently received compared to the nominal sampling rate:
+                 *
+                 * - Irregular streams, i.e. ones without a nominal sampling rate, are
+                 *   always OK.
+                 * - Streams with a nominal sampling rate: The average sampling rate in a time
+                 *   window of the recent past is calculated and compared to the nominal sampling
+                 *   rate. A deviation up to a certain threshold is tolerated. If the actual
+                 *   sampling rate is too low by more than that threshold, the stream quality is
+                 *   deemed LAGGY. Otherwise, it is OK.
+                 */
+                QualityState quality = QualityState.OK;
 
                 if (samples > 0) {
                     Log.d(TAG, "Stream " + xdfStreamIndex + ": Pulled " + samples + " values");
+                    lastMillisAnySamplesReceived = System.currentTimeMillis();
                     writeAllRecordedSamples();
                     if (xdfWriter != null) {
                         long size = new File(xdfWriter.getXdfFilePath()).length();
@@ -87,7 +119,22 @@ public class StreamRecording {
                     }
                 } else {
                     Log.d(TAG, "Stream " + xdfStreamIndex + ": No samples. Waiting " + XDF_WRITE_INTERVAL + " ms");
+                    if (streamRecorder.hasRegularRate()) {
+                        long millisSinceLastReceived = System.currentTimeMillis() - lastMillisAnySamplesReceived;
+                        if (millisSinceLastReceived > millisThresholdNotResponding) {
+                            quality = QualityState.NOT_RESPONDING;
+                        }
+                    }
                 }
+
+                if (quality != QualityState.NOT_RESPONDING) {
+                    // Do not upgrade from NOT_RESPONDING to LAGGY
+
+                    /*
+                     * TODO Finish quality calculation: Detect LAGGY.
+                     */
+                }
+                setQuality(quality);
 
                 try {
                     Thread.sleep(XDF_WRITE_INTERVAL);
@@ -97,16 +144,21 @@ public class StreamRecording {
 
             } catch (Exception e) {
                 Log.e(TAG, "Stream " + xdfStreamIndex + ": Failed to read or record chunk.", e);
+                setQuality(QualityState.NOT_RESPONDING);
             }
         }
     }
 
-    private void notifyQualityListeners() {
+    private void setQuality(QualityState quality) {
         QualityState newState = getCurrentQuality();
         if (newState != lastObservedQuality) {
-            qualityListeners.forEach(l -> l.streamQualityChanged(newState));
             lastObservedQuality = newState;
+            notifyQualityListeners(newState);
         }
+    }
+
+    private void notifyQualityListeners(QualityState newState) {
+        qualityListeners.forEach(l -> l.streamQualityChanged(newState));
     }
 
     public void registerQualityListener(StreamQualityListener newListener) {
