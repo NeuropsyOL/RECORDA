@@ -6,6 +6,8 @@ import de.uol.neuropsy.recorda.xdf.XdfWriter;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Deque;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
@@ -18,6 +20,23 @@ import edu.ucsd.sccn.LSL;
  */
 public class StreamRecording {
 
+    private static class ReceivedSampleCount {
+
+        /**
+         * The point in time since which we waited for the samples just received.
+         */
+        final long timestamp;
+
+        /**
+         * The number of samples received after {@link #timestamp}.
+         */
+        final int sampleCount;
+        ReceivedSampleCount(int sampleCount, long timestamp) {
+            this.sampleCount = sampleCount;
+            this.timestamp = timestamp;
+        }
+    }
+
     private static final String TAG = "StreamRecording";
 
     /**
@@ -29,7 +48,8 @@ public class StreamRecording {
      * Milliseconds between flushing current recording buffer to XDF file.
      */
     private static final int XDF_WRITE_INTERVAL = 500;
-    private static final long DEFAULT_MILLIS_THRESHOLD_NOT_RESPONDING = 3000;
+    private static final long DEFAULT_MILLIS_THRESHOLD_LAGGY = 2000;
+    private static final long DEFAULT_MILLIS_THRESHOLD_NOT_RESPONDING = 5000;
 
     private final StreamRecorder streamRecorder;
     private final XdfWriter xdfWriter;
@@ -40,7 +60,6 @@ public class StreamRecording {
     private Thread sampleThread;
     private Thread timingOffsetThread;
     private volatile boolean isRunning;
-
     /**
      * Constructor for stream recording
      *
@@ -69,20 +88,33 @@ public class StreamRecording {
         }
     }
 
+
     private final List<StreamQualityListener> qualityListeners = new ArrayList<>();
 
     /*
      * Stream quality indicators
      */
 
+    /**
+     * The lowest ratio between the actual sampling rate and the nominal sampling rate that is
+     * tolerated for the quality being OK. If the actual sampling rate falls below that, the
+     * stream quality will be deemed LAGGY.
+     */
+    private double qualitySampleRateThreshold = 0.9;
     private long lastMillisAnySamplesReceived;
 
-    private long millisThresholdNotResponding = DEFAULT_MILLIS_THRESHOLD_NOT_RESPONDING;
+    private long millisTimeoutLaggy = DEFAULT_MILLIS_THRESHOLD_LAGGY;
+    private long millisTimeoutNotResponding = DEFAULT_MILLIS_THRESHOLD_NOT_RESPONDING;
+
+    private int qualityRateLookBackWindowSeconds = 10;
+
+    private final Deque<ReceivedSampleCount> receivedCounts = new LinkedList<>();
 
     private QualityState lastObservedQuality = QualityState.OK;
 
     private void sampleRecordingLoop(StreamRecorder streamRecorder) {
         lastMillisAnySamplesReceived = System.currentTimeMillis();
+        boolean anySamplesReceivedBefore = false;
         while (isRunning) {
             try {
                 int samples = streamRecorder.pullChunk();
@@ -111,28 +143,46 @@ public class StreamRecording {
 
                 if (samples > 0) {
                     Log.d(TAG, "Stream " + xdfStreamIndex + ": Pulled " + samples + " values");
+                    if (anySamplesReceivedBefore) {
+                        receivedCounts.addFirst(new ReceivedSampleCount(samples, lastMillisAnySamplesReceived));
+                    } else {
+                        anySamplesReceivedBefore = true;
+                    }
                     lastMillisAnySamplesReceived = System.currentTimeMillis();
                     writeAllRecordedSamples();
-                    if (xdfWriter != null) {
-                        long size = new File(xdfWriter.getXdfFilePath()).length();
-                        Log.d(TAG, "XDF file size now: " + size + " bytes");
-                    }
+
                 } else {
                     Log.d(TAG, "Stream " + xdfStreamIndex + ": No samples. Waiting " + XDF_WRITE_INTERVAL + " ms");
                     if (streamRecorder.hasRegularRate()) {
                         long millisSinceLastReceived = System.currentTimeMillis() - lastMillisAnySamplesReceived;
-                        if (millisSinceLastReceived > millisThresholdNotResponding) {
+                        if (millisSinceLastReceived > millisTimeoutNotResponding) {
                             quality = QualityState.NOT_RESPONDING;
+                        } else if (millisSinceLastReceived > millisTimeoutLaggy) {
+                            quality = QualityState.LAGGY;
                         }
                     }
                 }
 
-                if (quality != QualityState.NOT_RESPONDING) {
-                    // Do not upgrade from NOT_RESPONDING to LAGGY
+                if (quality == QualityState.OK && streamRecorder.hasRegularRate()) {
+                    // The check below only decides whether to downgrade from OK to LAGGY
 
-                    /*
-                     * TODO Finish quality calculation: Detect LAGGY.
-                     */
+                    double nominalRate = streamRecorder.getNominalSamplingRate();
+
+                    int samplesReceivedInQualityWindow = 0;
+                    double qualityWindowSeconds = 0.001 * (double) (System.currentTimeMillis() - receivedCounts.getLast().timestamp);
+                    for (ReceivedSampleCount rc : receivedCounts) {
+                        samplesReceivedInQualityWindow += rc.sampleCount;
+                        if (rc.timestamp < System.currentTimeMillis() - 1000 * (long)qualityRateLookBackWindowSeconds) {
+                            qualityWindowSeconds = System.currentTimeMillis() - rc.timestamp;
+                            break;
+                        }
+                    }
+                    if (qualityWindowSeconds >= qualityRateLookBackWindowSeconds) {
+                        double actualRate = (double) samplesReceivedInQualityWindow / (double) qualityWindowSeconds;
+                        if (actualRate < nominalRate * qualitySampleRateThreshold) {
+                            quality = QualityState.LAGGY;
+                        }
+                    }
                 }
                 setQuality(quality);
 
@@ -232,6 +282,8 @@ public class StreamRecording {
         if (xdfWriter != null) {
             int samplesWritten = streamRecorder.writeAllRecordedSamples(xdfWriter, xdfStreamIndex);
             Log.i(TAG, "Stream " + xdfStreamIndex + ": Chunk of " + samplesWritten + " samples written to XDF");
+            long size = new File(xdfWriter.getXdfFilePath()).length();
+            Log.d(TAG, "XDF file size now: " + size + " bytes");
         }
     }
 
