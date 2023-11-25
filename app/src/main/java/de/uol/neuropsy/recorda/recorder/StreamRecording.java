@@ -6,8 +6,6 @@ import de.uol.neuropsy.recorda.xdf.XdfWriter;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Deque;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
@@ -19,24 +17,6 @@ import edu.ucsd.sccn.LSL;
  * The XDF file may be shared with parallel recordings of other streams.
  */
 public class StreamRecording {
-
-    private static class ReceivedSampleCount {
-
-        /**
-         * The point in time since which we waited for the samples just received.
-         */
-        final long timestamp;
-
-        /**
-         * The number of samples received after {@link #timestamp}.
-         */
-        final int sampleCount;
-        ReceivedSampleCount(int sampleCount, long timestamp) {
-            this.sampleCount = sampleCount;
-            this.timestamp = timestamp;
-        }
-    }
-
     private static final String TAG = "StreamRecording";
 
     /**
@@ -48,8 +28,6 @@ public class StreamRecording {
      * Milliseconds between flushing current recording buffer to XDF file.
      */
     private static final int XDF_WRITE_INTERVAL = 500;
-    private static final long DEFAULT_MILLIS_THRESHOLD_LAGGY = 2000;
-    private static final long DEFAULT_MILLIS_THRESHOLD_NOT_RESPONDING = 5000;
 
     private final StreamRecorder streamRecorder;
     private final XdfWriter xdfWriter;
@@ -60,6 +38,11 @@ public class StreamRecording {
     private Thread sampleThread;
     private Thread timingOffsetThread;
     private volatile boolean isRunning;
+
+    private final QualityMetrics streamQuality;
+
+    private final List<StreamQualityListener> qualityListeners = new ArrayList<>();
+
     /**
      * Constructor for stream recording
      *
@@ -73,6 +56,7 @@ public class StreamRecording {
         this.streamRecorder = sourceToRecord;
         this.xdfStreamIndex = xdfStreamIndex;
         this.xdfWriter = xdfWriter;
+        this.streamQuality = new QualityMetrics(sourceToRecord.getNominalSamplingRate());
     }
 
     public void spawnRecorderThread() {
@@ -88,103 +72,20 @@ public class StreamRecording {
         }
     }
 
-
-    private final List<StreamQualityListener> qualityListeners = new ArrayList<>();
-
-    /*
-     * Stream quality indicators
-     */
-
-    /**
-     * The lowest ratio between the actual sampling rate and the nominal sampling rate that is
-     * tolerated for the quality being OK. If the actual sampling rate falls below that, the
-     * stream quality will be deemed LAGGY.
-     */
-    private double qualitySampleRateThreshold = 0.9;
-    private long lastMillisAnySamplesReceived;
-
-    private long millisTimeoutLaggy = DEFAULT_MILLIS_THRESHOLD_LAGGY;
-    private long millisTimeoutNotResponding = DEFAULT_MILLIS_THRESHOLD_NOT_RESPONDING;
-
-    private int qualityRateLookBackWindowSeconds = 10;
-
-    private final Deque<ReceivedSampleCount> receivedCounts = new LinkedList<>();
-
-    private QualityState lastObservedQuality = QualityState.OK;
-
     private void sampleRecordingLoop(StreamRecorder streamRecorder) {
-        lastMillisAnySamplesReceived = System.currentTimeMillis();
-        boolean anySamplesReceivedBefore = false;
         while (isRunning) {
             try {
                 int samples = streamRecorder.pullChunk();
-
-                /*
-                 * Calculate stream quality
-                 *
-                 * Stream quality has three possible values and is determined as follows:
-                 *
-                 * - If 'pullChunk' throws, the quality is NOT_RESPONDING
-                 * - If no samples have been received for certain (configurable) amount of time,
-                 *   the quality is NOT_RESPONDING
-                 *
-                 * Otherwise, the stream quality is either OK or LAGGY depending on the actual
-                 * number of samples recently received compared to the nominal sampling rate:
-                 *
-                 * - Irregular streams, i.e. ones without a nominal sampling rate, are
-                 *   always OK.
-                 * - Streams with a nominal sampling rate: The average sampling rate in a time
-                 *   window of the recent past is calculated and compared to the nominal sampling
-                 *   rate. A deviation up to a certain threshold is tolerated. If the actual
-                 *   sampling rate is too low by more than that threshold, the stream quality is
-                 *   deemed LAGGY. Otherwise, it is OK.
-                 */
-                QualityState quality = QualityState.OK;
+                streamQuality.received(samples);
 
                 if (samples > 0) {
                     Log.d(TAG, "Stream " + xdfStreamIndex + ": Pulled " + samples + " values");
-                    if (anySamplesReceivedBefore) {
-                        receivedCounts.addFirst(new ReceivedSampleCount(samples, lastMillisAnySamplesReceived));
-                    } else {
-                        anySamplesReceivedBefore = true;
-                    }
-                    lastMillisAnySamplesReceived = System.currentTimeMillis();
                     writeAllRecordedSamples();
-
                 } else {
                     Log.d(TAG, "Stream " + xdfStreamIndex + ": No samples. Waiting " + XDF_WRITE_INTERVAL + " ms");
-                    if (streamRecorder.hasRegularRate()) {
-                        long millisSinceLastReceived = System.currentTimeMillis() - lastMillisAnySamplesReceived;
-                        if (millisSinceLastReceived > millisTimeoutNotResponding) {
-                            quality = QualityState.NOT_RESPONDING;
-                        } else if (millisSinceLastReceived > millisTimeoutLaggy) {
-                            quality = QualityState.LAGGY;
-                        }
-                    }
                 }
 
-                if (quality == QualityState.OK && streamRecorder.hasRegularRate()) {
-                    // The check below only decides whether to downgrade from OK to LAGGY
-
-                    double nominalRate = streamRecorder.getNominalSamplingRate();
-
-                    int samplesReceivedInQualityWindow = 0;
-                    double qualityWindowSeconds = 0.001 * (double) (System.currentTimeMillis() - receivedCounts.getLast().timestamp);
-                    for (ReceivedSampleCount rc : receivedCounts) {
-                        samplesReceivedInQualityWindow += rc.sampleCount;
-                        if (rc.timestamp < System.currentTimeMillis() - 1000 * (long)qualityRateLookBackWindowSeconds) {
-                            qualityWindowSeconds = System.currentTimeMillis() - rc.timestamp;
-                            break;
-                        }
-                    }
-                    if (qualityWindowSeconds >= qualityRateLookBackWindowSeconds) {
-                        double actualRate = (double) samplesReceivedInQualityWindow / (double) qualityWindowSeconds;
-                        if (actualRate < nominalRate * qualitySampleRateThreshold) {
-                            quality = QualityState.LAGGY;
-                        }
-                    }
-                }
-                setQuality(quality);
+                notifyQualityListeners(streamQuality);
 
                 try {
                     Thread.sleep(XDF_WRITE_INTERVAL);
@@ -194,21 +95,14 @@ public class StreamRecording {
 
             } catch (Exception e) {
                 Log.e(TAG, "Stream " + xdfStreamIndex + ": Failed to read or record chunk.", e);
-                setQuality(QualityState.NOT_RESPONDING);
+                streamQuality.exceptionHappened(e);
+                notifyQualityListeners(streamQuality);
             }
         }
     }
 
-    private void setQuality(QualityState quality) {
-        QualityState newState = getCurrentQuality();
-        if (newState != lastObservedQuality) {
-            lastObservedQuality = newState;
-            notifyQualityListeners(newState);
-        }
-    }
-
-    private void notifyQualityListeners(QualityState newState) {
-        qualityListeners.forEach(l -> l.streamQualityChanged(newState));
+    private void notifyQualityListeners(QualityMetrics streamQuality) {
+        qualityListeners.forEach(l -> l.streamQualityChanged(xdfStreamIndex, streamQuality));
     }
 
     public void registerQualityListener(StreamQualityListener newListener) {
@@ -300,7 +194,11 @@ public class StreamRecording {
         }
     }
 
-    public QualityState getCurrentQuality() {
-        return QualityState.values()[(int) (((System.currentTimeMillis() / 5_000) + xdfStreamIndex) % 3) ];
+    /**
+     * @return the current <em>actual</em> sampling rate (as opposed to the nominal rate) measured
+     * over a window of the last few seconds
+     */
+    public double getCurrentSamplingRate() {
+        return streamQuality.getCurrentSamplingRate();
     }
 }

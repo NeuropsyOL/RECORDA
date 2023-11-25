@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import de.uol.neuropsy.recorda.recorder.QualityMetrics;
 import de.uol.neuropsy.recorda.recorder.QualityState;
 import de.uol.neuropsy.recorda.recorder.RecorderFactory;
 import de.uol.neuropsy.recorda.recorder.StreamQualityListener;
@@ -78,18 +79,19 @@ public class LSLService extends Service {
             }
         }
         activeRecordings.forEach(streamRecording -> {
-            streamRecording.spawnRecorderThread();
-            streamRecording.registerQualityListener(qualityNow -> {
-                // TODO Identify the stream of this quality notification
-
+            streamRecording.registerQualityListener((int streamIndex, QualityMetrics q) -> {
                 /*
-                 * TODO Switch to UI thread. This listener is called from the recording thread and
-                 * that thread must not be blocked by the UI.
+                 * TODO
                  *
-                 * Solution: Call back into MainActivity and use runOnUiThread (inherited from Activity) there.
+                 * Call back into MainActivity in order to update the UI.
+                 *
+                 * In class MainActivity, switch to the UI thread (e.g. by calling method
+                 * Activity::runOnUiThread). This listener is called from the recording thread which
+                 * must not be blocked by the UI.
                  */
-                Log.i(TAG, "Stream quality changed to " + qualityNow);
+                Log.i(TAG, "Stream " + streamIndex + " srate: " + q.getCurrentSamplingRate() + " q: " + q.getCurrentQuality());
             });
+            streamRecording.spawnRecorderThread();
         });
 
         // This service is killed by the OS if it is not started as background service
