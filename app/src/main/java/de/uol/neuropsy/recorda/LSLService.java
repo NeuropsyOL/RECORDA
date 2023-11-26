@@ -7,6 +7,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.os.Binder;
 import android.os.Build;
 import android.os.Environment;
 import android.os.IBinder;
@@ -19,14 +20,12 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import de.uol.neuropsy.recorda.recorder.QualityMetrics;
 import de.uol.neuropsy.recorda.recorder.QualityState;
 import de.uol.neuropsy.recorda.recorder.RecorderFactory;
-import de.uol.neuropsy.recorda.recorder.StreamQualityListener;
 import de.uol.neuropsy.recorda.recorder.StreamRecorder;
 import de.uol.neuropsy.recorda.recorder.StreamRecording;
 import de.uol.neuropsy.recorda.xdf.XdfWriter;
@@ -43,9 +42,16 @@ public class LSLService extends Service {
 
     private static final String TAG = "LSLService";
 
-    private List<StreamRecording> activeRecordings = new ArrayList<>();
-    private XdfWriter xdfWriter;
+    private static final String NOTIFICATION_CHANNEL_ID = "de.uol.neuropsy.Recorda";
 
+    private List<StreamRecording> activeRecordings = new ArrayList<>();
+
+    private List<String> streamNames = new ArrayList<>();
+
+    private QualityState[] streamQualities = new QualityState[0];
+
+    private XdfWriter xdfWriter;
+    
     private final boolean recordTimingOffsets = true;
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
@@ -70,47 +76,31 @@ public class LSLService extends Service {
                 .collect(Collectors.toSet());
 
         int xdfStreamIndex = 0;
-        List<String> streamNames = new ArrayList<>();
-        for (LSL.StreamInfo availableStream : lslStreams) {
-            boolean isSelectedToBeRecorded = selectedLslStreams.contains(availableStream.name());
-            if (isSelectedToBeRecorded) {
-                StreamRecording rec = prepareRecording(availableStream, xdfStreamIndex++);
-                if (rec != null) {
-                    activeRecordings.add(rec);
-                    streamNames.add(availableStream.name());
+        synchronized (this) {
+            streamNames = new ArrayList<>();
+            for (LSL.StreamInfo availableStream : lslStreams) {
+                boolean isSelectedToBeRecorded = selectedLslStreams.contains(availableStream.name());
+                if (isSelectedToBeRecorded) {
+                    StreamRecording rec = prepareRecording(availableStream, xdfStreamIndex++);
+                    if (rec != null) {
+                        activeRecordings.add(rec);
+                        streamNames.add(availableStream.name());
+                    }
                 }
+            }
+            streamQualities = new QualityState[activeRecordings.size()];
+            for (int i = 0; i < streamQualities.length; i++) {
+                streamQualities[i] = QualityState.OK;
             }
         }
 
         activeRecordings.forEach(streamRecording -> {
-            QualityState[] lastObservedQuality = new QualityState[activeRecordings.size()];
-            for (int i = 0; i < lastObservedQuality.length; i++) {
-                lastObservedQuality[i] = QualityState.OK;
-            }
             streamRecording.registerQualityListener((int streamIndex, QualityMetrics q) -> {
-                /*
-                 * TODO
-                 *
-                 * Call back into MainActivity in order to update the UI.
-                 *
-                 * In class MainActivity, switch to the UI thread (e.g. by calling method
-                 * Activity::runOnUiThread). This listener is called from the recording thread which
-                 * must not be blocked by the UI.
-                 */
                 QualityState qualityNow = q.getCurrentQuality();
                 Log.i(TAG, "Stream " + streamIndex + " srate: " + q.getCurrentSamplingRate() + " q: " + qualityNow);
-                if (lastObservedQuality[streamIndex] != qualityNow) {
-                    lastObservedQuality[streamIndex] = qualityNow;
-                    if (qualityNow != QualityState.OK) {
-                        String qualityMessage;
-                        if (qualityNow == QualityState.LAGGY) {
-                            qualityMessage = "Stream lagging: ";
-                        } else {
-                            qualityMessage = "Stream not responding: ";
-                        }
-                        qualityMessage += streamNames.get(streamIndex);
-                        Toast.makeText(this, qualityMessage, Toast.LENGTH_LONG).show();
-                    }
+                if (streamQualities[streamIndex] != qualityNow) {
+                    streamQualities[streamIndex] = qualityNow;
+                    //postStreamQualityNotification(streamNames.get(streamIndex), qualityNow);
                 }
             });
             streamRecording.spawnRecorderThread();
@@ -142,6 +132,22 @@ public class LSLService extends Service {
         }
     }
 
+    public synchronized QualityState getCurrentStreamQuality(String streamName) {
+        int index = streamNames.indexOf(streamName);
+        if (index < 0 || index >= activeRecordings.size()) {
+            return null;
+        }
+        return activeRecordings.get(index).getCurrentQuality();
+    }
+
+    public synchronized double getCurrentSamplingRate(String streamName) {
+        int index = streamNames.indexOf(streamName);
+        if (index < 0 || index >= activeRecordings.size()) {
+            return Double.NaN;
+        }
+        return activeRecordings.get(index).getCurrentSamplingRate();
+    }
+
     // From https://stackoverflow.com/questions/47531742/startforeground-fail-after-upgrade-to-android-8-1
     // and https://androidwave.com/foreground-service-android-example/
     @RequiresApi(api = Build.VERSION_CODES.O)
@@ -169,7 +175,7 @@ public class LSLService extends Service {
     @Override
     public IBinder onBind(Intent arg0) {
         Log.i(TAG, "Service onBind");
-        return null;
+        return new LocalBinder();
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
@@ -214,12 +220,19 @@ public class LSLService extends Service {
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel serviceChannel = new NotificationChannel(
-                    "FOREGROUNDCHANNEL",
+                    NOTIFICATION_CHANNEL_ID,
                     "Foreground Service Channel",
-                    NotificationManager.IMPORTANCE_DEFAULT
+                    NotificationManager.IMPORTANCE_HIGH
             );
             NotificationManager manager = getSystemService(NotificationManager.class);
             manager.createNotificationChannel(serviceChannel);
         }
+    }
+
+    class LocalBinder extends Binder {
+        public LSLService getLSLService() {
+            return LSLService.this;
+        }
+
     }
 }

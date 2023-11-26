@@ -1,17 +1,19 @@
 package de.uol.neuropsy.recorda;
 
 import static de.uol.neuropsy.recorda.recorder.QualityState.LAGGY;
-import static de.uol.neuropsy.recorda.recorder.QualityState.OK;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.ComponentName;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.os.PowerManager;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
@@ -45,38 +47,6 @@ import edu.ucsd.sccn.LSL;
  */
 public class MainActivity extends Activity {
 
-    /**
-     * An LSL stream's name which is used to identify which stream to record, paired with a display
-     * string that includes its nominal sampling rate.
-     */
-    static final class StreamName {
-        public final String lslName;
-        public final String displayName;
-
-        public StreamName(LSL.StreamInfo streamInfo) {
-            lslName = Objects.requireNonNull(streamInfo.name());
-            displayName = streamDisplayNameOf(streamInfo);
-        }
-
-        @Override
-        public String toString() {
-            return displayName;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            StreamName that = (StreamName) o;
-            return lslName.equals(that.lslName) && displayName.equals(that.displayName);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(lslName, displayName);
-        }
-    }
-
     public static ListView lv;
     public static List<StreamName> LSLStreamName = new ArrayList<>();
     public static List<StreamName> selectedStreamNames = new ArrayList<>();
@@ -85,6 +55,10 @@ public class MainActivity extends Activity {
     public static boolean isComplete = false;
     static TextView tv;
     static volatile boolean isRunning = false;
+
+    private ServiceConnection serviceConnection = null;
+    private LSLService lslService;
+
     private static final String TAG = "MainActivity";
 
     //Elapsed Time
@@ -152,6 +126,18 @@ public class MainActivity extends Activity {
                     } else { // try our best with older Androids
                         startService(intent);
                     }
+                    serviceConnection = new ServiceConnection() {
+                        @Override
+                        public void onServiceConnected(ComponentName name, IBinder service) {
+                            lslService = ((LSLService.LocalBinder)service).getLSLService();
+                        }
+
+                        @Override
+                        public void onServiceDisconnected(ComponentName name) {
+                            lslService = null;
+                        }
+                    };
+                    bindService(intent, serviceConnection, 0);
                     startMillis = System.currentTimeMillis();
                     tdate.setText("00:00");
                     ElapsedTime();
@@ -189,7 +175,11 @@ public class MainActivity extends Activity {
         stop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (intent != null && t!=null) {
+                if (intent != null && t!= null) {
+                    ServiceConnection conn = serviceConnection;
+                    if (conn != null && lslService != null) {
+                        unbindService(conn);
+                    }
                     stopService(intent);
                     t.interrupt();
                     lv.setEnabled(true);
@@ -254,23 +244,18 @@ public class MainActivity extends Activity {
     }
 
     private static String streamDisplayNameOf(LSL.StreamInfo streamInfo) {
-        double nominalRate = streamInfo.nominal_srate();
-        String samplingRateAsString;
-        if (nominalRate == LSL.IRREGULAR_RATE) {
-            samplingRateAsString = "(irreg.)";
-        } else if (nominalRate < 10_000) {
-            samplingRateAsString = (int)nominalRate + " Hz";
-        } else {
-            samplingRateAsString = String.format("%.1f kHz", nominalRate / 1000.0);
-        }
-        String streamDisplayName = streamInfo.name() + " " + samplingRateAsString;
-        return streamDisplayName;
+        String samplingRateAsString = samplingRateAsText(streamInfo.nominal_srate());
+        return streamInfo.name() + " (" + samplingRateAsString + ")";
     }
 
-    public void indicateQualityInUi(String name, QualityState streamQualityNow) {
-        View streamListItem = lv.getChildAt(LSLStreamName.indexOf(name));
-        streamListItem.setBackgroundColor(streamQualityNow == OK ? Color.GREEN :
-                streamQualityNow == LAGGY ? Color.YELLOW : Color.RED);
+    private static String samplingRateAsText(double rate) {
+        if (rate == LSL.IRREGULAR_RATE) {
+            return "irreg.";
+        }
+        if (rate < 10000.0) {
+            return (int)rate + " Hz";
+        }
+        return String.format("%.1f kHz", rate / 1000.0);
     }
 
     public void ElapsedTime() {
@@ -286,6 +271,7 @@ public class MainActivity extends Activity {
                                 long now = System.currentTimeMillis();
                                 long difference = now - startMillis;
                                 tdate.setText(getElapsedTimeMinutesSecondsString(difference));
+                                updateStreamQualityIndicators();
                             }
                         });
                     }
@@ -294,6 +280,29 @@ public class MainActivity extends Activity {
             }
         };
         t.start();
+    }
+
+    private void updateStreamQualityIndicators() {
+        LSLService lsl = lslService;
+        if (!isRunning || lsl == null) {
+            return;
+        }
+        ArrayAdapter<StreamName> adapter = (ArrayAdapter<StreamName>) lv.getAdapter();
+        for (int i = 0; i < adapter.getCount(); i++) {
+            StreamName stream = adapter.getItem(i);
+            QualityState q = lsl.getCurrentStreamQuality(stream.lslName);
+            if (q == null) {
+                continue; // that stream is not being recorded
+            }
+            double currentRate = lsl.getCurrentSamplingRate(stream.lslName);
+            int color = q == QualityState.NOT_RESPONDING ? Color.rgb(255, 80, 80) :
+                    q == LAGGY ? Color.rgb(255, 255, 80) : Color.TRANSPARENT;
+            TextView listItem = (TextView) lv.getChildAt(i);
+            listItem.setBackgroundColor(color);
+            if (currentRate >= 0.0) {
+                listItem.setText(stream.displayName + " " + samplingRateAsText(currentRate));
+            }
+        }
     }
 
     /*
@@ -362,5 +371,35 @@ public class MainActivity extends Activity {
         ContextCompat.startForegroundService(this, intent);
     }
 
-}
+    /**
+     * An LSL stream's name which is used to identify which stream to record, paired with a display
+     * string that includes its nominal sampling rate.
+     */
+    static final class StreamName {
+        public final String lslName;
+        public final String displayName;
 
+        public StreamName(LSL.StreamInfo streamInfo) {
+            lslName = Objects.requireNonNull(streamInfo.name());
+            displayName = streamDisplayNameOf(streamInfo);
+        }
+
+        @Override
+        public String toString() {
+            return displayName;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            StreamName that = (StreamName) o;
+            return lslName.equals(that.lslName) && displayName.equals(that.displayName);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(lslName, displayName);
+        }
+    }
+}

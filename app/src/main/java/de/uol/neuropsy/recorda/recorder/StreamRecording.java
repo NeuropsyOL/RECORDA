@@ -201,4 +201,8 @@ public class StreamRecording {
     public double getCurrentSamplingRate() {
         return streamQuality.getCurrentSamplingRate();
     }
+
+    public QualityState getCurrentQuality() {
+        return streamQuality.getCurrentQuality();
+    }
 }
