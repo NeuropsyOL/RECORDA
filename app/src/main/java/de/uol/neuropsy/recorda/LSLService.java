@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -69,16 +70,23 @@ public class LSLService extends Service {
                 .collect(Collectors.toSet());
 
         int xdfStreamIndex = 0;
+        List<String> streamNames = new ArrayList<>();
         for (LSL.StreamInfo availableStream : lslStreams) {
             boolean isSelectedToBeRecorded = selectedLslStreams.contains(availableStream.name());
             if (isSelectedToBeRecorded) {
                 StreamRecording rec = prepareRecording(availableStream, xdfStreamIndex++);
                 if (rec != null) {
                     activeRecordings.add(rec);
+                    streamNames.add(availableStream.name());
                 }
             }
         }
+
         activeRecordings.forEach(streamRecording -> {
+            QualityState[] lastObservedQuality = new QualityState[activeRecordings.size()];
+            for (int i = 0; i < lastObservedQuality.length; i++) {
+                lastObservedQuality[i] = QualityState.OK;
+            }
             streamRecording.registerQualityListener((int streamIndex, QualityMetrics q) -> {
                 /*
                  * TODO
@@ -89,7 +97,21 @@ public class LSLService extends Service {
                  * Activity::runOnUiThread). This listener is called from the recording thread which
                  * must not be blocked by the UI.
                  */
-                Log.i(TAG, "Stream " + streamIndex + " srate: " + q.getCurrentSamplingRate() + " q: " + q.getCurrentQuality());
+                QualityState qualityNow = q.getCurrentQuality();
+                Log.i(TAG, "Stream " + streamIndex + " srate: " + q.getCurrentSamplingRate() + " q: " + qualityNow);
+                if (lastObservedQuality[streamIndex] != qualityNow) {
+                    lastObservedQuality[streamIndex] = qualityNow;
+                    if (qualityNow != QualityState.OK) {
+                        String qualityMessage;
+                        if (qualityNow == QualityState.LAGGY) {
+                            qualityMessage = "Stream lagging: ";
+                        } else {
+                            qualityMessage = "Stream not responding: ";
+                        }
+                        qualityMessage += streamNames.get(streamIndex);
+                        Toast.makeText(this, qualityMessage, Toast.LENGTH_LONG).show();
+                    }
+                }
             });
             streamRecording.spawnRecorderThread();
         });
@@ -124,7 +146,7 @@ public class LSLService extends Service {
     // and https://androidwave.com/foreground-service-android-example/
     @RequiresApi(api = Build.VERSION_CODES.O)
     private void startMyOwnForeground() {
-        String NOTIFICATION_CHANNEL_ID = "com.example.aliayubkhan.LSLReceiver";
+        String NOTIFICATION_CHANNEL_ID = "de.uol.neuropsy.Recorda";
         String channelName = "LSLReceiver Background Service";
         NotificationChannel chan = new NotificationChannel(NOTIFICATION_CHANNEL_ID, channelName, NotificationManager.IMPORTANCE_DEFAULT);
         chan.setLightColor(Color.GREEN);
