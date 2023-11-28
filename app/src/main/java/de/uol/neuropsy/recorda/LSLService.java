@@ -1,8 +1,12 @@
 package de.uol.neuropsy.recorda;
 
+import static android.app.Notification.DEFAULT_SOUND;
+import static android.app.Notification.DEFAULT_VIBRATE;
+
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -61,11 +65,16 @@ public class LSLService extends Service {
         MainActivity.isRunning = true;
         Toast.makeText(this,"Recording LSL!", Toast.LENGTH_SHORT).show();
 
-        // this method is part of the mechanisms that allow this to be a foreground channel
+        // this method is part of the mechanisms that allow this to be a foreground service
+        // a notification channel must also registered in the system before we can send notifications
+        // to the user
         createNotificationChannel();
 
         xdfWriter = new XdfWriter();
-        Path xdfFilePath = freshRecordingFilePath();
+        Path xdfFilePath = null;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            xdfFilePath = freshRecordingFilePath();
+        }
         xdfWriter.setXdfFilePath(xdfFilePath);
 
         // resolve all streams that are in the network
@@ -101,6 +110,7 @@ public class LSLService extends Service {
                 if (streamQualities[streamIndex] != qualityNow) {
                     streamQualities[streamIndex] = qualityNow;
                     //postStreamQualityNotification(streamNames.get(streamIndex), qualityNow);
+                    sendNotification();
                 }
             });
             streamRecording.spawnRecorderThread();
@@ -218,16 +228,80 @@ public class LSLService extends Service {
     }
 
     private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel serviceChannel = new NotificationChannel(
-                    NOTIFICATION_CHANNEL_ID,
-                    "Foreground Service Channel",
-                    NotificationManager.IMPORTANCE_HIGH
-            );
-            NotificationManager manager = getSystemService(NotificationManager.class);
-            manager.createNotificationChannel(serviceChannel);
+        // Create the NotificationChannel, but only on API 26+ because
+        // the NotificationChannel class is not in the Support Library.
+        String name = "Recorda Channel";
+        String description = "Recorda Channel description";
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            int importance = NotificationManager.IMPORTANCE_HIGH; //Important for heads-up notification
+            NotificationChannel channel = null;
+            channel = new NotificationChannel("1", name, importance);
+            channel.setDescription(description);
+            channel.setShowBadge(true);
+            channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
         }
     }
+
+    private void sendNotification() {
+        NotificationManager notifyManager = null;
+        int NOTIFY_ID = 1002;
+
+        String name = "KotlinApplication";
+        String id = "kotlin_app";
+        String description = "kotlin_app_first_channel";
+
+        Intent intent;
+        PendingIntent pendingIntent;
+        NotificationCompat.Builder builder;
+
+
+        if (notifyManager == null) {
+            notifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            int importance = NotificationManager.IMPORTANCE_HIGH;
+            NotificationChannel mChannel = notifyManager.getNotificationChannel(id);
+            if (mChannel == null) {
+                mChannel = new NotificationChannel(id, name, importance);
+                mChannel.setDescription(description);
+                mChannel.enableVibration(true);
+                mChannel.setLightColor(Color.GREEN);
+                mChannel.setVibrationPattern(new long[]{100, 200, 300, 400, 500, 400, 300, 200, 400});
+                notifyManager.createNotificationChannel(mChannel);
+            }
+        }
+
+        builder = new NotificationCompat.Builder(this, id);
+
+        intent = new Intent(this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
+
+        builder.setContentTitle("Heads Up Notification")  // required
+                .setSmallIcon(android.R.drawable.ic_popup_reminder) // required
+                .setContentText(this.getString(R.string.app_name))  // required
+                .setDefaults(Notification.DEFAULT_ALL)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .setTicker("Notification")
+                .setVibrate(new long[]{100, 200, 300, 400, 500, 400, 300, 200, 400});
+
+        Intent dismissIntent = new Intent(this, MainActivity.class);
+        dismissIntent.setAction("DISMISS");
+        dismissIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent pendingDismissIntent = PendingIntent.getActivity(this, 0, dismissIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        NotificationCompat.Action dismissAction = new NotificationCompat.Action(R.drawable.ic_launcher_foreground,
+                "DISMISS", pendingDismissIntent);
+        builder.addAction(dismissAction);
+
+        Notification notification = builder.build();
+        notifyManager.notify(NOTIFY_ID, notification);
+    }
+
 
     class LocalBinder extends Binder {
         public LSLService getLSLService() {
