@@ -48,12 +48,13 @@ The worse result of these two metrics will be displayed in the UI.
 
 Importantly, streams being declared as having an *irregular nominal sampling rate* by the sending side, are not checked with the timeout or deviating sampling rate checks.
 
-<p align="center">
-  <img width="227" height="500" src="./docs/Images/bad_quality.png">
-</p>
+<div align="center">
+  <img style="padding:10px" width="227" height="500" src="./docs/Images/bad_quality.png">
+  <img style="padding:10px" width="227" height="500" src="./docs/Images/laggy_quality.png">
+</div>
 
 <p align="center">
-  <img width="227" height="500" src="./docs/Images/laggy_quality.png">
+  
 </p>
  
 ## XDF File Handling
@@ -85,7 +86,5 @@ The app is actively developed by the neuropsychology group of [Stefan Debener](h
 **Ali Ayub Khan** - [AliAyub007](https://github.com/AliAyub007)
 
 
-
-## Acknowledgments
-
-[liblsl Library](https://github.com/sccn/labstreaminglayer/tree/master/LSL): I used this library to develop this application. 
+# Adoption
+- Blum S, Hölle D, Bleichner MG, Debener S. Pocketable Labs for Everyone: Synchronized Multi-Sensor Data Streaming and Recording on Smartphones with the Lab Streaming Layer. Sensors. 2021; 21(23):8135. https://doi.org/10.3390/s21238135
