@@ -92,9 +92,6 @@ public class QualityMetrics {
      */
     public QualityState received(int samples) {
         QualityState q = recordNumberOfSamplesReceivedAndDetermineQuality(samples);
-        if(System.currentTimeMillis() > this.startTimeOfCurrentQualityWindow + 5000){
-            q = QualityState.LAGGY;
-        }
         return setQuality(q);
     }
 
@@ -197,7 +194,7 @@ public class QualityMetrics {
     }
 
     private boolean hasRegularRate() {
-        return nominalSamplingRate >= 0.0;
+        return nominalSamplingRate > 0.0;
     }
 
     public QualityState exceptionHappened(Exception e) {

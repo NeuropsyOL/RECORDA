@@ -44,9 +44,8 @@ public class LSLService extends Service {
 
     private static final String TAG = "LSLService";
 
-    private static final String NOTIFICATION_CHANNEL_ID = "de.uol.neuropsy.Recorda";
-    private static final String notificationChannelName = "KotlinApplication";
-    private static final String QUALITY_NOTIFICATION_CHANNEL_ID = "de.uol.neuropsy.Recorda.Quality";
+    private static final String QUALITY_NOTIFICATION_CHANNEL_NAME = "RECORDA stream quality";
+    private static final String QUALITY_NOTIFICATION_CHANNEL_ID = "de.uol.neuropsy.Recorda.quality";
 
     private final List<StreamRecording> activeRecordings = new ArrayList<>();
 
@@ -107,7 +106,9 @@ public class LSLService extends Service {
                 Log.i(TAG, "Stream " + streamIndex + " srate: " + q.getCurrentSamplingRate() + " q: " + qualityNow);
                 if (streamQualities[streamIndex] != qualityNow) {
                     streamQualities[streamIndex] = qualityNow;
-                    postStreamQualityNotification(streamNames.get(streamIndex), qualityNow);
+                    if (qualityNow != QualityState.OK) {
+                        postStreamQualityNotification(streamNames.get(streamIndex), qualityNow);
+                    }
                 }
             });
             streamRecording.spawnRecorderThread();
@@ -139,6 +140,13 @@ public class LSLService extends Service {
         }
     }
 
+    /**
+     * Return the quality of the stream with a given name, if a stream with that name is currently
+     * being recorded.
+     *
+     * @param streamName the name of the stream as advertised by LSL
+     * @return the current quality of the named stream; or null if no such stream is being recorded
+     */
     public synchronized QualityState getCurrentStreamQuality(String streamName) {
         int index = streamNames.indexOf(streamName);
         if (index < 0 || index >= activeRecordings.size()) {
@@ -241,17 +249,15 @@ public class LSLService extends Service {
         }
     }
 
-    private void postStreamQualityNotification(String s, QualityState qualityNow) {
+    private void postStreamQualityNotification(String streamName, QualityState quality) {
         NotificationManager notifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             NotificationChannel channel = notifyManager.getNotificationChannel(QUALITY_NOTIFICATION_CHANNEL_ID);
             if (channel == null) {
-                channel = new NotificationChannel(QUALITY_NOTIFICATION_CHANNEL_ID, notificationChannelName, NotificationManager.IMPORTANCE_HIGH);
+                channel = new NotificationChannel(QUALITY_NOTIFICATION_CHANNEL_ID,
+                        QUALITY_NOTIFICATION_CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
                 channel.setDescription("RECORDA stream quality notifications");
-                channel.setLightColor(Color.GREEN);
-                channel.enableVibration(true);
-                channel.setVibrationPattern(new long[]{100, 200, 300, 400, 500, 400, 300, 200, 400});
                 notifyManager.createNotificationChannel(channel);
             }
         }
@@ -261,18 +267,19 @@ public class LSLService extends Service {
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
 
         Notification notification =
-                new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
-                        .setContentTitle("LSL Stream Quality Problem")  // required
-                        .setSmallIcon(R.drawable.ic_receiver_round) // required
-                        .setContentText(this.getString(R.string.app_name))  // required
+                new NotificationCompat.Builder(this, QUALITY_NOTIFICATION_CHANNEL_ID)
+                        .setContentTitle("LSL recording problem")
+                        .setContentText(
+                                "Stream is " + quality.displayName + ":\n" +
+                                        "\t\u2022 " + streamName)
+                        .setSmallIcon(android.R.drawable.ic_dialog_alert)
                         .setDefaults(Notification.DEFAULT_ALL)
                         .setAutoCancel(true)
                         .setContentIntent(pendingIntent)
-                        .setTicker("Notification")
-                        .setVibrate(new long[]{100, 200, 300, 400, 500, 400, 300, 200, 400}).build();
+                        .setTicker("Stream recording problem")
+                        .build();
 
-        int QUALITY_NOTIFY_ID = 1002;
-        notifyManager.notify(QUALITY_NOTIFY_ID, notification);
+        notifyManager.notify(1007, notification);
     }
 
 

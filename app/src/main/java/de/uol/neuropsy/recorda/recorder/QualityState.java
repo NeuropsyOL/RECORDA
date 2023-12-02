@@ -1,7 +1,13 @@
 package de.uol.neuropsy.recorda.recorder;
 
 public enum QualityState {
-    OK,
-    NOT_RESPONDING,
-    LAGGY
+
+    OK("good"),
+    NOT_RESPONDING("not responding"),
+    LAGGY("lagging");
+
+    public final String displayName;
+    QualityState(String displayName) {
+        this.displayName = displayName;
+    }
 }

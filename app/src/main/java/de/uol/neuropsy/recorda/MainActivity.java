@@ -47,6 +47,8 @@ import edu.ucsd.sccn.LSL;
  */
 public class MainActivity extends Activity {
 
+    public static final int COLOR_QUALITY_RED = Color.rgb(210, 25, 25);
+    public static final int COLOR_QUALITY_YELLOW = Color.rgb(255, 220, 0);
     public static ListView lv;
     public static List<StreamName> LSLStreamName = new ArrayList<>();
     public static List<StreamName> selectedStreamNames = new ArrayList<>();
@@ -56,8 +58,8 @@ public class MainActivity extends Activity {
     static TextView tv;
     static volatile boolean isRunning = false;
 
-    private ServiceConnection serviceConnection = null;
-    private LSLService lslService;
+    private ServiceConnection serviceConnection;
+    private volatile LSLService lslService;
 
     private static final String TAG = "MainActivity";
 
@@ -100,6 +102,18 @@ public class MainActivity extends Activity {
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
+        serviceConnection = new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName name, IBinder service) {
+                lslService = ((LSLService.LocalBinder)service).getLSLService();
+            }
+
+            @Override
+            public void onServiceDisconnected(ComponentName name) {
+                lslService = null;
+            }
+        };
+
         start.setOnClickListener(new View.OnClickListener() {
             Long tsLong = System.currentTimeMillis() / 1000;
             String ts = tsLong.toString();
@@ -126,17 +140,6 @@ public class MainActivity extends Activity {
                     } else { // try our best with older Androids
                         startService(intent);
                     }
-                    serviceConnection = new ServiceConnection() {
-                        @Override
-                        public void onServiceConnected(ComponentName name, IBinder service) {
-                            lslService = ((LSLService.LocalBinder)service).getLSLService();
-                        }
-
-                        @Override
-                        public void onServiceDisconnected(ComponentName name) {
-                            lslService = null;
-                        }
-                    };
                     bindService(intent, serviceConnection, 0);
                     startMillis = System.currentTimeMillis();
                     tdate.setText("00:00");
@@ -176,11 +179,11 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 if (intent != null && t!= null) {
-                    ServiceConnection conn = serviceConnection;
-                    if (conn != null && lslService != null) {
-                        unbindService(conn);
+                    if (lslService != null) {
+                        lslService = null;
+                        stopService(intent);
+                        unbindService(serviceConnection);
                     }
-                    stopService(intent);
                     t.interrupt();
                     lv.setEnabled(true);
                 }
@@ -290,19 +293,39 @@ public class MainActivity extends Activity {
         ArrayAdapter<StreamName> adapter = (ArrayAdapter<StreamName>) lv.getAdapter();
         for (int i = 0; i < adapter.getCount(); i++) {
             StreamName stream = adapter.getItem(i);
-            QualityState q = lsl.getCurrentStreamQuality(stream.lslName);
-            if (q == null) {
+            QualityState quality = lsl.getCurrentStreamQuality(stream.lslName);
+            if (quality == null) {
                 continue; // that stream is not being recorded
             }
-            double currentRate = lsl.getCurrentSamplingRate(stream.lslName);
-            int color = q == QualityState.NOT_RESPONDING ? Color.rgb(255, 80, 80) :
-                    q == LAGGY ? Color.rgb(255, 255, 80) : Color.TRANSPARENT;
             TextView listItem = (TextView) lv.getChildAt(i);
-            listItem.setBackgroundColor(color);
-            if (currentRate >= 0.0) {
-                listItem.setText(stream.displayName + " " + samplingRateAsText(currentRate));
-            }
+            setColorBasedOnQuality(listItem, quality);
+            double currentSamplingRate = lsl.getCurrentSamplingRate(stream.lslName);
+            setTextBasedOnSamplingRate(listItem, stream, currentSamplingRate);
         }
+    }
+
+    private static void setColorBasedOnQuality(TextView view, QualityState q) {
+        int backgroundColor =
+                q == QualityState.NOT_RESPONDING ? COLOR_QUALITY_RED
+                        : q == LAGGY ? COLOR_QUALITY_YELLOW
+                        : Color.TRANSPARENT;
+        view.setBackgroundColor(backgroundColor);
+        int textColor;
+        if (Color.luminance(backgroundColor) > 0.5f || backgroundColor == Color.TRANSPARENT) {
+            textColor = Color.BLACK;
+        } else {
+            textColor = Color.WHITE;
+        }
+        view.setTextColor(textColor);
+    }
+
+    private static void setTextBasedOnSamplingRate(TextView view, StreamName stream, double samplingRate) {
+        double currentRate = samplingRate;
+        String streamNameWithSamplingRate = stream.displayName;
+        if (currentRate > 0.0) {
+            streamNameWithSamplingRate += " " + samplingRateAsText(currentRate);
+        }
+        view.setText(streamNameWithSamplingRate);
     }
 
     /*
