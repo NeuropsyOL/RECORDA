@@ -1,8 +1,5 @@
 package de.uol.neuropsy.recorda;
 
-import static android.app.Notification.DEFAULT_SOUND;
-import static android.app.Notification.DEFAULT_VIBRATE;
-
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -23,6 +20,7 @@ import android.widget.Toast;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -47,8 +45,10 @@ public class LSLService extends Service {
     private static final String TAG = "LSLService";
 
     private static final String NOTIFICATION_CHANNEL_ID = "de.uol.neuropsy.Recorda";
+    private static final String notificationChannelName = "KotlinApplication";
+    private static final String QUALITY_NOTIFICATION_CHANNEL_ID = "de.uol.neuropsy.Recorda.Quality";
 
-    private List<StreamRecording> activeRecordings = new ArrayList<>();
+    private final List<StreamRecording> activeRecordings = new ArrayList<>();
 
     private List<String> streamNames = new ArrayList<>();
 
@@ -98,9 +98,7 @@ public class LSLService extends Service {
                 }
             }
             streamQualities = new QualityState[activeRecordings.size()];
-            for (int i = 0; i < streamQualities.length; i++) {
-                streamQualities[i] = QualityState.OK;
-            }
+            Arrays.fill(streamQualities, QualityState.OK);
         }
 
         activeRecordings.forEach(streamRecording -> {
@@ -109,8 +107,7 @@ public class LSLService extends Service {
                 Log.i(TAG, "Stream " + streamIndex + " srate: " + q.getCurrentSamplingRate() + " q: " + qualityNow);
                 if (streamQualities[streamIndex] != qualityNow) {
                     streamQualities[streamIndex] = qualityNow;
-                    //postStreamQualityNotification(streamNames.get(streamIndex), qualityNow);
-                    sendNotification();
+                    postStreamQualityNotification(streamNames.get(streamIndex), qualityNow);
                 }
             });
             streamRecording.spawnRecorderThread();
@@ -244,62 +241,38 @@ public class LSLService extends Service {
         }
     }
 
-    private void sendNotification() {
-        NotificationManager notifyManager = null;
-        int NOTIFY_ID = 1002;
+    private void postStreamQualityNotification(String s, QualityState qualityNow) {
+        NotificationManager notifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
-        String name = "KotlinApplication";
-        String id = "kotlin_app";
-        String description = "kotlin_app_first_channel";
-
-        Intent intent;
-        PendingIntent pendingIntent;
-        NotificationCompat.Builder builder;
-
-
-        if (notifyManager == null) {
-            notifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            int importance = NotificationManager.IMPORTANCE_HIGH;
-            NotificationChannel mChannel = notifyManager.getNotificationChannel(id);
-            if (mChannel == null) {
-                mChannel = new NotificationChannel(id, name, importance);
-                mChannel.setDescription(description);
-                mChannel.enableVibration(true);
-                mChannel.setLightColor(Color.GREEN);
-                mChannel.setVibrationPattern(new long[]{100, 200, 300, 400, 500, 400, 300, 200, 400});
-                notifyManager.createNotificationChannel(mChannel);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            NotificationChannel channel = notifyManager.getNotificationChannel(QUALITY_NOTIFICATION_CHANNEL_ID);
+            if (channel == null) {
+                channel = new NotificationChannel(QUALITY_NOTIFICATION_CHANNEL_ID, notificationChannelName, NotificationManager.IMPORTANCE_HIGH);
+                channel.setDescription("RECORDA stream quality notifications");
+                channel.setLightColor(Color.GREEN);
+                channel.enableVibration(true);
+                channel.setVibrationPattern(new long[]{100, 200, 300, 400, 500, 400, 300, 200, 400});
+                notifyManager.createNotificationChannel(channel);
             }
         }
 
-        builder = new NotificationCompat.Builder(this, id);
-
-        intent = new Intent(this, MainActivity.class);
+        Intent intent = new Intent(this, MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
 
-        builder.setContentTitle("Heads Up Notification")  // required
-                .setSmallIcon(android.R.drawable.ic_popup_reminder) // required
-                .setContentText(this.getString(R.string.app_name))  // required
-                .setDefaults(Notification.DEFAULT_ALL)
-                .setAutoCancel(true)
-                .setContentIntent(pendingIntent)
-                .setTicker("Notification")
-                .setVibrate(new long[]{100, 200, 300, 400, 500, 400, 300, 200, 400});
+        Notification notification =
+                new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
+                        .setContentTitle("LSL Stream Quality Problem")  // required
+                        .setSmallIcon(R.drawable.ic_receiver_round) // required
+                        .setContentText(this.getString(R.string.app_name))  // required
+                        .setDefaults(Notification.DEFAULT_ALL)
+                        .setAutoCancel(true)
+                        .setContentIntent(pendingIntent)
+                        .setTicker("Notification")
+                        .setVibrate(new long[]{100, 200, 300, 400, 500, 400, 300, 200, 400}).build();
 
-        Intent dismissIntent = new Intent(this, MainActivity.class);
-        dismissIntent.setAction("DISMISS");
-        dismissIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        PendingIntent pendingDismissIntent = PendingIntent.getActivity(this, 0, dismissIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        NotificationCompat.Action dismissAction = new NotificationCompat.Action(R.drawable.ic_launcher_foreground,
-                "DISMISS", pendingDismissIntent);
-        builder.addAction(dismissAction);
-
-        Notification notification = builder.build();
-        notifyManager.notify(NOTIFY_ID, notification);
+        int QUALITY_NOTIFY_ID = 1002;
+        notifyManager.notify(QUALITY_NOTIFY_ID, notification);
     }
 
 
