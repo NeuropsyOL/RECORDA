@@ -29,6 +29,10 @@ public interface StreamRecorder extends Closeable {
 
     @Override
     void close();
+
+    boolean hasRegularRate();
+
+    double getNominalSamplingRate();
 }
 
 abstract class TypedStreamRecorder<SampleArray, Sample> implements StreamRecorder {
@@ -52,6 +56,7 @@ abstract class TypedStreamRecorder<SampleArray, Sample> implements StreamRecorde
     final LSL.StreamInlet inlet;
     final String streamName;
     final int channelCount;
+    final double nominalRate;
 
     /**
      * Number of samples to buffer
@@ -86,6 +91,7 @@ abstract class TypedStreamRecorder<SampleArray, Sample> implements StreamRecorde
     public TypedStreamRecorder(LSL.StreamInfo input, IntFunction<SampleArray> bufferConstructor) throws IOException {
         channelCount = input.channel_count();
         streamName = input.name();
+        nominalRate = input.nominal_srate();
 
         if (channelCount < 1) {
             throw new IllegalArgumentException("Stream has less than one channel: " + streamName);
@@ -202,6 +208,16 @@ abstract class TypedStreamRecorder<SampleArray, Sample> implements StreamRecorde
         unwrittenRecordedTimestamps.clear();
         unwrittenRecordedSamples.clear();
         return xdfTimestamps.length;
+    }
+
+    @Override
+    public boolean hasRegularRate() {
+        return nominalRate != LSL.IRREGULAR_RATE && nominalRate > 0.0;
+    }
+
+    @Override
+    public double getNominalSamplingRate() {
+        return nominalRate;
     }
 
     @Override
