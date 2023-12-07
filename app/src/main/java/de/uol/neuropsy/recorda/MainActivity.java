@@ -18,6 +18,7 @@ import android.os.PowerManager;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
@@ -33,6 +34,7 @@ import android.widget.Toast;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -106,6 +108,7 @@ public class MainActivity extends Activity {
             @Override
             public void onServiceConnected(ComponentName name, IBinder service) {
                 lslService = ((LSLService.LocalBinder)service).getLSLService();
+
             }
 
             @Override
@@ -132,9 +135,26 @@ public class MainActivity extends Activity {
                     if (StringUtils.isEmpty(filenamevalue)) {
                         filenamevalue = "recording";
                     }
+                    LSL.StreamInfo[] available_streams = LSL.resolve_streams();
+                    Boolean allOkay = true;
+                    for (StreamName streamName : selectedStreamNames) {
+                        if (Arrays.stream(available_streams).anyMatch(s -> s.name().equals(streamName.lslName))){
+                            Log.i(TAG,"Found "+streamName.lslName);
+                        }
+                        else {
+                            Log.e(TAG,"Did not find: "+streamName.lslName);
+                            allOkay = false;
+                            forceUpdateQualityIndicator(streamName.lslName, QualityState.NOT_RESPONDING);
+                        }
+                    }
+                    if (!allOkay) {
+                        Toast.makeText(MainActivity.this, "At least one of the streams you selected is no longer available. Refresh and try again.", Toast.LENGTH_LONG).show();
+                        return;
+                    }
                     lv.setEnabled(false);
                     // make this a foreground service so that android does not kill it while it is in the background
                         myStartForegroundService(intent);
+
                     bindService(intent, serviceConnection, 0);
                     startMillis = System.currentTimeMillis();
                     tdate.setText("00:00");
@@ -174,6 +194,7 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 if (intent != null && t!= null) {
+
                     if (lslService != null) {
                         lslService = null;
                         stopService(intent);
@@ -199,6 +220,7 @@ public class MainActivity extends Activity {
                 // selected item
                 ArrayAdapter<StreamName> adapter = (ArrayAdapter<StreamName>) parent.getAdapter();
                 StreamName selectedItem = adapter.getItem (position);
+
                 if (selectedStreamNames.contains(selectedItem))
                     selectedStreamNames.remove(selectedItem); //remove deselected item from the list of selected items
                 else
@@ -228,7 +250,7 @@ public class MainActivity extends Activity {
         new ResolveStreamsTask().execute(this);
     }
 
-    public void onStreamRefresh(LSL.StreamInfo[] streams){
+    public void onStreamRefresh(LSL.StreamInfo[] streams) {
         ArrayAdapter<StreamName> adapter = new ArrayAdapter<>(this, R.layout.list_view_text, LSLStreamName);
         lv.setEnabled(true);
         lv.setAdapter(adapter);
@@ -251,7 +273,7 @@ public class MainActivity extends Activity {
             return "irreg.";
         }
         if (rate < 10000.0) {
-            return (int)rate + " Hz";
+            return (int) rate + " Hz";
         }
         return String.format("%.1f kHz", rate / 1000.0);
     }
@@ -280,6 +302,26 @@ public class MainActivity extends Activity {
         t.start();
     }
 
+    private void forceUpdateQualityIndicator(String lslName, QualityState quality) {
+        ArrayAdapter<StreamName> adapter = (ArrayAdapter<StreamName>) lv.getAdapter();
+        for (int i = 0; i < adapter.getCount(); i++) {
+            StreamName stream = adapter.getItem(i);
+            if (lslName == stream.lslName) {
+                if (i < lv.getFirstVisiblePosition() || i > lv.getLastVisiblePosition()) {
+                    Log.d("RECORDA", stream.lslName + " not visible, skipping");
+                    return;
+                }
+                TextView listItem = (TextView) lv.getChildAt(i);
+                if (listItem == null)
+                    Log.e("RECORDA", "Could not find child: " + stream.lslName + " with id: " + i);
+                else {
+                    Log.e("RECORDA", "Setting quality for: " + stream.lslName + " with id: " + i);
+                    setColorBasedOnQuality(listItem, quality);
+                }
+            }
+        }
+    }
+
     private void updateStreamQualityIndicators() {
         LSLService lsl = lslService;
         if (!isRunning || lsl == null) {
@@ -292,10 +334,19 @@ public class MainActivity extends Activity {
             if (quality == null) {
                 continue; // that stream is not being recorded
             }
+            if (i < lv.getFirstVisiblePosition() || i > lv.getLastVisiblePosition()) {
+                Log.d("RECORDA", stream.lslName + " not visible, skipping");
+                return;
+            }
             TextView listItem = (TextView) lv.getChildAt(i);
-            setColorBasedOnQuality(listItem, quality);
-            double currentSamplingRate = lsl.getCurrentSamplingRate(stream.lslName);
-            setTextBasedOnSamplingRate(listItem, stream, currentSamplingRate);
+            if (listItem == null)
+                Log.e("RECORDA", "Could not find child: " + stream.lslName + " with id: " + i);
+            else {
+                Log.e("RECORDA", "Setting quality for: " + stream.lslName + " with id: " + i);
+                setColorBasedOnQuality(listItem, quality);
+                double currentSamplingRate = lsl.getCurrentSamplingRate(stream.lslName);
+                setTextBasedOnSamplingRate(listItem, stream, currentSamplingRate);
+            }
         }
     }
 
