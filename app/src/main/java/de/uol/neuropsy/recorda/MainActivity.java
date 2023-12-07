@@ -18,6 +18,7 @@ import android.os.PowerManager;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
@@ -33,6 +34,7 @@ import android.widget.Toast;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -292,10 +294,19 @@ public class MainActivity extends Activity {
             if (quality == null) {
                 continue; // that stream is not being recorded
             }
+            if (i < lv.getFirstVisiblePosition() || i > lv.getLastVisiblePosition()) {
+                Log.d("RECORDA", stream.lslName + " not visible, skipping");
+                return;
+            }
             TextView listItem = (TextView) lv.getChildAt(i);
-            setColorBasedOnQuality(listItem, quality);
-            double currentSamplingRate = lsl.getCurrentSamplingRate(stream.lslName);
-            setTextBasedOnSamplingRate(listItem, stream, currentSamplingRate);
+            if (listItem == null)
+                Log.e("RECORDA", "Could not find child: " + stream.lslName + " with id: " + i);
+            else {
+                Log.e("RECORDA", "Setting quality for: " + stream.lslName + " with id: " + i);
+                setColorBasedOnQuality(listItem, quality);
+                double currentSamplingRate = lsl.getCurrentSamplingRate(stream.lslName);
+                setTextBasedOnSamplingRate(listItem, stream, currentSamplingRate);
+            }
         }
     }
 
