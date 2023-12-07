@@ -396,11 +396,10 @@ public:
 	 * @param max_buffered Optionally the maximum amount of data to buffer (in seconds if there is a
 	 * nominal sampling rate, otherwise x100 in samples). The default is 6 minutes of data.
 	 */
-	stream_outlet(const stream_info &info, int32_t chunk_size = 0, int32_t max_buffered = 360,
-		lsl_transport_options_t flags = transp_default)
-		: channel_count(info.channel_count()), sample_rate(info.nominal_srate()),
-		  obj(lsl_create_outlet_ex(info.handle().get(), chunk_size, max_buffered, flags),
-			  &lsl_destroy_outlet) {}
+	stream_outlet(const stream_info &info, int32_t chunk_size = 0, int32_t max_buffered = 360)
+		: channel_count(info.channel_count()),
+		  sample_rate(info.nominal_srate()),
+		  obj(lsl_create_outlet(info.handle().get(), chunk_size, max_buffered), &lsl_destroy_outlet) {}
 
 	// ========================================
 	// === Pushing a sample into the outlet ===
@@ -500,7 +499,7 @@ public:
 	}
 
 	/** Push a pointer to raw numeric data as one sample into the outlet.
-	 * This is the lowest-level function; performs no checking whatsoever. Cannot be used for
+	 * This is the lowest-level function; performns no checking whatsoever. Can not be used for
 	 * variable-size / string-formatted channels.
 	 * @param sample A pointer to the raw sample data to push.
 	 * @param timestamp Optionally the capture time of the sample, in agreement with local_clock();
@@ -791,7 +790,7 @@ private:
 
 	/// Check whether a given data length matches the number of channels; throw if not
 	void check_numchan(std::size_t N) const {
-		if (N != static_cast<std::size_t>(channel_count))
+		if (N != channel_count)
 			throw std::runtime_error("Provided element count (" + std::to_string(N) +
 									 ") does not match the stream's channel count (" +
 									 std::to_string(channel_count) + '.');
@@ -901,10 +900,9 @@ public:
 	 * lsl::lost_error if the stream's source is lost (e.g., due to an app or computer crash).
 	 */
 	stream_inlet(const stream_info &info, int32_t max_buflen = 360, int32_t max_chunklen = 0,
-		bool recover = true, lsl_transport_options_t flags = transp_default)
+		bool recover = true)
 		: channel_count(info.channel_count()),
-		  obj(lsl_create_inlet_ex(info.handle().get(), max_buflen, max_chunklen, recover, flags),
-			  &lsl_destroy_inlet) {}
+		  obj(lsl_create_inlet(info.handle().get(), max_buflen, max_chunklen, recover), &lsl_destroy_inlet) {}
 
 	/// Return a shared pointer to pass to C-API functions that aren't wrapped yet
 	///
@@ -1670,7 +1668,7 @@ public:
 	std::vector<stream_info> results() {
 		lsl_streaminfo buffer[1024];
 		return std::vector<stream_info>(
-			buffer, buffer + check_error(lsl_resolver_results(obj.get(), buffer, sizeof(buffer))));
+			buffer, buffer + lsl_resolver_results(obj.get(), buffer, sizeof(buffer)));
 	}
 
 	/// Move constructor for stream_inlet
@@ -1705,7 +1703,7 @@ inline int32_t check_error(int32_t ec) {
 		switch (ec) {
 		case lsl_timeout_error: throw timeout_error("The operation has timed out.");
 		case lsl_lost_error:
-			throw lost_error(
+			throw timeout_error(
 				"The stream has been lost; to continue reading, you need to re-resolve it.");
 		case lsl_argument_error:
 			throw std::invalid_argument("An argument was incorrectly specified.");

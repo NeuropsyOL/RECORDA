@@ -2,28 +2,24 @@
 #define RESOLVE_ATTEMPT_UDP_H
 
 #include "cancellation.h"
-#include "forward.h"
-#include "netinterfaces.h"
 #include "stream_info_impl.h"
-#include "socket_utils.h"
-#include <asio/ip/multicast.hpp>
-#include <asio/steady_timer.hpp>
+#include <boost/asio/ip/udp.hpp>
+#include <boost/asio/steady_timer.hpp>
 #include <map>
-#include <memory>
-#include <string>
-#include <vector>
 
-using asio::ip::udp;
-using err_t = const asio::error_code &;
+namespace lslboost {
+namespace system {
+class error_code;
+}
+} // namespace lslboost
+
+using lslboost::asio::ip::udp;
+using lslboost::system::error_code;
 
 namespace lsl {
 
-using steady_timer = asio::basic_waitable_timer<asio::chrono::steady_clock, asio::wait_traits<asio::chrono::steady_clock>, asio::io_context::executor_type>;
-
 /// A container for resolve results (map from stream instance UID onto (stream_info,receive-time)).
 typedef std::map<std::string, std::pair<stream_info_impl, double>> result_container;
-/// A container for outgoing multicast interfaces
-typedef std::vector<class netif> mcast_interface_list;
 
 /**
  * An asynchronous resolve attempt for a single query targeted at a set of endpoints, via UDP.
@@ -33,8 +29,8 @@ typedef std::vector<class netif> mcast_interface_list;
  * packet receives. The operation will wait for return packets until either a particular timeout has
  * been reached or until it is cancelled via the cancel() method.
  */
-class resolve_attempt_udp final : public cancellable_obj,
-								  public std::enable_shared_from_this<resolve_attempt_udp> {
+class resolve_attempt_udp : public cancellable_obj,
+							public std::enable_shared_from_this<resolve_attempt_udp> {
 	using endpoint_list = std::vector<udp::endpoint>;
 
 public:
@@ -57,12 +53,13 @@ public:
 	 * @param registry A registry where the attempt can register itself as active so it can be
 	 * cancelled during shutdown.
 	 */
-	resolve_attempt_udp(asio::io_context &io, const udp &protocol,
+	resolve_attempt_udp(lslboost::asio::io_context &io, const udp &protocol,
 		const std::vector<udp::endpoint> &targets, const std::string &query,
-		resolver_impl &resolver, double cancel_after = 5.0);
+		result_container &results, std::mutex &results_mut, double cancel_after = 5.0,
+		cancellable_registry *registry = nullptr);
 
 	/// Destructor
-	~resolve_attempt_udp() final;
+	~resolve_attempt_udp();
 
 	/// Start the attempt asynchronously.
 	void begin();
@@ -81,11 +78,10 @@ private:
 	void receive_next_result();
 
 	/// Thos function starts an async send operation for the given current endpoint.
-	void send_next_query(
-		endpoint_list::const_iterator next, mcast_interface_list::const_iterator mcit);
+	void send_next_query(endpoint_list::const_iterator i);
 
 	/// Handler that gets called when a receive has completed.
-	void handle_receive_outcome(err_t err, std::size_t len);
+	void handle_receive_outcome(error_code err, std::size_t len);
 
 	// === cancellation ===
 
@@ -95,9 +91,11 @@ private:
 
 	// data shared with the resolver_impl
 	/// reference to the IO service that executes our actions
-	asio::io_context &io_;
-	/// the resolver associated with this attempt
-	resolver_impl &resolver_;
+	lslboost::asio::io_context &io_;
+	/// shared result container
+	result_container &results_;
+	/// shared mutex that protects the results
+	std::mutex &results_mut_;
 
 	// constant over the lifetime of this attempt
 	/// the timeout for giving up
@@ -121,17 +119,15 @@ private:
 
 	// IO objects
 	/// socket to send data over (for unicasts)
-	udp_socket unicast_socket_;
+	udp::socket unicast_socket_;
 	/// socket to send data over (for broadcasts)
-	udp_socket broadcast_socket_;
+	udp::socket broadcast_socket_;
 	/// socket to send data over (for multicasts)
-	udp_socket multicast_socket_;
-	/// Interface addresses to send multicast packets from
-	const mcast_interface_list &multicast_interfaces;
+	udp::socket multicast_socket_;
 	/// socket to receive replies (always unicast)
-	udp_socket recv_socket_;
+	udp::socket recv_socket_;
 	/// timer to schedule the cancel action
-	steady_timer cancel_timer_;
+	lslboost::asio::steady_timer cancel_timer_;
 };
 } // namespace lsl
 

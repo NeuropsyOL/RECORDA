@@ -3,14 +3,10 @@
 #include <istream>
 #include "portable_archive_includes.hpp"
 
-#ifdef SLIMARCHIVE
-#include "slimarchive.hpp"
-#else
 #include <boost/archive/basic_binary_iprimitive.hpp>
 #include <boost/archive/basic_binary_iarchive.hpp>
 
 #include <boost/archive/detail/polymorphic_iarchive_route.hpp>
-#endif
 
 
 namespace eos {
@@ -18,8 +14,11 @@ namespace eos {
 	// forward declaration
 	class portable_iarchive;
 
-	using portable_iprimitive = lslboost::archive::basic_binary_iprimitive<portable_iarchive,
-		std::istream::char_type, std::istream::traits_type>;
+	typedef lslboost::archive::basic_binary_iprimitive<
+		portable_iarchive
+		, std::istream::char_type
+		, std::istream::traits_type
+	> portable_iprimitive;
 
 	/**
 	 * \brief Portable binary input archive using little endian format.
@@ -46,9 +45,7 @@ namespace eos {
 
 		// workaround for gcc: use a dummy struct
 		// as additional argument type for overloading
-		template <int> struct dummy {
-			dummy(int /*unused*/) {}
-		};
+		template <int> struct dummy { dummy(int) {}};
 
 		// loads directly from stream
 		inline signed char load_signed_char()
@@ -207,7 +204,7 @@ namespace eos {
 		typename std::enable_if<std::is_floating_point<T>::value >::type
 		load(T & t, dummy<3> = 0)
 		{
-			using traits = typename fp::detail::fp_traits<T>::type;
+			typedef typename fp::detail::fp_traits<T>::type traits;
 
 			// if you end here there are three possibilities:
 			// 1. you're serializing a long double which is not portable

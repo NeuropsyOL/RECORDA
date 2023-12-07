@@ -11,22 +11,21 @@ http://www.boost.org/LICENSE_1_0.txt)
 #include <boost/predef/version_number.h>
 #include <boost/predef/make.h>
 
-/* tag::reference[]
-= `BOOST_ARCH_RS6000`
+/*`
+[heading `BOOST_ARCH_RS6000`]
 
-http://en.wikipedia.org/wiki/RS/6000[RS/6000] architecture.
+[@http://en.wikipedia.org/wiki/RS/6000 RS/6000] architecture.
 
-[options="header"]
-|===
-| {predef_symbol} | {predef_version}
+[table
+    [[__predef_symbol__] [__predef_version__]]
 
-| `+__THW_RS6000+` | {predef_detection}
-| `+_IBMR2+` | {predef_detection}
-| `+_POWER+` | {predef_detection}
-| `+_ARCH_PWR+` | {predef_detection}
-| `+_ARCH_PWR2+` | {predef_detection}
-|===
-*/ // end::reference[]
+    [[`__THW_RS6000`] [__predef_detection__]]
+    [[`_IBMR2`] [__predef_detection__]]
+    [[`_POWER`] [__predef_detection__]]
+    [[`_ARCH_PWR`] [__predef_detection__]]
+    [[`_ARCH_PWR2`] [__predef_detection__]]
+    ]
+ */
 
 #define BOOST_ARCH_RS6000 BOOST_VERSION_NUMBER_NOT_AVAILABLE
 
@@ -41,22 +40,12 @@ http://en.wikipedia.org/wiki/RS/6000[RS/6000] architecture.
 #   define BOOST_ARCH_RS6000_AVAILABLE
 #endif
 
-#if BOOST_ARCH_RS6000
-#   undef BOOST_ARCH_WORD_BITS_32
-#   define BOOST_ARCH_WORD_BITS_32 BOOST_VERSION_NUMBER_AVAILABLE
-#endif
-
 #define BOOST_ARCH_RS6000_NAME "RS/6000"
 
 #define BOOST_ARCH_PWR BOOST_ARCH_RS6000
 
 #if BOOST_ARCH_PWR
 #   define BOOST_ARCH_PWR_AVAILABLE
-#endif
-
-#if BOOST_ARCH_PWR
-#   undef BOOST_ARCH_WORD_BITS_32
-#   define BOOST_ARCH_WORD_BITS_32 BOOST_VERSION_NUMBER_AVAILABLE
 #endif
 
 #define BOOST_ARCH_PWR_NAME BOOST_ARCH_RS6000_NAME

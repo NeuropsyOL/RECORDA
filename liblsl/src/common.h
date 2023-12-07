@@ -30,15 +30,7 @@ extern "C" {
 	"Please do not compile this with a lslboost version older than 1.45 because the library would otherwise not be protocol-compatible with builds using other versions."
 #endif
 
-// compiler hint that the given expression is likely or unlikely
-// (e.g., in conditional statements)
-#if defined(__clang__) || defined(__GNUC__)
-#define LIKELY(x) __builtin_expect(!!(x), 1)
-#define UNLIKELY(x) __builtin_expect(!!(x), 0)
-#else
-#define LIKELY(x) (x)
-#define UNLIKELY(x) (x)
-#endif
+extern thread_local char last_error[512];
 
 // the highest supported protocol version
 // * 100 is the original version, supported by library versions 1.00+
@@ -46,20 +38,17 @@ extern "C" {
 const int LSL_PROTOCOL_VERSION = 110;
 
 // the library version
-const int LSL_LIBRARY_VERSION = 116;
-
-/// size of the lsl_last_error() buffer size
-const int LAST_ERROR_SIZE = 512;
+const int LSL_LIBRARY_VERSION = 115;
 
 namespace lsl {
 /// A very large time duration (> 1 year) for timeout values.
-const double FOREVER = LSL_FOREVER;
+const double FOREVER = 32000000.0;
 
 /// Constant to indicate that a sample has the next successive time stamp.
-const double DEDUCED_TIMESTAMP = LSL_DEDUCED_TIMESTAMP;
+const double DEDUCED_TIMESTAMP = -1.0;
 
 /// Constant to indicate that a stream has variable sampling rate.
-const double IRREGULAR_RATE = LSL_IRREGULAR_RATE;
+const double IRREGULAR_RATE = 0.0;
 
 /// Obtain a local system time stamp in nanoseconds.
 int64_t lsl_local_clock_ns();
@@ -83,6 +72,9 @@ public:
 	explicit timeout_error(const std::string &msg) : std::runtime_error(msg) {}
 };
 
+std::string trim(const std::string &input);
+std::vector<std::string> splitandtrim(
+	const std::string &input, char separator = ',', bool keepempty = false);
 } // namespace lsl
 
 #endif

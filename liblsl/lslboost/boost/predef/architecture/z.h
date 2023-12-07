@@ -11,18 +11,17 @@ http://www.boost.org/LICENSE_1_0.txt)
 #include <boost/predef/version_number.h>
 #include <boost/predef/make.h>
 
-/* tag::reference[]
-= `BOOST_ARCH_Z`
+/*`
+[heading `BOOST_ARCH_Z`]
 
-http://en.wikipedia.org/wiki/Z/Architecture[z/Architecture] architecture.
+[@http://en.wikipedia.org/wiki/Z/Architecture z/Architecture] architecture.
 
-[options="header"]
-|===
-| {predef_symbol} | {predef_version}
+[table
+    [[__predef_symbol__] [__predef_version__]]
 
-| `+__SYSC_ZARCH__+` | {predef_detection}
-|===
-*/ // end::reference[]
+    [[`__SYSC_ZARCH__`] [__predef_detection__]]
+    ]
+ */
 
 #define BOOST_ARCH_Z BOOST_VERSION_NUMBER_NOT_AVAILABLE
 
@@ -33,11 +32,6 @@ http://en.wikipedia.org/wiki/Z/Architecture[z/Architecture] architecture.
 
 #if BOOST_ARCH_Z
 #   define BOOST_ARCH_Z_AVAILABLE
-#endif
-
-#if BOOST_ARCH_Z
-#   undef BOOST_ARCH_WORD_BITS_64
-#   define BOOST_ARCH_WORD_BITS_64 BOOST_VERSION_NUMBER_AVAILABLE
 #endif
 
 #define BOOST_ARCH_Z_NAME "z/Architecture"

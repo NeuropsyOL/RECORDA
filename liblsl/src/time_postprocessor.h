@@ -2,7 +2,6 @@
 #define TIME_POSTPROCESSOR_H
 
 #include "common.h"
-#include <cstdint>
 #include <functional>
 #include <mutex>
 
@@ -41,8 +40,8 @@ struct postproc_dejitterer {
 class time_postprocessor {
 public:
 	/// Construct a new time post-processor given some callback functions.
-	time_postprocessor(postproc_callback_t query_correction, postproc_callback_t query_srate,
-		reset_callback_t query_reset);
+	time_postprocessor(const postproc_callback_t &query_correction,
+		const postproc_callback_t &query_srate, const reset_callback_t &query_reset);
 
 	/**
 	 * Set post-processing options to use.

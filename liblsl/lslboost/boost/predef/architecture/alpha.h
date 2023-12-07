@@ -11,23 +11,22 @@ http://www.boost.org/LICENSE_1_0.txt)
 #include <boost/predef/version_number.h>
 #include <boost/predef/make.h>
 
-/* tag::reference[]
-= `BOOST_ARCH_ALPHA`
+/*`
+[heading `BOOST_ARCH_ALPHA`]
 
-http://en.wikipedia.org/wiki/DEC_Alpha[DEC Alpha] architecture.
+[@http://en.wikipedia.org/wiki/DEC_Alpha DEC Alpha] architecture.
 
-[options="header"]
-|===
-| {predef_symbol} | {predef_version}
-| `+__alpha__+` | {predef_detection}
-| `+__alpha+` | {predef_detection}
-| `+_M_ALPHA+` | {predef_detection}
+[table
+    [[__predef_symbol__] [__predef_version__]]
+    [[`__alpha__`] [__predef_detection__]]
+    [[`__alpha`] [__predef_detection__]]
+    [[`_M_ALPHA`] [__predef_detection__]]
 
-| `+__alpha_ev4__+` | 4.0.0
-| `+__alpha_ev5__+` | 5.0.0
-| `+__alpha_ev6__+` | 6.0.0
-|===
-*/ // end::reference[]
+    [[`__alpha_ev4__`] [4.0.0]]
+    [[`__alpha_ev5__`] [5.0.0]]
+    [[`__alpha_ev6__`] [6.0.0]]
+    ]
+ */
 
 #define BOOST_ARCH_ALPHA BOOST_VERSION_NUMBER_NOT_AVAILABLE
 
@@ -50,11 +49,6 @@ http://en.wikipedia.org/wiki/DEC_Alpha[DEC Alpha] architecture.
 
 #if BOOST_ARCH_ALPHA
 #   define BOOST_ARCH_ALPHA_AVAILABLE
-#endif
-
-#if BOOST_ARCH_ALPHA
-#   undef BOOST_ARCH_WORD_BITS_64
-#   define BOOST_ARCH_WORD_BITS_64 BOOST_VERSION_NUMBER_AVAILABLE
 #endif
 
 #define BOOST_ARCH_ALPHA_NAME "DEC Alpha"

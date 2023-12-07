@@ -1,7 +1,6 @@
 [![GitHub Actions Status](https://github.com/sccn/liblsl/workflows/C%2FC++%20CI/badge.svg)](https://github.com/sccn/liblsl/actions)
 [![Travis Build Status](https://travis-ci.org/sccn/liblsl.svg?branch=master)](https://travis-ci.org/sccn/liblsl)
 [![Azure Build Status](https://dev.azure.com/labstreaminglayer/liblsl/_apis/build/status/sccn.liblsl?branchName=master)](https://dev.azure.com/labstreaminglayer/liblsl/_build/latest?definitionId=1&branchName=master)
-[![DOI](https://zenodo.org/badge/123265865.svg)](https://zenodo.org/badge/latestdoi/123265865)
 
 # Lab Streaming Layer library
 
@@ -10,39 +9,41 @@ data between applications in a lab, e.g. instrument time series, event markers,
 audio, and so on. For more information, please read the
 [online documentation](https://labstreaminglayer.readthedocs.io)
 
-These repository is for the core library: `liblsl`
-
 ## Getting and using liblsl
 
-The most up-to-date instructions to use liblsl are in the
+The most up-to-date instructions are in the
 [quick start online documentation](https://labstreaminglayer.readthedocs.io/info/getting_started.html).
+
+## Building liblsl
+
+Precompiled packages are uploaded
+
+- to the [Release page](https://github.com/sccn/liblsl/releases)
+- the [Anaconda cloud](https://anaconda.org/tstenner/liblsl)
+
+To compile the library yourself from source please follow the [online documentation](https://labstreaminglayer.readthedocs.io/dev/lib_dev.html).
+
+For single board computers running linux, you can also try
+`standalone_compilation_linux.sh`.
+
+To build language bindings (e.g. for
+[Matlab](https://github.com/labstreaminglayer/liblsl-Matlab) or
+[Python](https://github.com/labstreaminglayer/liblsl-Python)) take a look at
+the [corresponding directory in the main repository](https://github.com/sccn/labstreaminglayer/tree/master/LSL).
 
 You might also be interested in
 [apps to connect to recording equipment](https://labstreaminglayer.readthedocs.io/info/supported_devices.html)
 and the [LabRecorder](https://github.com/labstreaminglayer/App-LabRecorder) to record streams to disk.
 
-To retrieve the latest liblsl release, you have a few options.
 
-Precompiled packages are uploaded
+## Boost
 
-- to the [Release page](https://github.com/sccn/liblsl/releases)
-- the [Anaconda cloud](https://anaconda.org/conda-forge/liblsl), install with `conda install -c conda-forge liblsl`
+liblsl uses boost (mainly Boost.ASIO) extensively.
+Because embedding liblsl in an application that links to an other Boost version (notably Matlab)
+causes runtime errors, we bundle a subset of boost in
+`lslboost`.
 
-liblsl is also available via the following package managers:
-
-- [vcpkg](https://vcpkg.io)
-- [Conan](https://conan.io/center/liblsl)
-- [homebrew](https://brew.sh/) via `brew install labstreaminglayer/tap/lsl`
-
-If you cannot find a liblsl for you via any of the above methods, then fear not because for most users it is simple to build.
-
-## Building liblsl
-
-To compile the library yourself from source,
-please follow the [online documentation](https://labstreaminglayer.readthedocs.io/dev/lib_dev.html).
-
-For single board computers running linux, you can also try
-`standalone_compilation_linux.sh`.
+To update the included lslboost, install Boost bcp and use the `update_lslboost.sh` script.
 
 ## Design goals
 
@@ -90,9 +91,3 @@ The library uses code that is licensed under the Boost software license.
 # Acknowledgements
 
 The original version of this software was written at the Swartz Center for Computational Neuroscience, UCSD. This work was funded by the Army Research Laboratory under Cooperative Agreement Number W911NF-10-2-0022 as well as through NINDS grant 3R01NS047293-06S1.
-
-# Citing liblsl
-
-[![DOI](https://zenodo.org/badge/123265865.svg)](https://zenodo.org/badge/latestdoi/123265865)
-
-Information about versioning: https://help.zenodo.org/#versioning

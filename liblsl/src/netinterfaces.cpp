@@ -1,11 +1,12 @@
 #include "netinterfaces.h"
-#include <cstring>
 #include <loguru.hpp>
 
-asio::ip::address_v6 sinaddr_to_asio(sockaddr_in6 *addr) {
-	asio::ip::address_v6::bytes_type buf;
+using lslboost::asio::ip::address_v4;
+
+lslboost::asio::ip::address_v6 sinaddr_to_asio(sockaddr_in6 *addr) {
+	lslboost::asio::ip::address_v6::bytes_type buf;
 	memcpy(buf.data(), addr->sin6_addr.s6_addr, sizeof(addr->sin6_addr));
-	return asio::ip::make_address_v6(buf, addr->sin6_scope_id);
+	return lslboost::asio::ip::make_address_v6(buf, addr->sin6_scope_id);
 }
 
 #if defined(_WIN32)
@@ -46,7 +47,7 @@ std::vector<lsl::netif> lsl::get_local_interfaces() {
 				for (Addr *uaddr = addr->FirstUnicastAddress; uaddr != 0; uaddr = uaddr->Next) {
 					if (uaddr->Address.lpSockaddr->sa_family != AF_INET) continue;
 
-					if_.addr = asio::ip::make_address_v4(
+					if_.addr = lslboost::asio::ip::make_address_v4(
 						ntohl(reinterpret_cast<sockaddr_in *>(uaddr->Address.lpSockaddr)
 								  ->sin_addr.s_addr));
 					ret.emplace_back(std::move(if_));
@@ -83,11 +84,11 @@ std::vector<lsl::netif> lsl::get_local_interfaces() {
 		LOG_F(ERROR, "Couldn't enumerate network interfaces: %d", errno);
 		return res;
 	}
-	for (auto *addr = ifs; addr != nullptr; addr = addr->ifa_next) {
+	for (auto addr = ifs; addr != nullptr; addr = addr->ifa_next) {
 		// No address? Skip.
 		if (addr->ifa_addr == nullptr) continue;
 		LOG_F(INFO, "netif '%s' (status: %d, multicast: %d, broadcast: %d)", addr->ifa_name,
-			addr->ifa_flags & IFF_UP, addr->ifa_flags & IFF_MULTICAST,
+			addr->ifa_flags & IFF_MULTICAST, addr->ifa_flags & IFF_UP,
 			addr->ifa_flags & IFF_BROADCAST);
 		// Interface doesn't support multicast? Skip.
 		if (!(addr->ifa_flags & IFF_MULTICAST)) continue;
@@ -97,7 +98,7 @@ std::vector<lsl::netif> lsl::get_local_interfaces() {
 		lsl::netif if_;
 
 		if (addr->ifa_addr->sa_family == AF_INET) {
-			if_.addr = asio::ip::make_address_v4(
+			if_.addr = lslboost::asio::ip::make_address_v4(
 				ntohl(reinterpret_cast<sockaddr_in *>(addr->ifa_addr)->sin_addr.s_addr));
 			LOG_F(INFO, "\tIPv4 addr: %x", if_.addr.to_v4().to_uint());
 		} else if (addr->ifa_addr->sa_family == AF_INET6) {
@@ -114,7 +115,7 @@ std::vector<lsl::netif> lsl::get_local_interfaces() {
 }
 #else
 
-std::vector<lsl::netif> lsl::get_local_interfaces() {
+std::vector<lsl::netif> get_interface_addresses() {
 	LOG_F(WARNING, "No implementation to enumerate network interfaces found.");
 	return std::vector<lsl::netif>();
 }

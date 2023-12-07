@@ -1,14 +1,11 @@
 #include "info_receiver.h"
 #include "cancellable_streambuf.h"
 #include "inlet_connection.h"
-#include "stream_info_impl.h"
 #include <chrono>
-#include <exception>
-#include <istream>
+#include <iostream>
 #include <loguru.hpp>
 #include <memory>
 #include <sstream>
-#include <string>
 
 lsl::info_receiver::info_receiver(inlet_connection &conn) : conn_(conn) {
 	conn_.register_onlost(this, &fullinfo_upd_);
@@ -70,7 +67,7 @@ void lsl::info_receiver::info_thread() {
 				}
 				fullinfo_upd_.notify_all();
 				break;
-			} catch (err_t) {
+			} catch (error_code &) {
 				// connection-level error: closed, reset, refused, etc.
 				conn_.try_recover_from_error();
 			} catch (std::exception &e) {

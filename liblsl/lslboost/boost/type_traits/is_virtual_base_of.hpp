@@ -44,7 +44,7 @@ namespace lslboost {
       // They can also fall back to the behaviour of reinterpret_cast, which allows is_virtual_base_of to work on non-class types too.
       // Note that because we are casting pointers there can be no user-defined operators to interfere.
       template<class T, class U,
-         typename lslboost::make_void<decltype((U*)(std::declval<T*>()))>::type* =
+         lslboost::void_t<decltype((U*)(std::declval<T*>()))>* =
          nullptr>
          constexpr bool is_virtual_base_impl(int) { return false; }
 
@@ -81,7 +81,7 @@ namespace lslboost {
          long long ll;
 #endif
       };
-#ifdef BOOST_BORLANDC
+#ifdef __BORLANDC__
       struct boost_type_traits_internal_struct_X : public virtual Derived, public virtual Base
       {
          boost_type_traits_internal_struct_X();
