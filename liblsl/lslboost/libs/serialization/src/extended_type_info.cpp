@@ -79,24 +79,24 @@ typedef std::multiset<const extended_type_info *, key_compare> ktmap;
 
 class extended_type_info_arg : public extended_type_info
 {
-    bool
-    is_less_than(const extended_type_info & /*rhs*/) const BOOST_OVERRIDE {
+    virtual bool
+    is_less_than(const extended_type_info & /*rhs*/) const {
         BOOST_ASSERT(false);
         return false;
-    }
-    bool
-    is_equal(const extended_type_info & /*rhs*/) const BOOST_OVERRIDE {
+    };
+    virtual bool
+    is_equal(const extended_type_info & /*rhs*/) const {
         BOOST_ASSERT(false);
         return false;
-    }
-    const char * get_debug_info() const BOOST_OVERRIDE {
+    };
+    virtual const char * get_debug_info() const {
         return get_key();
     }
-    void * construct(unsigned int /*count*/, ...) const BOOST_OVERRIDE {
+    virtual void * construct(unsigned int /*count*/, ...) const{
         BOOST_ASSERT(false);
         return NULL;
     }
-    void destroy(void const * const /*p*/) const BOOST_OVERRIDE {
+    virtual void destroy(void const * const /*p*/) const {
         BOOST_ASSERT(false);
     }
 public:
@@ -104,7 +104,8 @@ public:
         extended_type_info(0, key)
     {}
 
-    ~extended_type_info_arg() BOOST_OVERRIDE {}
+    ~extended_type_info_arg(){
+    }
 };
 
 #ifdef BOOST_MSVC

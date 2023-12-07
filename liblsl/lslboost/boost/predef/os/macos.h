@@ -19,24 +19,23 @@ http://www.boost.org/LICENSE_1_0.txt)
 #include <boost/predef/version_number.h>
 #include <boost/predef/make.h>
 
-/* tag::reference[]
-= `BOOST_OS_MACOS`
+/*`
+[heading `BOOST_OS_MACOS`]
 
-http://en.wikipedia.org/wiki/Mac_OS[Mac OS] operating system.
+[@http://en.wikipedia.org/wiki/Mac_OS Mac OS] operating system.
 
-[options="header"]
-|===
-| {predef_symbol} | {predef_version}
+[table
+    [[__predef_symbol__] [__predef_version__]]
 
-| `macintosh` | {predef_detection}
-| `Macintosh` | {predef_detection}
-| `+__APPLE__+` | {predef_detection}
-| `+__MACH__+` | {predef_detection}
+    [[`macintosh`] [__predef_detection__]]
+    [[`Macintosh`] [__predef_detection__]]
+    [[`__APPLE__`] [__predef_detection__]]
+    [[`__MACH__`] [__predef_detection__]]
 
-| `+__APPLE__+`, `+__MACH__+` | 10.0.0
-| `_otherwise_` | 9.0.0
-|===
-*/ // end::reference[]
+    [[`__APPLE__`, `__MACH__`] [10.0.0]]
+    [[ /otherwise/ ] [9.0.0]]
+    ]
+ */
 
 #define BOOST_OS_MACOS BOOST_VERSION_NUMBER_NOT_AVAILABLE
 

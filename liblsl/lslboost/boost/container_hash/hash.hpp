@@ -18,7 +18,6 @@
 
 #include <boost/container_hash/hash_fwd.hpp>
 #include <functional>
-#include <iterator>
 #include <boost/container_hash/detail/hash_float.hpp>
 #include <string>
 #include <boost/limits.hpp>
@@ -26,7 +25,6 @@
 #include <boost/type_traits/is_integral.hpp>
 #include <boost/core/enable_if.hpp>
 #include <boost/cstdint.hpp>
-#include <climits>
 
 #if defined(BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION)
 #include <boost/type_traits/is_pointer.hpp>
@@ -120,7 +118,7 @@ namespace lslboost
 {
     namespace hash_detail
     {
-#if defined(BOOST_NO_CXX98_FUNCTION_BASE)
+#if defined(_HAS_AUTO_PTR_ETC) && !_HAS_AUTO_PTR_ETC
         template <typename T>
         struct hash_base
         {
@@ -308,56 +306,52 @@ namespace lslboost
              return seed;
         }
 
-        template<std::size_t Bits> struct hash_combine_impl
+        template <typename SizeT>
+        inline void hash_combine_impl(SizeT& seed, SizeT value)
         {
-            template <typename SizeT>
-            inline static SizeT fn(SizeT seed, SizeT value)
-            {
-                seed ^= value + 0x9e3779b9 + (seed<<6) + (seed>>2);
-                return seed;
-            }
-        };
+            seed ^= value + 0x9e3779b9 + (seed<<6) + (seed>>2);
+        }
 
-        template<> struct hash_combine_impl<32>
+        inline void hash_combine_impl(lslboost::uint32_t& h1,
+                lslboost::uint32_t k1)
         {
-            inline static lslboost::uint32_t fn(lslboost::uint32_t h1, lslboost::uint32_t k1)
-            {
-                const lslboost::uint32_t c1 = 0xcc9e2d51;
-                const lslboost::uint32_t c2 = 0x1b873593;
+            const uint32_t c1 = 0xcc9e2d51;
+            const uint32_t c2 = 0x1b873593;
 
-                k1 *= c1;
-                k1 = BOOST_FUNCTIONAL_HASH_ROTL32(k1,15);
-                k1 *= c2;
+            k1 *= c1;
+            k1 = BOOST_FUNCTIONAL_HASH_ROTL32(k1,15);
+            k1 *= c2;
 
-                h1 ^= k1;
-                h1 = BOOST_FUNCTIONAL_HASH_ROTL32(h1,13);
-                h1 = h1*5+0xe6546b64;
+            h1 ^= k1;
+            h1 = BOOST_FUNCTIONAL_HASH_ROTL32(h1,13);
+            h1 = h1*5+0xe6546b64;
+        }
 
-                return h1;
-            }
-        };
 
-        template<> struct hash_combine_impl<64>
+// Don't define 64-bit hash combine on platforms without 64 bit integers,
+// and also not for 32-bit gcc as it warns about the 64-bit constant.
+#if !defined(BOOST_NO_INT64_T) && \
+        !(defined(__GNUC__) && ULONG_MAX == 0xffffffff)
+
+        inline void hash_combine_impl(lslboost::uint64_t& h,
+                lslboost::uint64_t k)
         {
-            inline static lslboost::uint64_t fn(lslboost::uint64_t h, lslboost::uint64_t k)
-            {
-                const lslboost::uint64_t m = (lslboost::uint64_t(0xc6a4a793) << 32) + 0x5bd1e995;
-                const int r = 47;
+            const lslboost::uint64_t m = UINT64_C(0xc6a4a7935bd1e995);
+            const int r = 47;
 
-                k *= m;
-                k ^= k >> r;
-                k *= m;
+            k *= m;
+            k ^= k >> r;
+            k *= m;
 
-                h ^= k;
-                h *= m;
+            h ^= k;
+            h *= m;
 
-                // Completely arbitrary number, to prevent 0's
-                // from hashing to 0.
-                h += 0xe6546b64;
+            // Completely arbitrary number, to prevent 0's
+            // from hashing to 0.
+            h += 0xe6546b64;
+        }
 
-                return h;
-            }
-        };
+#endif // BOOST_NO_INT64_T
     }
 
     template <typename T>
@@ -418,7 +412,7 @@ namespace lslboost
     inline void hash_combine(std::size_t& seed, T const& v)
     {
         lslboost::hash<T> hasher;
-        seed = lslboost::hash_detail::hash_combine_impl<sizeof(std::size_t) * CHAR_BIT>::fn(seed, hasher(v));
+        return lslboost::hash_detail::hash_combine_impl(seed, hasher(v));
     }
 
 #if defined(BOOST_MSVC)
@@ -432,7 +426,7 @@ namespace lslboost
 
         for(; first != last; ++first)
         {
-            hash_combine<typename std::iterator_traits<It>::value_type>(seed, *first);
+            hash_combine(seed, *first);
         }
 
         return seed;
@@ -443,11 +437,11 @@ namespace lslboost
     {
         for(; first != last; ++first)
         {
-            hash_combine<typename std::iterator_traits<It>::value_type>(seed, *first);
+            hash_combine(seed, *first);
         }
     }
 
-#if BOOST_WORKAROUND(BOOST_BORLANDC, BOOST_TESTED_AT(0x551))
+#if BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x551))
     template <class T>
     inline std::size_t hash_range(T* first, T* last)
     {

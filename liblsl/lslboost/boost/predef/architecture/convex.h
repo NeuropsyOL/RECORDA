@@ -11,24 +11,23 @@ http://www.boost.org/LICENSE_1_0.txt)
 #include <boost/predef/version_number.h>
 #include <boost/predef/make.h>
 
-/* tag::reference[]
-= `BOOST_ARCH_CONVEX`
+/*`
+[heading `BOOST_ARCH_CONVEX`]
 
-http://en.wikipedia.org/wiki/Convex_Computer[Convex Computer] architecture.
+[@http://en.wikipedia.org/wiki/Convex_Computer Convex Computer] architecture.
 
-[options="header"]
-|===
-| {predef_symbol} | {predef_version}
+[table
+    [[__predef_symbol__] [__predef_version__]]
 
-| `+__convex__+` | {predef_detection}
+    [[`__convex__`] [__predef_detection__]]
 
-| `+__convex_c1__+` | 1.0.0
-| `+__convex_c2__+` | 2.0.0
-| `+__convex_c32__+` | 3.2.0
-| `+__convex_c34__+` | 3.4.0
-| `+__convex_c38__+` | 3.8.0
-|===
-*/ // end::reference[]
+    [[`__convex_c1__`] [1.0.0]]
+    [[`__convex_c2__`] [2.0.0]]
+    [[`__convex_c32__`] [3.2.0]]
+    [[`__convex_c34__`] [3.4.0]]
+    [[`__convex_c38__`] [3.8.0]]
+    ]
+ */
 
 #define BOOST_ARCH_CONVEX BOOST_VERSION_NUMBER_NOT_AVAILABLE
 
@@ -56,11 +55,6 @@ http://en.wikipedia.org/wiki/Convex_Computer[Convex Computer] architecture.
 
 #if BOOST_ARCH_CONVEX
 #   define BOOST_ARCH_CONVEX_AVAILABLE
-#endif
-
-#if BOOST_ARCH_CONVEX
-#   undef BOOST_ARCH_WORD_BITS_32
-#   define BOOST_ARCH_WORD_BITS_32 BOOST_VERSION_NUMBER_AVAILABLE
 #endif
 
 #define BOOST_ARCH_CONVEX_NAME "Convex Computer"

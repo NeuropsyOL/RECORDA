@@ -347,15 +347,13 @@ namespace details
 
 template <class T1, class T2>
 class compressed_pair
-#ifndef BOOST_UTILITY_DOCS
-    : private ::lslboost::details::compressed_pair_imp<T1, T2,
+   : private ::lslboost::details::compressed_pair_imp<T1, T2,
              ::lslboost::details::compressed_pair_switch<
                     T1,
                     T2,
                     ::lslboost::is_same<typename remove_cv<T1>::type, typename remove_cv<T2>::type>::value,
                     ::lslboost::details::compressed_pair_empty<T1>::value,
                     ::lslboost::details::compressed_pair_empty<T2>::value>::value>
-#endif // BOOST_UTILITY_DOCS
 {
 private:
    typedef details::compressed_pair_imp<T1, T2,
@@ -394,7 +392,6 @@ public:
 //
 template <class T>
 class compressed_pair<T, T>
-#ifndef BOOST_UTILITY_DOCS
    : private details::compressed_pair_imp<T, T,
              ::lslboost::details::compressed_pair_switch<
                     T,
@@ -402,7 +399,6 @@ class compressed_pair<T, T>
                     ::lslboost::is_same<typename remove_cv<T>::type, typename remove_cv<T>::type>::value,
                     ::lslboost::details::compressed_pair_empty<T>::value,
                     ::lslboost::details::compressed_pair_empty<T>::value>::value>
-#endif // BOOST_UTILITY_DOCS
 {
 private:
    typedef details::compressed_pair_imp<T, T,

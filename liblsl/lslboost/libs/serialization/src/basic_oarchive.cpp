@@ -134,7 +134,7 @@ class basic_oarchive_impl {
     // keyed on object id
     std::set<object_id_type> stored_pointers;
 
-    // address of the most recent object serialized as a pointer
+    // address of the most recent object serialized as a poiner
     // whose data itself is now pending serialization
     const void * pending_object;
     const basic_oserializer * pending_bos;
@@ -179,28 +179,28 @@ basic_oarchive_impl::find(const serialization::extended_type_info & ti) const {
     class bosarg : 
         public basic_oserializer
     {
-        bool class_info() const BOOST_OVERRIDE {
+        bool class_info() const {
             BOOST_ASSERT(false); 
             return false;
         }
         // returns true if objects should be tracked
-        bool tracking(const unsigned int) const BOOST_OVERRIDE {
+        bool tracking(const unsigned int) const {
             BOOST_ASSERT(false);
             return false;
         }
         // returns class version
-        version_type version() const BOOST_OVERRIDE {
+        version_type version() const {
             BOOST_ASSERT(false);
             return version_type(0);
         }
         // returns true if this class is polymorphic
-        bool is_polymorphic() const BOOST_OVERRIDE {
+        bool is_polymorphic() const{
             BOOST_ASSERT(false);
             return false;
         }
         void save_object_data(      
             basic_oarchive & /*ar*/, const void * /*x*/
-        ) const BOOST_OVERRIDE {
+        ) const {
             BOOST_ASSERT(false);
         }
     public:
@@ -306,9 +306,10 @@ basic_oarchive_impl::save_object(
     // just save the object id
     ar.vsave(object_reference_type(oid));
     ar.end_preamble();
+    return;
 }
 
-// colle
+// save a pointer to an object instance
 inline void
 basic_oarchive_impl::save_pointer(
     basic_oarchive & ar,

@@ -37,7 +37,6 @@ function(LSL_get_target_arch)
 #else
 #error cmake_ARCH unknown
 #endif")
-	enable_language(C)
 	try_compile(dummy_result "${CMAKE_BINARY_DIR}"
 		SOURCES "${CMAKE_BINARY_DIR}/arch.c"
 		OUTPUT_VARIABLE ARCH)
@@ -73,8 +72,7 @@ function(installLSLAuxFiles target)
 	get_target_property(is_bundle ${target} MACOSX_BUNDLE)
 	set(destdir ${PROJECT_NAME})
 	if(LSL_UNIXFOLDERS)
-		include(GNUInstallDirs)
-		set(destdir "${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}")
+		set(destdir bin/)
 	elseif(is_bundle AND APPLE)
 		set(destdir ${destdir}/${target}.app/Contents/MacOS)
 	endif()
@@ -137,13 +135,11 @@ function(installLSLApp target)
 		install(CODE "file(INSTALL $<TARGET_FILE:${libdependency}> DESTINATION \${CMAKE_INSTALL_PREFIX}/$<IF:$<PLATFORM_ID:Windows>,${CMAKE_INSTALL_BINDIR},${CMAKE_INSTALL_LIBDIR}>)")
 	endforeach()
 
-	if(NOT PROJECT_NAME STREQUAL "liblsl")
-		set_property(GLOBAL APPEND PROPERTY "LSLDEPENDS_${PROJECT_NAME}" liblsl)
-	endif()
+	set_property(GLOBAL APPEND PROPERTY
+		"LSLDEPENDS_${PROJECT_NAME}" liblsl)
 	install(TARGETS ${target} COMPONENT ${PROJECT_NAME}
 		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 		BUNDLE DESTINATION ${CMAKE_INSTALL_BINDIR})
 	# skip copying libraries if disabled or on Linux
 	if(NOT LSL_DEPLOYAPPLIBS OR UNIX AND NOT APPLE)
@@ -307,8 +303,9 @@ macro(LSLGenerateCPackConfig)
 		elseif(UNIX)
 			set(LSL_CPACK_DEFAULT_GEN DEB)
 			set(LSL_OS "Linux")
+			set(CPACK_SET_DESTDIR 1)
+			set(CPACK_INSTALL_PREFIX "/usr")
 			set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Tristan Stenner <ttstenner@gmail.com>")
-
 			set(CPACK_DEBIAN_ENABLE_COMPONENT_DEPENDS ON)
 			set(CPACK_DEB_COMPONENT_INSTALL ON)
 			set(CPACK_DEBIAN_PACKAGE_PRIORITY optional)
@@ -322,7 +319,7 @@ macro(LSLGenerateCPackConfig)
 				OUTPUT_STRIP_TRAILING_WHITESPACE
 				RESULT_VARIABLE LSB_RELEASE_RESULT
 			)
-			if(LSB_RELEASE_CODENAME AND NOT LSB_RELEASE_CODENAME STREQUAL "n/a")
+			if(LSB_RELEASE_CODENAME)
 				set(CPACK_DEBIAN_PACKAGE_RELEASE ${LSB_RELEASE_CODENAME})
 				set(LSL_OS "${LSB_RELEASE_CODENAME}")
 			endif()

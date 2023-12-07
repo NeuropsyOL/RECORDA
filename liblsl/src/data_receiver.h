@@ -7,9 +7,10 @@
 #include "forward.h"
 #include <atomic>
 #include <condition_variable>
-#include <cstdint>
 #include <mutex>
 #include <thread>
+
+using lslboost::asio::ip::tcp;
 
 namespace lsl {
 
@@ -24,7 +25,7 @@ class inlet_connection; // Forward declaration
  * The background thread terminates only if the data_receiver is destroyed or the underlying
  * connection is lost or shut down.
  */
-class data_receiver final : public cancellable_registry {
+class data_receiver : public cancellable_registry {
 public:
 	/**
 	 * Construct a new data receiver from an info connection.
@@ -80,8 +81,6 @@ public:
 private:
 	/// The data reader thread.
 	void data_thread();
-
-	sample_p try_get_next_sample(double timeout);
 
 	/// the underlying connection
 	inlet_connection &conn_;

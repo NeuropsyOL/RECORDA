@@ -1,13 +1,10 @@
 cmake_minimum_required (VERSION 3.12)
 project (liblsl
-	VERSION 1.16.2
+	VERSION 1.15
 	LANGUAGES C CXX
 	DESCRIPTION "Labstreaminglayer C/C++ library"
 	HOMEPAGE_URL "https://github.com/sccn/liblsl"
 	)
-
-# API version, to be incremented on backwards-incompatible ABI changes
-set(LSL_ABI_VERSION 2)
 
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
@@ -25,12 +22,7 @@ option(LSL_BUILD_STATIC "Build LSL as static library." OFF)
 option(LSL_LEGACY_CPP_ABI "Build legacy C++ ABI into lsl-static" OFF)
 option(LSL_OPTIMIZATIONS "Enable some more compiler optimizations" ON)
 option(LSL_UNITTESTS "Build LSL library unit tests" OFF)
-option(LSL_BUNDLED_BOOST "Use the bundled Boost by default" ON)
 option(LSL_BUNDLED_PUGIXML "Use the bundled pugixml by default" ON)
-option(LSL_SLIMARCHIVE "Use experimental but smaller serialization code" OFF)
-option(LSL_TOOLS "Build some experimental tools for in-depth tests" OFF)
-
-mark_as_advanced(LSL_SLIMARCHIVE LSL_FORCE_FANCY_LIBNAME)
 
 set(LSL_WINVER "0x0601" CACHE STRING
 	"Windows version (_WIN32_WINNT) to target (defaults to 0x0601 for Windows 7)")
@@ -51,6 +43,8 @@ add_library(lslobj OBJECT
 	src/cancellable_streambuf.h
 	src/cancellation.h
 	src/cancellation.cpp
+	src/cast.h
+	src/cast.cpp
 	src/common.cpp
 	src/common.h
 	src/consumer_queue.cpp
@@ -60,6 +54,8 @@ add_library(lslobj OBJECT
 	src/forward.h
 	src/info_receiver.cpp
 	src/info_receiver.h
+	src/inireader.h
+	src/inireader.cpp
 	src/inlet_connection.cpp
 	src/inlet_connection.h
 	src/lsl_resolver_c.cpp
@@ -96,15 +92,6 @@ add_library(lslobj OBJECT
 	src/time_receiver.h
 	src/udp_server.cpp
 	src/udp_server.h
-	src/util/cast.hpp
-	src/util/cast.cpp
-	src/util/endian.cpp
-	src/util/endian.hpp
-	src/util/inireader.hpp
-	src/util/inireader.cpp
-	src/util/strfuns.hpp
-	src/util/strfuns.cpp
-	src/util/uuid.hpp
 	thirdparty/loguru/loguru.cpp
 	$<$<BOOL:${LSL_LEGACY_CPP_ABI}>:src/legacy/legacy_abi.cpp src/legacy/legacy_abi.h>
 	# headers
@@ -123,7 +110,7 @@ if(LSL_BUNDLED_PUGIXML)
 	message(STATUS "Using bundled pugixml")
 	target_sources(lslobj PRIVATE thirdparty/pugixml/pugixml.cpp)
 	target_include_directories(lslobj SYSTEM PUBLIC
-		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/pugixml>)
+		${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/pugixml)
 else()
 	message(STATUS "Using system pugixml")
 	find_package(pugixml REQUIRED)
@@ -169,49 +156,32 @@ set_source_files_properties("thirdparty/loguru/loguru.cpp"
 find_package(Threads REQUIRED)
 
 # create the lslboost target
-add_library(lslboost INTERFACE)
-if(LSL_BUNDLED_BOOST)
-	message(STATUS "Using bundled Boost")
-	target_include_directories(lslboost SYSTEM INTERFACE
-		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lslboost>)
-else()
-	message(STATUS "Using system Boost")
-	find_package(Boost REQUIRED)
-	target_compile_definitions(lslboost
-		INTERFACE
-			lslboost=boost # allows the LSL code base to work with the original Boost namespace/headers
-	)
-	target_link_libraries(lslboost INTERFACE Boost::boost Boost::disable_autolinking)
-endif()
+add_library(lslboost OBJECT
+	lslboost/serialization_objects.cpp
+)
+target_link_libraries(lslboost PUBLIC Threads::Threads)
+target_compile_features(lslboost PUBLIC cxx_std_11 cxx_lambda_init_captures)
 
-if(LSL_SLIMARCHIVE OR NOT LSL_BUNDLED_BOOST)
-	message(STATUS "Using shim instead of full Boost.Archive")
-	target_compile_definitions(lslboost INTERFACE SLIMARCHIVE)
-elseif(LSL_BUNDLED_BOOST)
-	# compile Boost.Serialization objects as part of lslobj
-	target_sources(lslobj PRIVATE lslboost/serialization_objects.cpp)
-endif()
-target_compile_definitions(lslboost INTERFACE BOOST_ALL_NO_LIB)
+target_compile_definitions(lslboost
+	PUBLIC
+		BOOST_ALL_NO_LIB
+		BOOST_ASIO_STANDALONE
+		BOOST_THREAD_DONT_PROVIDE_INTERRUPTIONS
+)
+target_include_directories(lslboost SYSTEM PUBLIC
+	${CMAKE_CURRENT_SOURCE_DIR}/lslboost)
 
 # target configuration for the internal lslobj target
-target_link_libraries(lslobj PRIVATE lslboost Threads::Threads)
-target_compile_features(lslobj PUBLIC cxx_std_11 cxx_lambda_init_captures)
+target_link_libraries(lslobj PRIVATE lslboost)
 target_include_directories(lslobj
-	PUBLIC
-		$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>
-		$<INSTALL_INTERFACE:include>
-	INTERFACE # for unit tests
-		$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/src>
+	PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>
 	)
-target_include_directories(lslobj
-	SYSTEM PUBLIC
-		$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/thirdparty/loguru>
-		$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/thirdparty/asio>
+target_include_directories(lslobj SYSTEM PUBLIC
+	$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/thirdparty/loguru>
 )
 target_compile_definitions(lslobj PRIVATE
 	LIBLSL_EXPORTS
 	LOGURU_DEBUG_LOGGING=$<BOOL:${LSL_DEBUGLOG}>
-	PUBLIC ASIO_NO_DEPRECATED
 )
 
 # platform specific configuration
@@ -226,11 +196,15 @@ if(UNIX AND NOT APPLE)
 		target_link_libraries(lslobj PRIVATE dl)
 	endif()
 elseif(WIN32)
-	target_link_libraries(lslobj PRIVATE iphlpapi winmm mswsock ws2_32)
+	target_link_libraries(lslobj PRIVATE iphlpapi winmm)
+	target_link_libraries(lslboost PRIVATE bcrypt mswsock ws2_32)
 	target_compile_definitions(lslobj
 		PRIVATE _CRT_SECURE_NO_WARNINGS
 		PUBLIC LSLNOAUTOLINK # don't use #pragma(lib) in CMake builds
-		_WIN32_WINNT=${LSL_WINVER}
+		)
+	target_compile_definitions(lslboost
+		PUBLIC _WIN32_WINNT=${LSL_WINVER}
+		PRIVATE BOOST_THREAD_BUILD_DLL
 		)
 endif()
 
@@ -251,7 +225,6 @@ target_include_directories(lsl INTERFACE
 )
 set_target_properties(lsl PROPERTIES
 	VERSION ${liblsl_VERSION_MAJOR}.${liblsl_VERSION_MINOR}.${liblsl_VERSION_PATCH}
-	SOVERSION ${LSL_ABI_VERSION}
 )
 
 # enable some additional expensive compiler optimizations
@@ -261,8 +234,8 @@ if(LSL_OPTIMIZATIONS)
 else()
 	# build one object file for Asio instead of once every time an Asio function is called. See
 	# https://think-async.com/Asio/asio-1.18.2/doc/asio/using.html#asio.using.optional_separate_compilation
-	target_sources(lslobj PRIVATE thirdparty/asio_objects.cpp)
-	target_compile_definitions(lslobj PUBLIC ASIO_SEPARATE_COMPILATION)
+	target_sources(lslboost PRIVATE lslboost/asio_objects.cpp)
+	target_compile_definitions(lslboost PUBLIC BOOST_ASIO_SEPARATE_COMPILATION)
 endif()
 
 
@@ -291,12 +264,7 @@ write_basic_package_version_file(
 	COMPATIBILITY AnyNewerVersion
 )
 
-set(LSLTargets lsl)
-if(LSL_BUILD_STATIC)
-	list(APPEND LSLTargets lslobj lslboost)
-endif()
-
-install(TARGETS ${LSLTargets}
+install(TARGETS lsl
 	EXPORT LSLTargets
 	COMPONENT liblsl
 	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -339,13 +307,6 @@ include(cmake/LSLCMake.cmake)
 add_executable(lslver testing/lslver.c)
 target_link_libraries(lslver PRIVATE lsl)
 installLSLApp(lslver)
-
-if(NOT WIN32 AND LSL_TOOLS)
-	add_executable(blackhole testing/blackhole.cpp)
-	target_link_libraries(blackhole PRIVATE Threads::Threads)
-	target_include_directories(blackhole PRIVATE "thirdparty/asio/")
-	installLSLApp(blackhole)
-endif()
 
 set(LSL_INSTALL_ROOT ${CMAKE_CURRENT_BINARY_DIR})
 if(LSL_UNITTESTS)

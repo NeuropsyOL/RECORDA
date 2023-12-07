@@ -1,23 +1,26 @@
 #ifndef TCP_SERVER_H
 #define TCP_SERVER_H
 
+// (inefficiently converting int to bool in portable_oarchive instantiation...)
+#pragma warning(disable : 4800)
+
 #include "forward.h"
-#include "socket_utils.h"
-#include <atomic>
-#include <map>
+#include <boost/asio/ip/tcp.hpp>
 #include <memory>
 #include <mutex>
-#include <string>
+#include <set>
 
-using asio::ip::tcp;
-using err_t = const asio::error_code &;
+using lslboost::asio::ip::tcp;
+using lslboost::system::error_code;
 
 namespace lsl {
 
+/// shared pointer to a string
+using string_p = std::shared_ptr<std::string>;
 /// shared pointer to a socket
-using tcp_socket_p = std::shared_ptr<tcp_socket>;
+using tcp_socket_p = std::shared_ptr<tcp::socket>;
 /// shared pointer to an acceptor socket
-using tcp_acceptor_p = std::unique_ptr<tcp_acceptor>;
+using tcp_acceptor_p = std::shared_ptr<tcp::acceptor>;
 
 /**
  * The TCP data server.
@@ -48,8 +51,8 @@ public:
 	 * @param chunk_size The preferred chunk size, in samples. If 0, the pushthrough flag determines
 	 * the effective chunking.
 	 */
-	tcp_server(stream_info_impl_p info, io_context_p io, send_buffer_p sendbuf, factory_p factory,
-		int chunk_size, bool allow_v4, bool allow_v6);
+	tcp_server(const stream_info_impl_p &info, const io_context_p &io, const send_buffer_p &sendbuf,
+		const factory_p &factory, tcp protocol, int chunk_size);
 
 	/**
 	 * Begin serving TCP connections.
@@ -63,27 +66,32 @@ public:
 	 * Initiate teardown of IO processes.
 	 *
 	 * The actual teardown will be performed by the IO thread that runs the operations of
-	 * this server.
+	 * thisserver.
 	 */
 	void end_serving();
 
 private:
 	friend class client_session;
-
 	/// Start accepting a new connection.
-	void accept_next_connection(tcp_acceptor_p &acceptor);
+	void accept_next_connection();
 
-	/// Register an in-flight (active) session with the server (so that we can close it when
+	/// Handler that is called when the accept has finished.
+	void handle_accept_outcome(std::shared_ptr<class client_session> newsession, error_code err);
+
+	/// Register an in-flight (active) session socket with the server (so that we can close it when
 	/// a shutdown is requested externally).
-	void register_inflight_session(const std::shared_ptr<class client_session> &session);
+	void register_inflight_socket(const tcp_socket_p &sock);
 
-	void unregister_inflight_session(client_session *session);
+	/// Unregister an in-flight session socket.
+	void unregister_inflight_socket(const tcp_socket_p &sock);
 
 	/// Post a close of all in-flight sockets.
-	void close_inflight_sessions();
+	void close_inflight_sockets();
 
 	// data used by the transfer threads
 	int chunk_size_; // the chunk size to use (or 0)
+	/// shutdown flag: tells the transfer thread that it should terminate itself asap
+	std::atomic<bool> shutdown_;
 
 	// data shared with the outlet
 	stream_info_impl_p info_; // shared stream_info object
@@ -93,11 +101,11 @@ private:
 	send_buffer_p send_buffer_; // the send buffer, shared with other TCP's and the outlet
 
 	// acceptor socket
-	tcp_acceptor_p acceptor_v4_, acceptor_v6_; // our server socket
+	tcp_acceptor_p acceptor_; // our server socket
 
-	// registry of in-flight asessions (for cancellation)
-	std::map<void *, std::weak_ptr<client_session>> inflight_;
-	std::recursive_mutex inflight_mut_; // mutex protecting the registry from concurrent access
+	// registry of in-flight client sockets (for cancellation)
+	std::set<tcp_socket_p> inflight_;		 // registry of currently in-flight sockets
+	std::recursive_mutex inflight_mut_;		 // mutex protecting the registry from concurrent access
 
 	// some cached data
 	std::string shortinfo_msg_; // pre-computed short-info server response

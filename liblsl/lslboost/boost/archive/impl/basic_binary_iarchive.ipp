@@ -22,7 +22,7 @@ namespace std{
 #endif
 
 #include <boost/detail/workaround.hpp>
-#include <boost/predef/other/endian.h>
+#include <boost/detail/endian.hpp>
 
 #include <boost/archive/basic_binary_iarchive.hpp>
 
@@ -48,7 +48,7 @@ basic_binary_iarchive<Archive>::load_override(class_name_type & t){
 
 template<class Archive>
 BOOST_ARCHIVE_OR_WARCHIVE_DECL void
-basic_binary_iarchive<Archive>::init() {
+basic_binary_iarchive<Archive>::init(void){
     // read signature in an archive version independent manner
     std::string file_signature;
     
@@ -84,12 +84,12 @@ basic_binary_iarchive<Archive>::init() {
 
     // make sure the version of the reading archive library can
     // support the format of the archive being read
-    lslboost::serialization::library_version_type input_library_version;
+    library_version_type input_library_version;
     //* this->This() >> input_library_version;
     {
         int v = 0;
         v = this->This()->m_sb.sbumpc();
-        #if BOOST_ENDIAN_LITTLE_BYTE
+        #if defined(BOOST_LITTLE_ENDIAN)
         if(v < 6){
             ;
         }
@@ -111,11 +111,11 @@ basic_binary_iarchive<Archive>::init() {
             // version 8+ followed by a zero
             this->This()->m_sb.sbumpc();
         }
-        #elif BOOST_ENDIAN_BIG_BYTE
+        #elif defined(BOOST_BIG_ENDIAN)
         if(v == 0)
             v = this->This()->m_sb.sbumpc();
         #endif
-        input_library_version = static_cast<lslboost::serialization::library_version_type>(v);
+        input_library_version = static_cast<library_version_type>(v);
     }
     
     #if BOOST_WORKAROUND(__MWERKS__, BOOST_TESTED_AT(0x3205))
