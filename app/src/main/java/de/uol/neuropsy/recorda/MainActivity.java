@@ -18,6 +18,7 @@ import android.os.PowerManager;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
@@ -290,14 +291,21 @@ public class MainActivity extends Activity {
         if (!isRunning || lsl == null) {
             return;
         }
-        ArrayAdapter<StreamName> adapter = (ArrayAdapter<StreamName>) lv.getAdapter();
-        for (int i = 0; i < adapter.getCount(); i++) {
-            StreamName stream = adapter.getItem(i);
+        for (int i = lv.getFirstVisiblePosition(); i <= lv.getLastVisiblePosition(); i++) {
+            StreamName stream = (StreamName) lv.getItemAtPosition(i);
+            if (stream == null) {
+                Log.w(TAG, "Unexpected: No data item at position " + i);
+                continue;
+            }
             QualityState quality = lsl.getCurrentStreamQuality(stream.lslName);
             if (quality == null) {
                 continue; // that stream is not being recorded
             }
-            TextView listItem = (TextView) lv.getChildAt(i);
+            TextView listItem = (TextView) lv.getChildAt(i - lv.getFirstVisiblePosition());
+            if (listItem == null) {
+                Log.w(TAG, "Unexpected: No view at index " + i);
+                continue;
+            }
             setColorBasedOnQuality(listItem, quality);
             double currentSamplingRate = lsl.getCurrentSamplingRate(stream.lslName);
             setTextBasedOnSamplingRate(listItem, stream, currentSamplingRate);
