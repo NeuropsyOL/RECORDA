@@ -135,10 +135,6 @@ public class MainActivity extends Activity {
                         filenamevalue = "recording";
                     }
                     LSL.StreamInfo[] available_streams = LSL.resolve_streams();
-                    String _="";
-                    for(LSL.StreamInfo si:available_streams)
-                        _+=si.name()+" ";
-                    Log.e(TAG,_);
                     Boolean allOkay = true;
                     for (StreamName streamName : selectedStreamNames) {
                         if (Arrays.stream(available_streams).anyMatch(s -> s.name().equals(streamName.lslName))){
