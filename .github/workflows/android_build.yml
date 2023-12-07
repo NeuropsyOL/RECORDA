@@ -5,6 +5,7 @@ on:
     branches:
       - master  # Change this to your main branch name (e.g., master)
       - dev
+      - 21-only-one-stream-is-found-when-not-connected-to-a-wifi
 jobs:
   build:
     runs-on: ubuntu-latest
