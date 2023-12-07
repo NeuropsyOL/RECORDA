@@ -1,19 +1,14 @@
 #include "data_receiver.h"
 #include "api_config.h"
 #include "cancellable_streambuf.h"
+#include "cast.h"
 #include "inlet_connection.h"
 #include "sample.h"
 #include "socket_utils.h"
-#include "util/cast.hpp"
-#include "util/endian.hpp"
-#include "util/strfuns.hpp"
-#include <chrono>
-#include <exception>
 #include <iostream>
 #include <loguru.hpp>
 #include <memory>
-#include <string>
-#include <vector>
+#include <sstream>
 
 // a convention that applies when including portable_oarchive.h in multiple .cpp files.
 // otherwise, the templates are instantiated in this file and sample.cpp which leads
@@ -80,8 +75,8 @@ void data_receiver::close_stream() {
 	cancel_all_registered();
 }
 
-sample_p lsl::data_receiver::try_get_next_sample(double timeout)
-{
+template <class T>
+double data_receiver::pull_sample_typed(T *buffer, uint32_t buffer_elements, double timeout) {
 	if (conn_.lost())
 		throw lost_error("The stream read by this outlet has been lost. To recover, you need to "
 						 "re-resolve the source and re-create the inlet.");
@@ -91,25 +86,18 @@ sample_p lsl::data_receiver::try_get_next_sample(double timeout)
 		check_thread_start_ = false;
 	}
 	// get the sample with timeout
-	if (sample_p s = sample_queue_.pop_sample(timeout))
-		return s;
-	else if (conn_.lost())
-			throw lost_error("The stream read by this inlet has been lost. To recover, you need to "
-							"re-resolve the source and re-create the inlet.");
-	return nullptr;
-}
-
-
-template <class T>
-double data_receiver::pull_sample_typed(T *buffer, uint32_t buffer_elements, double timeout) {
-	if(sample_p s = try_get_next_sample(timeout))
-	{
+	if (sample_p s = sample_queue_.pop_sample(timeout)) {
 		if (buffer_elements != conn_.type_info().channel_count())
 			throw std::range_error("The number of buffer elements provided does not match the "
 								   "number of channels in the sample.");
 		s->retrieve_typed(buffer);
-		return s->timestamp();
-	} else return 0.0;
+		return s->timestamp;
+	} else {
+		if (conn_.lost())
+			throw lost_error("The stream read by this inlet has been lost. To recover, you need to "
+							 "re-resolve the source and re-create the inlet.");
+		return 0.0;
+	}
 }
 
 template double data_receiver::pull_sample_typed<char>(char *, uint32_t, double);
@@ -121,14 +109,27 @@ template double data_receiver::pull_sample_typed<double>(double *, uint32_t, dou
 template double data_receiver::pull_sample_typed<std::string>(std::string *, uint32_t, double);
 
 double data_receiver::pull_sample_untyped(void *buffer, int buffer_bytes, double timeout) {
-	if(sample_p s = try_get_next_sample(timeout)) {
+	if (conn_.lost())
+		throw lost_error("The stream read by this inlet has been lost. To recover, you need to "
+						 "re-resolve the source and re-create the inlet.");
+	// start data thread implicitly if necessary
+	if (check_thread_start_ && !data_thread_.joinable()) {
+		data_thread_ = std::thread(&data_receiver::data_thread, this);
+		check_thread_start_ = false;
+	}
+	// get the sample with timeout
+	if (sample_p s = sample_queue_.pop_sample(timeout)) {
 		if (buffer_bytes != conn_.type_info().sample_bytes())
 			throw std::range_error("The size of the provided buffer does not match the number of "
 								   "bytes in the sample.");
 		s->retrieve_untyped(buffer);
-		return s->timestamp();
+		return s->timestamp;
+	} else {
+		if (conn_.lost())
+			throw lost_error("The stream read by this inlet has been lost. To recover, you need to "
+							 "re-resolve the source and re-create the inlet.");
+		return 0.0;
 	}
-	else return 0.0;
 }
 
 
@@ -156,7 +157,7 @@ void data_receiver::data_thread() {
 
 				// --- protocol negotiation ---
 
-				bool reverse_byte_order = false; // perform little <-> big endian conversion?
+				int use_byte_order = 0; // which byte order we shall use (0=portable byte order)
 				int data_protocol_version = 100;  // which protocol version we shall use for data
 												  // transmission (100=version 1.00)
 				bool suppress_subnormals = false; // whether we shall suppress subnormal numbers
@@ -170,7 +171,7 @@ void data_receiver::data_thread() {
 					server_stream << "LSL:streamfeed/" << proposed_protocol_version << " "
 								  << conn_.current_uid() << "\r\n";
 					// transmit request parameters
-					server_stream << "Native-Byte-Order: " << LSL_BYTE_ORDER << "\r\n";
+					server_stream << "Native-Byte-Order: " << BOOST_BYTE_ORDER << "\r\n";
 					server_stream << "Endian-Performance: "
 								  << std::floor(measure_endian_performance()) << "\r\n";
 					server_stream << "Has-IEEE754-Floats: "
@@ -226,15 +227,12 @@ void data_receiver::data_thread() {
 										rest = trim(hdrline.substr(colon + 1));
 							// get the header information
 							if (type == "byte-order") {
-								int use_byte_order = std::stoi(rest);
-								// needed for interoperability with liblsl ~1.13 and data protocol 100
-								if(use_byte_order == 0) use_byte_order = LSL_BYTE_ORDER;
-								auto value_size = format_sizes[conn_.type_info().channel_format()];
-								if (!lsl::can_convert_endian(use_byte_order, value_size))
+								use_byte_order = std::stoi(rest);
+								if (use_byte_order == 2134 && BOOST_BYTE_ORDER != 2134 &&
+									format_sizes[conn_.type_info().channel_format()] >= 8)
 									throw std::runtime_error(
 										"The byte order conversion requested by the other party is "
 										"not supported.");
-								reverse_byte_order = use_byte_order != LSL_BYTE_ORDER;
 							}
 							if (type == "suppress-subnormals")
 								suppress_subnormals = lsl::from_string<bool>(rest);
@@ -260,7 +258,7 @@ void data_receiver::data_thread() {
 
 				if (data_protocol_version == 100) {
 					// portable binary archive (parse archive header)
-					inarch = std::make_unique<eos::portable_iarchive>(server_stream);
+					inarch.reset(new eos::portable_iarchive(server_stream));
 					// receive stream_info message from server
 					std::string infomsg;
 					*inarch >> infomsg;
@@ -284,8 +282,8 @@ void data_receiver::data_thread() {
 							received(fac.new_sample(0.0, false));
 						expected->assign_test_pattern(test_pattern);
 						if (data_protocol_version >= 110)
-							received->load_streambuf(buffer, data_protocol_version,
-								reverse_byte_order, suppress_subnormals);
+							received->load_streambuf(
+								buffer, data_protocol_version, use_byte_order, suppress_subnormals);
 						else
 							*inarch >> *received;
 
@@ -314,21 +312,21 @@ void data_receiver::data_thread() {
 					sample_p samp(factory->new_sample(0.0, false));
 					if (data_protocol_version >= 110)
 						samp->load_streambuf(
-							buffer, data_protocol_version, reverse_byte_order, suppress_subnormals);
+							buffer, data_protocol_version, use_byte_order, suppress_subnormals);
 					else
 						*inarch >> *samp;
 					// deduce timestamp if necessary
-					if (samp->timestamp() == DEDUCED_TIMESTAMP) {
-						samp->timestamp() = last_timestamp;
-						if (srate != IRREGULAR_RATE) samp->timestamp() += 1.0 / srate;
+					if (samp->timestamp == DEDUCED_TIMESTAMP) {
+						samp->timestamp = last_timestamp;
+						if (srate != IRREGULAR_RATE) samp->timestamp += 1.0 / srate;
 					}
-					last_timestamp = samp->timestamp();
+					last_timestamp = samp->timestamp;
 					// push it into the sample queue
 					sample_queue_.push_sample(samp);
 					// periodically update the last receive time to keep the watchdog happy
 					if (srate <= 16 || (k & 0xF) == 0) conn_.update_receive_time(lsl_clock());
 				}
-			} catch (err_t) {
+			} catch (error_code &) {
 				// connection-level error: closed, reset, refused, etc.
 				conn_.try_recover_from_error();
 			} catch (lost_error &) {

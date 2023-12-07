@@ -1,11 +1,8 @@
 #include "lsl_c_api_helpers.hpp"
 #include "stream_outlet_impl.h"
 #include <loguru.hpp>
-#include <cstdint>
-#include <exception>
-#include <stdexcept>
-#include <string>
-#include <vector>
+
+#pragma warning(disable : 4800)
 
 extern "C" {
 #include "api_types.hpp"
@@ -15,14 +12,10 @@ extern "C" {
 using namespace lsl;
 
 // boilerplate wrapper code
-LIBLSL_C_API lsl_outlet lsl_create_outlet_ex(
-	lsl_streaminfo info, int32_t chunk_size, int32_t max_buffered, lsl_transport_options_t flags) {
-	return create_object_noexcept<stream_outlet_impl>(*info, chunk_size, max_buffered, flags);
-}
-
 LIBLSL_C_API lsl_outlet lsl_create_outlet(
 	lsl_streaminfo info, int32_t chunk_size, int32_t max_buffered) {
-	return lsl_create_outlet_ex(info, chunk_size, max_buffered, transp_default);
+	return create_object_noexcept<stream_outlet_impl>(*info, chunk_size,
+		info->nominal_srate() ? (int)(info->nominal_srate() * max_buffered) : max_buffered * 100);
 }
 
 LIBLSL_C_API void lsl_destroy_outlet(lsl_outlet out) {

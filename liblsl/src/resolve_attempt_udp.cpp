@@ -1,27 +1,21 @@
 #include "resolve_attempt_udp.h"
 #include "api_config.h"
-#include "netinterfaces.h"
 #include "resolver_impl.h"
 #include "socket_utils.h"
-#include "util/strfuns.hpp"
-#include <asio/io_context.hpp>
-#include <asio/ip/address.hpp>
-#include <asio/ip/multicast.hpp>
-#include <exception>
+#include <boost/asio/ip/multicast.hpp>
 #include <loguru.hpp>
 #include <sstream>
 
 using namespace lsl;
-using err_t = const asio::error_code &;
-using asio::ip::multicast::outbound_interface;
+namespace asio = lslboost::asio;
+using err_t = const lslboost::system::error_code &;
 
 resolve_attempt_udp::resolve_attempt_udp(asio::io_context &io, const udp &protocol,
-	const std::vector<udp::endpoint> &targets, const std::string &query, resolver_impl &resolver,
-	double cancel_after)
-	: io_(io), resolver_(resolver), cancel_after_(cancel_after), cancelled_(false),
-	  targets_(targets), query_(query), unicast_socket_(io), broadcast_socket_(io),
-	  multicast_socket_(io), multicast_interfaces(api_config::get_instance()->multicast_interfaces),
-	  recv_socket_(io), cancel_timer_(io) {
+	const std::vector<udp::endpoint> &targets, const std::string &query, result_container &results,
+	std::mutex &results_mut, double cancel_after, cancellable_registry *registry)
+	: io_(io), results_(results), results_mut_(results_mut), cancel_after_(cancel_after),
+	  cancelled_(false), targets_(targets), query_(query), unicast_socket_(io),
+	  broadcast_socket_(io), multicast_socket_(io), recv_socket_(io), cancel_timer_(io) {
 	// open the sockets that we might need
 	recv_socket_.open(protocol);
 	try {
@@ -61,7 +55,7 @@ resolve_attempt_udp::resolve_attempt_udp(asio::io_context &io, const udp &protoc
 		query_msg_.c_str());
 
 	// register ourselves as a candidate for cancellation
-	register_at(&resolver);
+	if (registry) register_at(registry);
 }
 
 resolve_attempt_udp::~resolve_attempt_udp() {
@@ -75,7 +69,7 @@ void resolve_attempt_udp::begin() {
 	// initiate the result gathering chain
 	receive_next_result();
 	// initiate the send chain
-	send_next_query(targets_.begin(), multicast_interfaces.begin());
+	send_next_query(targets_.begin());
 
 	// also initiate the cancel event, if desired
 	if (cancel_after_ != FOREVER) {
@@ -99,7 +93,7 @@ void resolve_attempt_udp::receive_next_result() {
 			err_t err, size_t len) { shared_this->handle_receive_outcome(err, len); });
 }
 
-void resolve_attempt_udp::handle_receive_outcome(err_t err, std::size_t len) {
+void resolve_attempt_udp::handle_receive_outcome(error_code err, std::size_t len) {
 	if (cancelled_ || err == asio::error::operation_aborted || err == asio::error::not_connected ||
 		err == asio::error::not_socket)
 		return;
@@ -107,43 +101,35 @@ void resolve_attempt_udp::handle_receive_outcome(err_t err, std::size_t len) {
 	if (!err) {
 		try {
 			// first parse & check the query id
-			char *bufend = resultbuf_ + len;
-			char *newlinepos = resultbuf_;
-			// find the end of the line
-			while (newlinepos != bufend && *newlinepos != '\n') ++newlinepos;
-			std::string returned_id(resultbuf_, trim_end(resultbuf_, newlinepos));
-
-			if (returned_id == query_id_ && newlinepos != bufend) {
+			std::istringstream is(std::string(resultbuf_, len));
+			std::string returned_id;
+			getline(is, returned_id);
+			returned_id = trim(returned_id);
+			if (returned_id == query_id_) {
 				// parse the rest of the query into a stream_info
 				stream_info_impl info;
-				info.from_shortinfo_message(std::string(newlinepos, bufend));
+				std::ostringstream os;
+				os << is.rdbuf();
+				info.from_shortinfo_message(os.str());
 				std::string uid = info.uid();
 				{
 					// update the results
-					std::lock_guard<std::mutex> lock(resolver_.results_mut_);
-					auto it = resolver_.results_.find(uid);
-					if (it == resolver_.results_.end())
-						// insert new result, store iterator in it
-						it = resolver_.results_.emplace(uid, std::make_pair(info, lsl_clock()))
-								 .first;
+					std::lock_guard<std::mutex> lock(results_mut_);
+					if (results_.find(uid) == results_.end())
+						results_[uid] = std::make_pair(info, lsl_clock()); // insert new result
 					else
-						it->second.second = lsl_clock(); // update only the receive time
-					auto &stored_info = it->second.first;
+						results_[uid].second = lsl_clock(); // update only the receive time
 					// ... also update the address associated with the result (but don't
 					// override the address of an earlier record for this stream since this
 					// would be the faster route)
 					if (remote_endpoint_.address().is_v4()) {
-						if (stored_info.v4address().empty())
-							stored_info.v4address(remote_endpoint_.address().to_string());
+						if (results_[uid].first.v4address().empty())
+							results_[uid].first.v4address(remote_endpoint_.address().to_string());
 					} else {
-						if (stored_info.v6address().empty())
-							stored_info.v6address(remote_endpoint_.address().to_string());
+						if (results_[uid].first.v6address().empty())
+							results_[uid].first.v6address(remote_endpoint_.address().to_string());
 					}
 				}
-				// prepone the next cancellation check, i.e. when all needed streams are found,
-				// cancel immediately rather than when a wave timer is due half a second later
-				if (resolver_.check_cancellation_criteria())
-					resolver_.cancel_ongoing_resolve();
 			}
 		} catch (std::exception &e) {
 			LOG_F(WARNING, "resolve_attempt_udp: hiccup while processing the received data: %s",
@@ -157,41 +143,27 @@ void resolve_attempt_udp::handle_receive_outcome(err_t err, std::size_t len) {
 
 // === send loop ===
 
-void resolve_attempt_udp::send_next_query(
-	endpoint_list::const_iterator next, mcast_interface_list::const_iterator mcit) {
-	if (cancelled_ || mcit == multicast_interfaces.end()) return;
-	auto proto = recv_socket_.local_endpoint().protocol();
-	if (next == targets_.begin()) {
-		// Mismatching protocols? Skip this round
-		if (mcit->addr.is_v4() != (proto == asio::ip::udp::v4()))
-			next = targets_.end();
-		else
-			multicast_socket_.set_option(mcit->addr.is_v4() ? outbound_interface(mcit->addr.to_v4())
-															: outbound_interface(mcit->ifindex));
-	}
-	if (next != targets_.end()) {
-		udp::endpoint ep(*next++);
-		// endpoint matches our active protocol?
-		if (ep.protocol() == recv_socket_.local_endpoint().protocol()) {
-			// select socket to use
-			udp_socket &sock =
-				(ep.address() == asio::ip::address_v4::broadcast())
-					? broadcast_socket_
-					: (ep.address().is_multicast() ? multicast_socket_ : unicast_socket_);
-			// and send the query over it
-			auto keepalive(shared_from_this());
-			sock.async_send_to(asio::buffer(query_msg_), ep,
-				[shared_this = shared_from_this(), next, mcit](err_t err, size_t /*unused*/) {
-					if (!shared_this->cancelled_ && err != asio::error::operation_aborted &&
-						err != asio::error::not_connected && err != asio::error::not_socket)
-						shared_this->send_next_query(next, mcit);
-				});
-		} else
-			// otherwise just go directly to the next query
-			send_next_query(next, mcit);
+void resolve_attempt_udp::send_next_query(endpoint_list::const_iterator next) {
+	if (next == targets_.end() || cancelled_) return;
+
+	udp::endpoint ep(*next++);
+	// endpoint matches our active protocol?
+	if (ep.protocol() == recv_socket_.local_endpoint().protocol()) {
+		// select socket to use
+		udp::socket &sock =
+			(ep.address() == asio::ip::address_v4::broadcast())
+				? broadcast_socket_
+				: (ep.address().is_multicast() ? multicast_socket_ : unicast_socket_);
+		// and send the query over it
+		sock.async_send_to(lslboost::asio::buffer(query_msg_), ep,
+			[shared_this = shared_from_this(), next](err_t err, size_t) {
+				if (!shared_this->cancelled_ && err != asio::error::operation_aborted &&
+					err != asio::error::not_connected && err != asio::error::not_socket)
+					shared_this->send_next_query(next);
+			});
 	} else
-		// Restart from the next interface
-		send_next_query(targets_.begin(), ++mcit);
+		// otherwise just go directly to the next query
+		send_next_query(next);
 }
 
 void resolve_attempt_udp::do_cancel() {

@@ -13,14 +13,14 @@
 
     <application android:allowBackup="true"
         android:icon="@mipmap/ic_launcher_round"
-        android:label="RECEIVA"
+        android:label="RECORDA"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:requestLegacyExternalStorage="true"
         tools:ignore="GoogleAppIndexingWarning"
         tools:targetApi="q">
 
-        <activity android:name="de.uol.neuropsy.recorda.MainActivity" android:label="recorda"
+        <activity android:name="de.uol.neuropsy.recorda.MainActivity" android:label="RECORDA"
             android:theme="@style/AppTheme.NoActionBar"
             android:screenOrientation="portrait"
             android:exported="true">

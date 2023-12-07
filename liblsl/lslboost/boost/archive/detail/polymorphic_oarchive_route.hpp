@@ -56,116 +56,116 @@ class polymorphic_oarchive_route :
 {
 private:
     // these are used by the serialization library.
-    void save_object(
+    virtual void save_object(
         const void *x,
         const detail::basic_oserializer & bos
-    ) BOOST_OVERRIDE {
+    ){
         ArchiveImplementation::save_object(x, bos);
     }
-    void save_pointer(
+    virtual void save_pointer(
         const void * t,
         const detail::basic_pointer_oserializer * bpos_ptr
-    ) BOOST_OVERRIDE {
+    ){
         ArchiveImplementation::save_pointer(t, bpos_ptr);
     }
-    void save_null_pointer() BOOST_OVERRIDE {
+    virtual void save_null_pointer(){
         ArchiveImplementation::save_null_pointer();
     }
     // primitive types the only ones permitted by polymorphic archives
-    void save(const bool t) BOOST_OVERRIDE {
+    virtual void save(const bool t){
         ArchiveImplementation::save(t);
     }
-    void save(const char t) BOOST_OVERRIDE {
+    virtual void save(const char t){
         ArchiveImplementation::save(t);
     }
-    void save(const signed char t) BOOST_OVERRIDE {
+    virtual void save(const signed char t){
         ArchiveImplementation::save(t);
     }
-    void save(const unsigned char t) BOOST_OVERRIDE {
+    virtual void save(const unsigned char t){
         ArchiveImplementation::save(t);
     }
     #ifndef BOOST_NO_CWCHAR
     #ifndef BOOST_NO_INTRINSIC_WCHAR_T
-    void save(const wchar_t t) BOOST_OVERRIDE {
+    virtual void save(const wchar_t t){
         ArchiveImplementation::save(t);
     }
     #endif
     #endif
-    void save(const short t) BOOST_OVERRIDE {
+    virtual void save(const short t){
         ArchiveImplementation::save(t);
     }
-    void save(const unsigned short t) BOOST_OVERRIDE {
+    virtual void save(const unsigned short t){
         ArchiveImplementation::save(t);
     }
-    void save(const int t) BOOST_OVERRIDE {
+    virtual void save(const int t){
         ArchiveImplementation::save(t);
     }
-    void save(const unsigned int t) BOOST_OVERRIDE {
+    virtual void save(const unsigned int t){
         ArchiveImplementation::save(t);
     }
-    void save(const long t) BOOST_OVERRIDE {
+    virtual void save(const long t){
         ArchiveImplementation::save(t);
     }
-    void save(const unsigned long t) BOOST_OVERRIDE {
+    virtual void save(const unsigned long t){
         ArchiveImplementation::save(t);
     }
     #if defined(BOOST_HAS_LONG_LONG)
-    void save(const lslboost::long_long_type t) BOOST_OVERRIDE {
+    virtual void save(const lslboost::long_long_type t){
         ArchiveImplementation::save(t);
     }
-    void save(const lslboost::ulong_long_type t) BOOST_OVERRIDE {
+    virtual void save(const lslboost::ulong_long_type t){
         ArchiveImplementation::save(t);
     }
     #elif defined(BOOST_HAS_MS_INT64)
-    void save(const lslboost::int64_t t) BOOST_OVERRIDE {
+    virtual void save(const lslboost::int64_t t){
         ArchiveImplementation::save(t);
     }
-    void save(const lslboost::uint64_t t) BOOST_OVERRIDE {
+    virtual void save(const lslboost::uint64_t t){
         ArchiveImplementation::save(t);
     }
     #endif
-    void save(const float t) BOOST_OVERRIDE {
+    virtual void save(const float t){
         ArchiveImplementation::save(t);
     }
-    void save(const double t) BOOST_OVERRIDE {
+    virtual void save(const double t){
         ArchiveImplementation::save(t);
     }
-    void save(const std::string & t) BOOST_OVERRIDE {
+    virtual void save(const std::string & t){
         ArchiveImplementation::save(t);
     }
     #ifndef BOOST_NO_STD_WSTRING
-    void save(const std::wstring & t) BOOST_OVERRIDE {
+    virtual void save(const std::wstring & t){
         ArchiveImplementation::save(t);
     }
     #endif
-    lslboost::serialization::library_version_type get_library_version() const BOOST_OVERRIDE {
+    virtual library_version_type get_library_version() const{
         return ArchiveImplementation::get_library_version();
     }
-    unsigned int get_flags() const BOOST_OVERRIDE {
+    virtual unsigned int get_flags() const {
         return ArchiveImplementation::get_flags();
     }
-    void save_binary(const void * t, std::size_t size) BOOST_OVERRIDE {
+    virtual void save_binary(const void * t, std::size_t size){
         ArchiveImplementation::save_binary(t, size);
     }
     // used for xml and other tagged formats default does nothing
-    void save_start(const char * name) BOOST_OVERRIDE {
+    virtual void save_start(const char * name){
         ArchiveImplementation::save_start(name);
     }
-    void save_end(const char * name) BOOST_OVERRIDE {
+    virtual void save_end(const char * name){
         ArchiveImplementation::save_end(name);
     }
-    void end_preamble() BOOST_OVERRIDE {
+    virtual void end_preamble(){
         ArchiveImplementation::end_preamble();
     }
-    void register_basic_serializer(const detail::basic_oserializer & bos) BOOST_OVERRIDE {
+    virtual void register_basic_serializer(const detail::basic_oserializer & bos){
         ArchiveImplementation::register_basic_serializer(bos);
     }
-    helper_collection &
-    get_helper_collection() BOOST_OVERRIDE {
+    virtual helper_collection &
+    get_helper_collection(){
         return ArchiveImplementation::get_helper_collection();
     }
 public:
-    // this can't be inherited because they appear in multiple
+    // this can't be inheriteded because they appear in mulitple
     // parents
     typedef mpl::bool_<false> is_loading;
     typedef mpl::bool_<true> is_saving;
@@ -181,7 +181,7 @@ public:
     }
     // register type function
     template<class T>
-    const basic_pointer_oserializer *
+    const basic_pointer_oserializer * 
     register_type(T * t = NULL){
         return ArchiveImplementation::register_type(t);
     }
@@ -193,7 +193,7 @@ public:
     ) :
         ArchiveImplementation(os, flags)
     {}
-    ~polymorphic_oarchive_route() BOOST_OVERRIDE {}
+    virtual ~polymorphic_oarchive_route(){};
 };
 
 } // namespace detail

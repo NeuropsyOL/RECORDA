@@ -11,19 +11,18 @@ http://www.boost.org/LICENSE_1_0.txt)
 #include <boost/predef/version_number.h>
 #include <boost/predef/make.h>
 
-/* tag::reference[]
-= `BOOST_ARCH_SYS370`
+/*`
+[heading `BOOST_ARCH_SYS370`]
 
-http://en.wikipedia.org/wiki/System/370[System/370] architecture.
+[@http://en.wikipedia.org/wiki/System/370 System/370] architecture.
 
-[options="header"]
-|===
-| {predef_symbol} | {predef_version}
+[table
+    [[__predef_symbol__] [__predef_version__]]
 
-| `+__370__+` | {predef_detection}
-| `+__THW_370__+` | {predef_detection}
-|===
-*/ // end::reference[]
+    [[`__370__`] [__predef_detection__]]
+    [[`__THW_370__`] [__predef_detection__]]
+    ]
+ */
 
 #define BOOST_ARCH_SYS370 BOOST_VERSION_NUMBER_NOT_AVAILABLE
 
@@ -34,11 +33,6 @@ http://en.wikipedia.org/wiki/System/370[System/370] architecture.
 
 #if BOOST_ARCH_SYS370
 #   define BOOST_ARCH_SYS370_AVAILABLE
-#endif
-
-#if BOOST_ARCH_SYS370
-#   undef BOOST_ARCH_WORD_BITS_32
-#   define BOOST_ARCH_WORD_BITS_32 BOOST_VERSION_NUMBER_AVAILABLE
 #endif
 
 #define BOOST_ARCH_SYS370_NAME "System/370"

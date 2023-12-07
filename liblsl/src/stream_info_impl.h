@@ -2,10 +2,8 @@
 #define STREAM_INFO_IMPL_H
 
 #include "common.h"
-#include <cstdint>
 #include <mutex>
 #include <pugixml.hpp>
-#include <string>
 #include <unordered_map>
 
 namespace lsl {
@@ -17,7 +15,7 @@ class query_cache {
 	std::mutex cache_mut_;
 
 public:
-	bool matches_query(const pugi::xml_document &doc, const std::string &query, bool nocache);
+	bool matches_query(const pugi::xml_document &doc, const std::string query, bool nocache);
 };
 
 /**
@@ -48,8 +46,8 @@ public:
 	 * @param source_id Unique identifier of the source or device if available (e.g., serial
 	 * number). Allows for advanced failure recovery.
 	 */
-	stream_info_impl(const std::string &name, std::string type, int channel_count,
-		double nominal_srate, lsl_channel_format_t channel_format, std::string source_id);
+	stream_info_impl(const std::string &name, const std::string &type, int channel_count,
+		double nominal_srate, lsl_channel_format_t channel_format, const std::string &source_id);
 
 	/// Copy constructor. Needs special handling because xml_document is non-copyable.
 	stream_info_impl(const stream_info_impl &rhs);
@@ -154,9 +152,6 @@ public:
 	const std::string &uid() const { return uid_; }
 	void uid(const std::string &v);
 
-	/// Reset the UID to a randomly generated UUID4
-	const std::string &reset_uid();
-
 	/**
 	 * Get/Set the session id for the given stream.
 	 *
@@ -220,9 +215,6 @@ public:
 	/// Get the (editable) XML description of a stream.
 	pugi::xml_node desc();
 	pugi::xml_node desc() const;
-
-	/// helper function to calculate the buffer size in samples for inlets and outlets
-	uint32_t calc_transport_buf_samples(int32_t requested_len, lsl_transport_options_t flags) const;
 
 protected:
 	/// Create and assign the XML DOM structure based on the class fields.

@@ -114,7 +114,8 @@ BOOST_SPIRIT_CLASSIC_NAMESPACE_BEGIN
 
         class rule_base_access
         {
-#if defined(BOOST_NO_MEMBER_TEMPLATE_FRIENDS)
+#if defined(BOOST_NO_MEMBER_TEMPLATE_FRIENDS) \
+    || BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x551))
         public: // YUCK!
 #else
             template <
@@ -232,16 +233,16 @@ BOOST_SPIRIT_CLASSIC_NAMESPACE_BEGIN
         struct concrete_parser : abstract_parser<ScannerT, AttrT>
         {
             concrete_parser(ParserT const& p_) : p(p_) {}
-            ~concrete_parser() BOOST_OVERRIDE {}
+            virtual ~concrete_parser() {}
 
-            typename match_result<ScannerT, AttrT>::type
-            do_parse_virtual(ScannerT const& scan) const BOOST_OVERRIDE
+            virtual typename match_result<ScannerT, AttrT>::type
+            do_parse_virtual(ScannerT const& scan) const
             {
                 return p.parse(scan);
             }
 
-            abstract_parser<ScannerT, AttrT>*
-            clone() const BOOST_OVERRIDE
+            virtual abstract_parser<ScannerT, AttrT>*
+            clone() const
             {
                 return new concrete_parser(p);
             }

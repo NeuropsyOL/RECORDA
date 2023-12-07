@@ -10,11 +10,11 @@
 //  See http://www.boost.org for updates, documentation, and revision history.
 
 #include <algorithm>
-#include <cstddef> // NULL
 #include <set>
-#include <typeinfo>
-
 #include <boost/assert.hpp>
+#include <typeinfo>
+#include <cstddef> // NULL
+
 #include <boost/core/no_exceptions_support.hpp>
 
 // it marks our code with proper attributes as being exported when
@@ -105,12 +105,12 @@ extended_type_info_typeid_0::type_unregister()
 
             // remove all entries in map which corresponds to this type
             // make sure that we don't use any invalidated iterators
-            while(true){
+            for(;;){
                 const tkmap::iterator & it = x.find(this);
                 if(it == x.end())
                     break;
                 x.erase(it);
-            }
+            };
         }
     }
     m_ti = NULL;
@@ -125,23 +125,23 @@ extended_type_info_typeid_0::type_unregister()
 class extended_type_info_typeid_arg : 
     public extended_type_info_typeid_0
 {
-    void * construct(unsigned int /*count*/, ...) const BOOST_OVERRIDE {
+    virtual void * construct(unsigned int /*count*/, ...) const{
         BOOST_ASSERT(false);
         return NULL;
     }
-    void destroy(void const * const /*p*/) const BOOST_OVERRIDE {
+    virtual void destroy(void const * const /*p*/) const {
         BOOST_ASSERT(false);
     }
 public:
     extended_type_info_typeid_arg(const std::type_info & ti) :
         extended_type_info_typeid_0(NULL)
     { 
-        // note absence of self register and key as this is used only as
+        // note absense of self register and key as this is used only as
         // search argument given a type_info reference and is not to 
         // be added to the map.
         m_ti = & ti;
     }
-    ~extended_type_info_typeid_arg() BOOST_OVERRIDE {
+    ~extended_type_info_typeid_arg(){
         m_ti = NULL;
     }
 };

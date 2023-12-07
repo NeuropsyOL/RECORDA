@@ -25,16 +25,9 @@
 //
 
 #include <boost/smart_ptr/detail/sp_interlocked.hpp>
-#include <boost/smart_ptr/detail/sp_typeinfo_.hpp>
-#include <boost/config/workaround.hpp>
+#include <boost/detail/workaround.hpp>
+#include <boost/detail/sp_typeinfo.hpp>
 #include <boost/config.hpp>
-
-#if defined(BOOST_SP_REPORT_IMPLEMENTATION)
-
-#include <boost/config/pragma_message.hpp>
-BOOST_PRAGMA_MESSAGE("Using Win32 sp_counted_base")
-
-#endif
 
 namespace lslboost
 {
@@ -74,8 +67,8 @@ public:
         delete this;
     }
 
-    virtual void * get_deleter( sp_typeinfo_ const & ti ) = 0;
-    virtual void * get_local_deleter( sp_typeinfo_ const & ti ) = 0;
+    virtual void * get_deleter( sp_typeinfo const & ti ) = 0;
+    virtual void * get_local_deleter( sp_typeinfo const & ti ) = 0;
     virtual void * get_untyped_deleter() = 0;
 
     void add_ref_copy()

@@ -18,17 +18,8 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include <boost/smart_ptr/detail/sp_typeinfo_.hpp>
-#include <boost/smart_ptr/detail/sp_noexcept.hpp>
+#include <boost/detail/sp_typeinfo.hpp>
 #include <boost/config.hpp>
-#include <boost/cstdint.hpp>
-
-#if defined(BOOST_SP_REPORT_IMPLEMENTATION)
-
-#include <boost/config/pragma_message.hpp>
-BOOST_PRAGMA_MESSAGE("Using single-threaded, non-atomic sp_counted_base")
-
-#endif
 
 namespace lslboost
 {
@@ -43,48 +34,48 @@ private:
     sp_counted_base( sp_counted_base const & );
     sp_counted_base & operator= ( sp_counted_base const & );
 
-    lslboost::int_least32_t use_count_;        // #shared
-    lslboost::int_least32_t weak_count_;       // #weak + (#shared != 0)
+    long use_count_;        // #shared
+    long weak_count_;       // #weak + (#shared != 0)
 
 public:
 
-    sp_counted_base() BOOST_SP_NOEXCEPT: use_count_( 1 ), weak_count_( 1 )
+    sp_counted_base(): use_count_( 1 ), weak_count_( 1 )
     {
     }
 
-    virtual ~sp_counted_base() /*BOOST_SP_NOEXCEPT*/
+    virtual ~sp_counted_base() // nothrow
     {
     }
 
     // dispose() is called when use_count_ drops to zero, to release
     // the resources managed by *this.
 
-    virtual void dispose() BOOST_SP_NOEXCEPT = 0; // nothrow
+    virtual void dispose() = 0; // nothrow
 
     // destroy() is called when weak_count_ drops to zero.
 
-    virtual void destroy() BOOST_SP_NOEXCEPT // nothrow
+    virtual void destroy() // nothrow
     {
         delete this;
     }
 
-    virtual void * get_deleter( sp_typeinfo_ const & ti ) BOOST_SP_NOEXCEPT = 0;
-    virtual void * get_local_deleter( sp_typeinfo_ const & ti ) BOOST_SP_NOEXCEPT = 0;
-    virtual void * get_untyped_deleter() BOOST_SP_NOEXCEPT = 0;
+    virtual void * get_deleter( sp_typeinfo const & ti ) = 0;
+    virtual void * get_local_deleter( sp_typeinfo const & ti ) = 0;
+    virtual void * get_untyped_deleter() = 0;
 
-    void add_ref_copy() BOOST_SP_NOEXCEPT
+    void add_ref_copy()
     {
         ++use_count_;
     }
 
-    bool add_ref_lock() BOOST_SP_NOEXCEPT // true on success
+    bool add_ref_lock() // true on success
     {
         if( use_count_ == 0 ) return false;
         ++use_count_;
         return true;
     }
 
-    void release() BOOST_SP_NOEXCEPT
+    void release() // nothrow
     {
         if( --use_count_ == 0 )
         {
@@ -93,12 +84,12 @@ public:
         }
     }
 
-    void weak_add_ref() BOOST_SP_NOEXCEPT
+    void weak_add_ref() // nothrow
     {
         ++weak_count_;
     }
 
-    void weak_release() BOOST_SP_NOEXCEPT
+    void weak_release() // nothrow
     {
         if( --weak_count_ == 0 )
         {
@@ -106,7 +97,7 @@ public:
         }
     }
 
-    long use_count() const BOOST_SP_NOEXCEPT
+    long use_count() const // nothrow
     {
         return use_count_;
     }

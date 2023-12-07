@@ -10,18 +10,17 @@ http://www.boost.org/LICENSE_1_0.txt)
 
 #include <boost/predef/os/bsd.h>
 
-/* tag::reference[]
-= `BOOST_OS_BSD_BSDI`
+/*`
+[heading `BOOST_OS_BSD_BSDI`]
 
-http://en.wikipedia.org/wiki/BSD/OS[BSDi BSD/OS] operating system.
+[@http://en.wikipedia.org/wiki/BSD/OS BSDi BSD/OS] operating system.
 
-[options="header"]
-|===
-| {predef_symbol} | {predef_version}
+[table
+    [[__predef_symbol__] [__predef_version__]]
 
-| `+__bsdi__+` | {predef_detection}
-|===
-*/ // end::reference[]
+    [[`__bsdi__`] [__predef_detection__]]
+    ]
+ */
 
 #define BOOST_OS_BSD_BSDI BOOST_VERSION_NUMBER_NOT_AVAILABLE
 
@@ -29,7 +28,6 @@ http://en.wikipedia.org/wiki/BSD/OS[BSDi BSD/OS] operating system.
     defined(__bsdi__) \
     )
 #   ifndef BOOST_OS_BSD_AVAILABLE
-#       undef BOOST_OS_BSD
 #       define BOOST_OS_BSD BOOST_VERSION_NUMBER_AVAILABLE
 #       define BOOST_OS_BSD_AVAILABLE
 #   endif

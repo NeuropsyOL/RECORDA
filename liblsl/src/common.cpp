@@ -16,6 +16,8 @@
 #include <mmsystem.h>
 #endif
 
+thread_local char last_error[512] = {0};
+
 int64_t lsl::lsl_local_clock_ns() {
 	return std::chrono::nanoseconds(std::chrono::steady_clock::now().time_since_epoch()).count();
 }
@@ -41,10 +43,7 @@ LIBLSL_C_API void lsl_destroy_string(char *s) {
 	if (s) free(s);
 }
 
-LIBLSL_C_API const char *lsl_last_error(void) {
-	thread_local char last_error[LAST_ERROR_SIZE] = {0};
-	return last_error;
-}
+LIBLSL_C_API const char *lsl_last_error(void) { return last_error; }
 }
 
 // === implementation of misc functions ===
@@ -77,4 +76,35 @@ void lsl::ensure_lsl_initialized() {
 		}
 #endif
 	}
+}
+
+std::vector<std::string> lsl::splitandtrim(
+	const std::string &input, char separator, bool keepempty) {
+	std::vector<std::string> parts;
+	auto it = input.cbegin();
+	while (true) {
+		// Skip whitespace in the beginning
+		while (it != input.cend() && std::isspace(*it)) ++it;
+
+		// find the next separator or end of string
+		auto endit = std::find(it, input.cend(), separator);
+		// mark beginning of next part if not at the end
+		auto next = endit;
+
+		// shrink the range so it doesn't include whitespace at the end
+		while (it < endit && std::isspace(*(endit - 1))) --endit;
+		if (endit != it || keepempty) parts.emplace_back(it, endit);
+
+		if (next != input.cend())
+			it = next + 1;
+		else
+			break;
+	}
+	return parts;
+}
+
+std::string lsl::trim(const std::string &input) {
+	auto first = input.find_first_not_of(" \t\r\n"), last = input.find_last_not_of(" \t\r\n");
+	if (first == std::string::npos || last == std::string::npos) return "";
+	return input.substr(first, last - first + 1);
 }

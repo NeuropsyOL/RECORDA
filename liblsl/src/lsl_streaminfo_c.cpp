@@ -1,12 +1,8 @@
 #include "lsl_c_api_helpers.hpp"
-#include "common.h"
 #include "stream_info_impl.h"
-#include <cstdint>
-#include <cstdlib>
+#include <chrono>
 #include <cstring>
-#include <exception>
 #include <loguru.hpp>
-#include <stdexcept>
 #include <string>
 
 extern "C" {
@@ -82,7 +78,7 @@ LIBLSL_C_API int32_t lsl_stream_info_matches_query(lsl_streaminfo info, const ch
 
 LIBLSL_C_API lsl_streaminfo lsl_streaminfo_from_xml(const char *xml) {
 	try {
-		auto *impl = new stream_info_impl();
+		stream_info_impl *impl = new stream_info_impl();
 		impl->from_fullinfo_message(xml);
 		return impl;
 	} catch (std::exception &e) {

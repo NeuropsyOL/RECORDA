@@ -1,15 +1,19 @@
 package de.uol.neuropsy.recorda;
 
-import edu.ucsd.sccn.LSL;
+import static de.uol.neuropsy.recorda.recorder.QualityState.LAGGY;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.ComponentName;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.os.PowerManager;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
@@ -26,12 +30,15 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import de.uol.neuropsy.recorda.R;
-
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+
+import de.uol.neuropsy.recorda.recorder.QualityState;
+import de.uol.neuropsy.recorda.util.ResolveStreamsTask;
+import edu.ucsd.sccn.LSL;
 
 /**
  * Edited by Sarah Blum on 21/08/2020
@@ -39,17 +46,22 @@ import java.util.List;
  * Changes: file handling adapted, storage location fixed
  */
 public class MainActivity extends Activity {
+
+    public static final int COLOR_QUALITY_RED = Color.rgb(210, 25, 25);
+    public static final int COLOR_QUALITY_YELLOW = Color.rgb(255, 220, 0);
     public static ListView lv;
-    public static List<String> LSLStreamName = new ArrayList<>();
-    public static List<String> selectedStreamNames = new ArrayList<>();
+    public static List<StreamName> LSLStreamName = new ArrayList<>();
+    public static List<StreamName> selectedStreamNames = new ArrayList<>();
     public static boolean writePermission = true;
     public static String filenamevalue;
     public static boolean isComplete = false;
     static TextView tv;
     static volatile boolean isRunning = false;
 
-    //Streams
-    static LSL.StreamInfo[] streams;
+    private ServiceConnection serviceConnection;
+    private volatile LSLService lslService;
+
+    private static final String TAG = "MainActivity";
 
     //Elapsed Time
     //Create placeholder for user's consent to record_audio permission.
@@ -90,11 +102,22 @@ public class MainActivity extends Activity {
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
+        serviceConnection = new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName name, IBinder service) {
+                lslService = ((LSLService.LocalBinder)service).getLSLService();
+            }
+
+            @Override
+            public void onServiceDisconnected(ComponentName name) {
+                lslService = null;
+            }
+        };
+
         start.setOnClickListener(new View.OnClickListener() {
             Long tsLong = System.currentTimeMillis() / 1000;
             String ts = tsLong.toString();
 
-            @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
             @Override
             public void onClick(View v) {
                 if (selectedStreamNames.isEmpty()) {
@@ -111,11 +134,8 @@ public class MainActivity extends Activity {
                     }
                     lv.setEnabled(false);
                     // make this a foreground service so that android does not kill it while it is in the background
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         myStartForegroundService(intent);
-                    } else { // try our best with older Androids
-                        startService(intent);
-                    }
+                    bindService(intent, serviceConnection, 0);
                     startMillis = System.currentTimeMillis();
                     tdate.setText("00:00");
                     ElapsedTime();
@@ -153,8 +173,12 @@ public class MainActivity extends Activity {
         stop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (intent != null && t!=null) {
-                    stopService(intent);
+                if (intent != null && t!= null) {
+                    if (lslService != null) {
+                        lslService = null;
+                        stopService(intent);
+                        unbindService(serviceConnection);
+                    }
                     t.interrupt();
                     lv.setEnabled(true);
                 }
@@ -173,7 +197,8 @@ public class MainActivity extends Activity {
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 // selected item
-                String selectedItem = ((TextView) view).getText().toString();
+                ArrayAdapter<StreamName> adapter = (ArrayAdapter<StreamName>) parent.getAdapter();
+                StreamName selectedItem = adapter.getItem (position);
                 if (selectedStreamNames.contains(selectedItem))
                     selectedStreamNames.remove(selectedItem); //remove deselected item from the list of selected items
                 else
@@ -200,17 +225,35 @@ public class MainActivity extends Activity {
     public void RefreshStreams() {
         selectedStreamNames.clear();
         LSLStreamName.clear();
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.list_view_text, LSLStreamName);
+        new ResolveStreamsTask().execute(this);
+    }
+
+    public void onStreamRefresh(LSL.StreamInfo[] streams){
+        ArrayAdapter<StreamName> adapter = new ArrayAdapter<>(this, R.layout.list_view_text, LSLStreamName);
         lv.setEnabled(true);
         lv.setAdapter(adapter);
-        streams = LSL.resolve_streams();
         for (LSL.StreamInfo stream1 : streams) {
-            adapter.add(stream1.name());
+            adapter.add(new StreamName(stream1));
         }
         for (int i = 0; i < lv.getAdapter().getCount(); i++) {
             lv.setItemChecked(i, true);
         }
         selectedStreamNames.addAll(LSLStreamName);
+    }
+
+    private static String streamDisplayNameOf(LSL.StreamInfo streamInfo) {
+        String samplingRateAsString = samplingRateAsText(streamInfo.nominal_srate());
+        return streamInfo.name() + " (" + samplingRateAsString + ")";
+    }
+
+    private static String samplingRateAsText(double rate) {
+        if (rate == LSL.IRREGULAR_RATE) {
+            return "irreg.";
+        }
+        if (rate < 10000.0) {
+            return (int)rate + " Hz";
+        }
+        return String.format("%.1f kHz", rate / 1000.0);
     }
 
     public void ElapsedTime() {
@@ -226,6 +269,7 @@ public class MainActivity extends Activity {
                                 long now = System.currentTimeMillis();
                                 long difference = now - startMillis;
                                 tdate.setText(getElapsedTimeMinutesSecondsString(difference));
+                                updateStreamQualityIndicators();
                             }
                         });
                     }
@@ -234,6 +278,49 @@ public class MainActivity extends Activity {
             }
         };
         t.start();
+    }
+
+    private void updateStreamQualityIndicators() {
+        LSLService lsl = lslService;
+        if (!isRunning || lsl == null) {
+            return;
+        }
+        ArrayAdapter<StreamName> adapter = (ArrayAdapter<StreamName>) lv.getAdapter();
+        for (int i = 0; i < adapter.getCount(); i++) {
+            StreamName stream = adapter.getItem(i);
+            QualityState quality = lsl.getCurrentStreamQuality(stream.lslName);
+            if (quality == null) {
+                continue; // that stream is not being recorded
+            }
+            TextView listItem = (TextView) lv.getChildAt(i);
+            setColorBasedOnQuality(listItem, quality);
+            double currentSamplingRate = lsl.getCurrentSamplingRate(stream.lslName);
+            setTextBasedOnSamplingRate(listItem, stream, currentSamplingRate);
+        }
+    }
+
+    private static void setColorBasedOnQuality(TextView view, QualityState q) {
+        int backgroundColor =
+                q == QualityState.NOT_RESPONDING ? COLOR_QUALITY_RED
+                        : q == LAGGY ? COLOR_QUALITY_YELLOW
+                        : Color.TRANSPARENT;
+        view.setBackgroundColor(backgroundColor);
+        int textColor;
+        if (Color.luminance(backgroundColor) > 0.5f || backgroundColor == Color.TRANSPARENT) {
+            textColor = Color.BLACK;
+        } else {
+            textColor = Color.WHITE;
+        }
+        view.setTextColor(textColor);
+    }
+
+    private static void setTextBasedOnSamplingRate(TextView view, StreamName stream, double samplingRate) {
+        double currentRate = samplingRate;
+        String streamNameWithSamplingRate = stream.displayName;
+        if (currentRate > 0.0) {
+            streamNameWithSamplingRate += " " + samplingRateAsText(currentRate);
+        }
+        view.setText(streamNameWithSamplingRate);
     }
 
     /*
@@ -288,9 +375,9 @@ public class MainActivity extends Activity {
 
     private void showSelectedItems() {
         String selItems = "";
-        for (String item : selectedStreamNames) {
+        for (StreamName item : selectedStreamNames) {
             if (selItems == "")
-                selItems = item;
+                selItems = item.lslName;
             else
                 selItems += "/" + item;
         }
@@ -302,5 +389,35 @@ public class MainActivity extends Activity {
         ContextCompat.startForegroundService(this, intent);
     }
 
-}
+    /**
+     * An LSL stream's name which is used to identify which stream to record, paired with a display
+     * string that includes its nominal sampling rate.
+     */
+    static final class StreamName {
+        public final String lslName;
+        public final String displayName;
 
+        public StreamName(LSL.StreamInfo streamInfo) {
+            lslName = Objects.requireNonNull(streamInfo.name());
+            displayName = streamDisplayNameOf(streamInfo);
+        }
+
+        @Override
+        public String toString() {
+            return displayName;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            StreamName that = (StreamName) o;
+            return lslName.equals(that.lslName) && displayName.equals(that.displayName);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(lslName, displayName);
+        }
+    }
+}

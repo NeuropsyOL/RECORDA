@@ -36,21 +36,7 @@ public class SettingsActivity extends AppCompatActivity {
 
         //TODO for now, the location handling is not implemented, every file is stored in
         // external storage - Download/
-        //samplingSet = (Button) findViewById(R.id.locationButton);
-
         MainActivity.isComplete = true;
-/*        samplingSet.setOnClickListener(new View.OnClickListener() {
-
-            @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-            @Override
-            public void onClick(View v) {
-                getFileName();
-                Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-                i.addCategory(Intent.CATEGORY_DEFAULT);
-                startActivityForResult(Intent.createChooser(i, "Choose directory"), 9999);
-            }
-        });*/
-
         filename = (EditText) findViewById(R.id.filenametext);
         filename.setText(MainActivity.filenamevalue);
     }
@@ -69,16 +55,12 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private static final String TAG = "SettingsActivity";
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == 9999) {
             Uri uri = data.getData();
-            Uri docUri = null;
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-                docUri = DocumentsContract.buildDocumentUriUsingTree(uri,
+            Uri docUri = DocumentsContract.buildDocumentUriUsingTree(uri,
                         DocumentsContract.getTreeDocumentId(uri));
-            }
             //MainActivity.path = getPath(this, docUri);
             Log.d(TAG, "onActivityResult: "+"File name starts with: " + MainActivity.filenamevalue);
             Intent intent = new Intent(SettingsActivity.this, MainActivity.class);
@@ -94,11 +76,9 @@ public class SettingsActivity extends AppCompatActivity {
         MainActivity.filenamevalue = String.valueOf(filename.getText());
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     public static String getPath(final Context context, final Uri uri) {
-        final boolean isKitKat = Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT;
         // DocumentProvider
-        if (isKitKat && DocumentsContract.isDocumentUri(context, uri)) {
+        if (DocumentsContract.isDocumentUri(context, uri)) {
             // ExternalStorageProvider
             if (isExternalStorageDocument(uri)) {
                 final String docId = DocumentsContract.getDocumentId(uri);

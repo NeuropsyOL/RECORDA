@@ -1,26 +1,24 @@
 #ifndef TIME_RECEIVER_H
 #define TIME_RECEIVER_H
 
-#include "socket_utils.h"
-#include <asio/io_context.hpp>
-#include <asio/ip/udp.hpp>
-#include <asio/steady_timer.hpp>
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/ip/udp.hpp>
+#include <boost/asio/steady_timer.hpp>
 #include <condition_variable>
+#include <cstdint>
 #include <mutex>
 #include <thread>
-#include <vector>
 
-using asio::ip::udp;
-using err_t = const asio::error_code &;
+using lslboost::asio::steady_timer;
+using lslboost::asio::ip::udp;
+using lslboost::system::error_code;
 
 namespace lsl {
-using steady_timer = asio::basic_waitable_timer<asio::chrono::steady_clock, asio::wait_traits<asio::chrono::steady_clock>, asio::io_context::executor_type>;
-
 class inlet_connection;
 class api_config;
 
 /// list of time estimates with error bounds
-using estimate_list = std::vector<std::pair<double, double>>;
+typedef std::vector<std::pair<double, double>> estimate_list;
 
 /**
  * Internal class of an inlet that's responsible for retrieving time-correction data of the inlet.
@@ -76,10 +74,10 @@ private:
 	void receive_next_packet();
 
 	/// Handler that gets called once reception of a time packet has completed
-	void handle_receive_outcome(err_t err, std::size_t len);
+	void handle_receive_outcome(error_code err, std::size_t len);
 
 	/// Handlers that gets called once the time estimation results shall be aggregated.
-	void result_aggregation_scheduled(err_t err);
+	void result_aggregation_scheduled(error_code err);
 
 	/// Ensures that the time-offset is reset when the underlying connection is recovered (e.g.,
 	/// switches to another host)
@@ -109,13 +107,11 @@ private:
 	/// the configuration object
 	const api_config *cfg_;
 	/// an IO service for async time operations
-	asio::io_context time_io_;
+	lslboost::asio::io_context time_io_;
 	/// a buffer to hold inbound packet contents
-	char recv_buffer_[1024]{0};
+	char recv_buffer_[16384]{0};
 	/// the socket through which the time thread communicates
-	udp_socket time_sock_;
-	/// current outlet address
-	udp::endpoint outlet_addr_;
+	udp::socket time_sock_;
 	/// schedule the next time estimate
 	steady_timer next_estimate_;
 	/// schedules result aggregation

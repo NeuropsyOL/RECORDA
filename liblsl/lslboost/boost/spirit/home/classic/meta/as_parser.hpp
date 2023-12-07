@@ -18,9 +18,9 @@ BOOST_SPIRIT_CLASSIC_NAMESPACE_BEGIN
 
     ///////////////////////////////////////////////////////////////////////////
     //
-    //  Helper templates to derive the parser type from an auxiliary type
+    //  Helper templates to derive the parser type from an auxilliary type
     //  and to generate an object of the required parser type given an
-    //  auxiliary object. Supported types to convert are parsers,
+    //  auxilliary object. Supported types to convert are parsers,
     //  single characters and character strings.
     //
     ///////////////////////////////////////////////////////////////////////////

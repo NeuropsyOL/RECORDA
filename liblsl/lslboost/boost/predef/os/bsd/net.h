@@ -10,25 +10,24 @@ http://www.boost.org/LICENSE_1_0.txt)
 
 #include <boost/predef/os/bsd.h>
 
-/* tag::reference[]
-= `BOOST_OS_BSD_NET`
+/*`
+[heading `BOOST_OS_BSD_NET`]
 
-http://en.wikipedia.org/wiki/Netbsd[NetBSD] operating system.
+[@http://en.wikipedia.org/wiki/Netbsd NetBSD] operating system.
 
-[options="header"]
-|===
-| {predef_symbol} | {predef_version}
+[table
+    [[__predef_symbol__] [__predef_version__]]
 
-| `+__NETBSD__+` | {predef_detection}
-| `+__NetBSD__+` | {predef_detection}
+    [[`__NETBSD__`] [__predef_detection__]]
+    [[`__NetBSD__`] [__predef_detection__]]
 
-| `+__NETBSD_version+` | V.R.P
-| `NetBSD0_8` | 0.8.0
-| `NetBSD0_9` | 0.9.0
-| `NetBSD1_0` | 1.0.0
-| `+__NetBSD_Version+` | V.R.P
-|===
-*/ // end::reference[]
+    [[`__NETBSD_version`] [V.R.P]]
+    [[`NetBSD0_8`] [0.8.0]]
+    [[`NetBSD0_9`] [0.9.0]]
+    [[`NetBSD1_0`] [1.0.0]]
+    [[`__NetBSD_Version`] [V.R.P]]
+    ]
+ */
 
 #define BOOST_OS_BSD_NET BOOST_VERSION_NUMBER_NOT_AVAILABLE
 
@@ -36,7 +35,6 @@ http://en.wikipedia.org/wiki/Netbsd[NetBSD] operating system.
     defined(__NETBSD__) || defined(__NetBSD__) \
     )
 #   ifndef BOOST_OS_BSD_AVAILABLE
-#       undef BOOST_OS_BSD
 #       define BOOST_OS_BSD BOOST_VERSION_NUMBER_AVAILABLE
 #       define BOOST_OS_BSD_AVAILABLE
 #   endif
@@ -78,7 +76,7 @@ http://en.wikipedia.org/wiki/Netbsd[NetBSD] operating system.
 #   include <boost/predef/detail/os_detected.h>
 #endif
 
-#define BOOST_OS_BSD_NET_NAME "NetBSD"
+#define BOOST_OS_BSD_NET_NAME "DragonFly BSD"
 
 #endif
 

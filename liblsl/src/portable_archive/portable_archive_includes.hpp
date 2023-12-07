@@ -96,45 +96,18 @@
 #include <boost/endian/conversion.hpp>
 #include <boost/math/special_functions/fpclassify.hpp>
 
-// generic type traits for numeric types
-#include "portable_archive_exception.hpp"
-#include <cstdint>
-#include <type_traits>
-
-namespace lsl {
-/*template<typename T>
-int fpclassify(T val) { return std::fpclassify(val); }*/
-namespace detail {
-
-template <typename T> struct fp_traits_consts {};
-template <> struct fp_traits_consts<double> {
-	using bits = uint64_t;
-	static constexpr bits sign = (0x80000000ull) << 32, exponent = (0x7ff00000ll) << 32,
-						  significand = ((0x000fffffll) << 32) + (0xfffffffful);
-};
-template <> struct fp_traits_consts<float> {
-	using bits = uint32_t;
-	static constexpr bits sign = 0x80000000u, exponent = 0x7f800000, significand = 0x007fffff;
-	static void get_bits(float src, bits &dst) { std::memcpy(&dst, &src, sizeof(src)); }
-	static void set_bits(float &dst, bits src) { std::memcpy(&dst, &src, sizeof(src)); }
-};
-
-template <typename T> struct fp_traits {
-	using type = fp_traits_consts<T>;
-	static void get_bits(double src, typename type::bits &dst) {
-		std::memcpy(&dst, &src, sizeof(src));
-	}
-	static void set_bits(double &dst, typename type::bits src) {
-		std::memcpy(&dst, &src, sizeof(src));
-	}
-};
-
-} // namespace detail
-} // namespace lsl
-
+// namespace alias fp_classify
 namespace fp = lslboost::math;
+
 // namespace alias endian
 namespace endian = lslboost::endian;
+
+// generic type traits for numeric types
+#include <type_traits>
+
+#include <boost/cstdint.hpp>
+
+#include "portable_archive_exception.hpp"
 
 // hint from Johan Rade: on VMS there is still support for
 // the VAX floating point format and this macro detects it

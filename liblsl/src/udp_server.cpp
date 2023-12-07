@@ -1,24 +1,18 @@
 #include "udp_server.h"
-#include "api_config.h"
 #include "socket_utils.h"
 #include "stream_info_impl.h"
-#include "util/strfuns.hpp"
-#include <asio/io_context.hpp>
-#include <asio/ip/address.hpp>
-#include <asio/ip/address_v4.hpp>
-#include <asio/ip/multicast.hpp>
-#include <asio/ip/udp.hpp>
-#include <exception>
+#include <boost/asio/ip/address.hpp>
+#include <boost/asio/ip/multicast.hpp>
+#include <boost/asio/ip/udp.hpp>
 #include <loguru.hpp>
 #include <sstream>
-#include <utility>
-
-namespace ip = asio::ip;
 
 namespace lsl {
+namespace ip = asio::ip;
+using err_t = const lslboost::system::error_code &;
 
-udp_server::udp_server(stream_info_impl_p info, asio::io_context &io, udp protocol)
-	: info_(std::move(info)), io_(io), socket_(std::make_shared<udp_socket_p::element_type>(io)),
+udp_server::udp_server(const stream_info_impl_p &info, asio::io_context &io, udp protocol)
+	: info_(info), io_(io), socket_(std::make_shared<udp::socket>(io)),
 	  time_services_enabled_(true) {
 	// open the socket for the specified protocol
 	socket_->open(protocol);
@@ -35,10 +29,11 @@ udp_server::udp_server(stream_info_impl_p info, asio::io_context &io, udp protoc
 		(void *)this);
 }
 
-udp_server::udp_server(stream_info_impl_p info, asio::io_context &io, ip::address addr,
-	uint16_t port, int ttl, const std::string &listen_address)
-	: info_(std::move(info)), io_(io), socket_(std::make_shared<udp_socket>(io)),
+udp_server::udp_server(const stream_info_impl_p &info, asio::io_context &io,
+	const std::string &address, uint16_t port, int ttl, const std::string &listen_address)
+	: info_(info), io_(io), socket_(std::make_shared<udp::socket>(io)),
 	  time_services_enabled_(false) {
+	ip::address addr = ip::make_address(address);
 	bool is_broadcast = addr == ip::address_v4::broadcast();
 
 	// set up the endpoint where we listen (note: this is not yet the multicast address)
@@ -65,28 +60,16 @@ udp_server::udp_server(stream_info_impl_p info, asio::io_context &io, ip::addres
 	// bind to the listen endpoint
 	socket_->bind(listen_endpoint);
 
-	// join the multicast groups
+	// join the multicast group, if any
 	if (addr.is_multicast() && !is_broadcast) {
-		bool joined_anywhere = false;
-		asio::error_code err;
-		for (auto &if_ : api_config::get_instance()->multicast_interfaces) {
-			DLOG_F(
-				INFO, "Joining %s to %s", if_.addr.to_string().c_str(), addr.to_string().c_str());
-			if (addr.is_v4() && if_.addr.is_v4())
-				socket_->set_option(ip::multicast::join_group(addr.to_v4(), if_.addr.to_v4()), err);
-			else if (addr.is_v6() && if_.addr.is_v6())
-				socket_->set_option(
-					ip::multicast::join_group(addr.to_v6(), if_.addr.to_v6().scope_id()), err);
-			if (err)
-				LOG_F(WARNING, "Could not bind multicast responder for %s to interface %s (%s)",
-					addr.to_string().c_str(), if_.addr.to_string().c_str(), err.message().c_str());
-			else
-				joined_anywhere = true;
-		}
-		if (!joined_anywhere) throw std::runtime_error("Could not join any multicast group");
+		if (addr.is_v4())
+			socket_->set_option(
+				ip::multicast::join_group(addr.to_v4(), listen_endpoint.address().to_v4()));
+		else
+			socket_->set_option(ip::multicast::join_group(addr));
 	}
 	LOG_F(2, "%s: Started multicast udp server at %s port %d (addr %p)",
-		this->info_->name().c_str(), addr.to_string().c_str(), port, (void *)this);
+		this->info_->name().c_str(), address.c_str(), port, (void *)this);
 }
 
 // === externally issued asynchronous commands ===
@@ -102,11 +85,10 @@ void udp_server::end_serving() {
 	// gracefully close the socket; this will eventually lead to the cancellation of the IO
 	// operation(s) tied to its socket
 	auto sock(socket_); // socket shared ptr to be kept alive
-	const char *fn = __func__;
-	post(io_, [sock, fn]() {
+	post(io_, [sock]() {
 		try {
 			if (sock->is_open()) sock->close();
-		} catch (std::exception &e) { LOG_F(ERROR, "Error during %s: %s", fn, e.what()); }
+		} catch (std::exception &e) { LOG_F(ERROR, "Error during %s: %s", __func__, e.what()); }
 	});
 }
 
@@ -139,7 +121,7 @@ void udp_server::process_shortinfo_request(std::istream& request_stream)
 		string_p replymsg(
 			std::make_shared<std::string>((query_id += "\r\n") += shortinfo_msg_));
 		socket_->async_send_to(asio::buffer(*replymsg), return_endpoint,
-			[shared_this = shared_from_this(), replymsg](err_t err_, std::size_t /*unused*/) {
+			[shared_this = shared_from_this(), replymsg](err_t err_, std::size_t) {
 				if (err_ != asio::error::operation_aborted && err_ != asio::error::shut_down)
 					shared_this->request_next_packet();
 			});
@@ -161,13 +143,13 @@ void udp_server::process_timedata_request(std::istream &request_stream, double t
 	reply << ' ' << wave_id << ' ' << t0 << ' ' << t1 << ' ' << lsl_clock();
 	string_p replymsg(std::make_shared<std::string>(reply.str()));
 	socket_->async_send_to(asio::buffer(*replymsg), remote_endpoint_,
-		[shared_this = shared_from_this(), replymsg](err_t err_, std::size_t /*unused*/) {
+		[shared_this = shared_from_this(), replymsg](err_t err_, std::size_t) {
 			if (err_ != asio::error::operation_aborted && err_ != asio::error::shut_down)
 				shared_this->request_next_packet();
 		});
 }
 
-void udp_server::handle_receive_outcome(err_t err, std::size_t len) {
+void udp_server::handle_receive_outcome(error_code err, std::size_t len) {
 	DLOG_F(6, "udp_server::handle_receive_outcome (%lub)", len);
 	if (err) {
 		// non-critical error? Wait for the next packet
@@ -188,13 +170,14 @@ void udp_server::handle_receive_outcome(err_t err, std::size_t len) {
 			// shortinfo request: parse content query string
 			process_shortinfo_request(request_stream);
 			return;
-		}
-		if (time_services_enabled_ && method == "LSL:timedata") {
+		} else if (time_services_enabled_ && method == "LSL:timedata") {
 			// timedata request: parse time of original transmission
 			process_timedata_request(request_stream, t1);
 			return;
+		} else {
+			DLOG_F(INFO, "%p Unknown method '%s' received by udp-server", (void *)this,
+				method.c_str());
 		}
-		DLOG_F(INFO, "%p Unknown method '%s' received by udp-server", (void *)this, method.c_str());
 	} catch (std::exception &e) {
 		LOG_F(
 			WARNING, "%p udp_server: hiccup during request processing: %s", (void *)this, e.what());

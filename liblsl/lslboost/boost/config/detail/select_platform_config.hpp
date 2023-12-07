@@ -88,11 +88,6 @@
 #elif defined(__CloudABI__)
 // Nuxi CloudABI:
 #  define BOOST_PLATFORM_CONFIG "boost/config/platform/cloudabi.hpp"
-
-#elif defined (__wasm__)
-// Web assembly:
-#  define BOOST_PLATFORM_CONFIG "boost/config/platform/wasm.hpp"
-
 #else
 
 #  if defined(unix) \

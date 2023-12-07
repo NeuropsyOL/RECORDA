@@ -1,11 +1,8 @@
 #include "api_config.h"
 #include "common.h"
-#include "util/cast.hpp"
-#include "util/inireader.hpp"
-#include "util/strfuns.hpp"
+#include "inireader.h"
 #include <algorithm>
 #include <cstdlib>
-#include <exception>
 #include <fstream>
 #include <loguru.hpp>
 #include <mutex>
@@ -15,13 +12,12 @@ using namespace lsl;
 
 /// Substitute the "~" character by the full home directory (according to environment variables).
 std::string expand_tilde(const std::string &filename) {
-	// NOLINTBEGIN(concurrency-mt-unsafe)
 	if (!filename.empty() && filename[0] == '~') {
 		std::string homedir;
-		if (auto *home = getenv("HOME"))
-			homedir = home;
-		else if (auto *home = getenv("USERPROFILE"))
-			homedir = home;
+		if (getenv("HOME"))
+			homedir = getenv("HOME");
+		else if (getenv("USERPROFILE"))
+			homedir = getenv("USERPROFILE");
 		else if (getenv("HOMEDRIVE") && getenv("HOMEPATH"))
 			homedir = std::string(getenv("HOMEDRIVE")) + getenv("HOMEPATH");
 		else {
@@ -32,7 +28,6 @@ std::string expand_tilde(const std::string &filename) {
 		return homedir + filename.substr(1);
 	}
 	return filename;
-	// NOLINTEND(concurrency-mt-unsafe)
 }
 
 /// Parse a set specifier (a string of the form {a, b, c, ...}) into a vector of strings.
@@ -53,10 +48,8 @@ bool file_is_readable(const std::string &filename) {
 api_config::api_config() {
 	// for each config file location under consideration...
 	std::vector<std::string> filenames;
-
-	// NOLINTNEXTLINE(concurrency-mt-unsafe)
-	if (auto cfgpath = getenv("LSLAPICFG")) {
-		std::string envcfg(cfgpath);
+	if (getenv("LSLAPICFG")) {
+		std::string envcfg(getenv("LSLAPICFG"));
 		if (!file_is_readable(envcfg))
 			LOG_F(ERROR, "LSLAPICFG file %s not found", envcfg.c_str());
 		else
@@ -92,26 +85,18 @@ void api_config::load_from_file(const std::string &filename) {
 			}
 		}
 
-		// read the [log] settings
-		int log_level = pt.get("log.level", (int)loguru::Verbosity_INFO);
-		if (log_level < -3 || log_level > 9)
-			throw std::runtime_error("Invalid log.level (valid range: -3 to 9");
-
-		std::string log_file = pt.get("log.file", "");
-		if (!log_file.empty()) {
-			loguru::add_file(log_file.c_str(), loguru::Append, log_level);
-			// don't duplicate log to stderr
-			loguru::g_stderr_verbosity = -9;
-		} else
-			loguru::g_stderr_verbosity = log_level;
-
 		// read out the [ports] parameters
 		multicast_port_ = pt.get("ports.MulticastPort", 16571);
 		base_port_ = pt.get("ports.BasePort", 16572);
 		port_range_ = pt.get("ports.PortRange", 32);
 		allow_random_ports_ = pt.get("ports.AllowRandomPorts", true);
-		std::string ipv6_str = pt.get("ports.IPv6", "allow");
-
+		std::string ipv6_str = pt.get("ports.IPv6",
+#ifdef __APPLE__
+			"disable"); // on Mac OS (10.7) there's a bug in the IPv6 implementation that breaks LSL
+						// when it tries to use both v4 and v6
+#else
+			"allow");
+#endif
 		allow_ipv4_ = true;
 		allow_ipv6_ = true;
 		// fix some common mis-spellings
@@ -162,29 +147,32 @@ void api_config::load_from_file(const std::string &filename) {
 		else
 			throw std::runtime_error("This ResolveScope setting is unsupported.");
 
-		std::vector<std::string> mcasttmp;
-
-		mcasttmp.insert(mcasttmp.end(), machine_group.begin(), machine_group.end());
+		multicast_addresses_.insert(
+			multicast_addresses_.end(), machine_group.begin(), machine_group.end());
 		multicast_ttl_ = 0;
 
 		if (scope >= link) {
-			mcasttmp.insert(mcasttmp.end(), link_group.begin(), link_group.end());
-			mcasttmp.push_back("FF02:" + ipv6_multicast_group);
+			multicast_addresses_.insert(
+				multicast_addresses_.end(), link_group.begin(), link_group.end());
+			multicast_addresses_.push_back("FF02:" + ipv6_multicast_group);
 			multicast_ttl_ = 1;
 		}
 		if (scope >= site) {
-			mcasttmp.insert(mcasttmp.end(), site_group.begin(), site_group.end());
-			mcasttmp.push_back("FF05:" + ipv6_multicast_group);
+			multicast_addresses_.insert(
+				multicast_addresses_.end(), site_group.begin(), site_group.end());
+			multicast_addresses_.push_back("FF05:" + ipv6_multicast_group);
 			multicast_ttl_ = 24;
 		}
 		if (scope >= organization) {
-			mcasttmp.insert(mcasttmp.end(), organization_group.begin(), organization_group.end());
-			mcasttmp.push_back("FF08:" + ipv6_multicast_group);
+			multicast_addresses_.insert(
+				multicast_addresses_.end(), organization_group.begin(), organization_group.end());
+			multicast_addresses_.push_back("FF08:" + ipv6_multicast_group);
 			multicast_ttl_ = 32;
 		}
 		if (scope >= global) {
-			mcasttmp.insert(mcasttmp.end(), global_group.begin(), global_group.end());
-			mcasttmp.push_back("FF0E:" + ipv6_multicast_group);
+			multicast_addresses_.insert(
+				multicast_addresses_.end(), global_group.begin(), global_group.end());
+			multicast_addresses_.push_back("FF0E:" + ipv6_multicast_group);
 			multicast_ttl_ = 255;
 		}
 
@@ -193,45 +181,7 @@ void api_config::load_from_file(const std::string &filename) {
 		std::vector<std::string> address_override =
 			parse_set(pt.get("multicast.AddressesOverride", "{}"));
 		if (ttl_override >= 0) multicast_ttl_ = ttl_override;
-		if (!address_override.empty()) mcasttmp = address_override;
-
-		// Parse, validate and store multicast addresses
-		for (std::vector<std::string>::iterator it = mcasttmp.begin(); it != mcasttmp.end(); ++it) {
-			ip::address addr = ip::make_address(*it);
-			if ((addr.is_v4() && allow_ipv4_) || (addr.is_v6() && allow_ipv6_))
-				multicast_addresses_.push_back(addr);
-		}
-
-		// The network stack requires the source interfaces for multicast packets to be
-		// specified as IPv4 address or an IPv6 interface index
-		// Try getting the interfaces from the configuration files
-		using namespace asio::ip;
-		std::vector<std::string> netifs = parse_set(pt.get("multicast.Interfaces", "{}"));
-		for (const auto &netifstr : netifs) {
-			netif if_;
-			if_.name = std::string("Configured in lslapi.cfg");
-			if_.addr = make_address(netifstr);
-			if (if_.addr.is_v6()) if_.ifindex = if_.addr.to_v6().scope_id();
-			multicast_interfaces.push_back(if_);
-		}
-		// Try getting the interfaces from the OS
-		if (multicast_interfaces.empty()) multicast_interfaces = get_local_interfaces();
-
-		// Otherwise, let the OS select an appropriate network interface
-		if (multicast_interfaces.empty()) {
-			LOG_F(ERROR,
-				"No local network interface addresses found, resolving streams will likely "
-				"only work for devices connected to the main network adapter\n");
-			// Add dummy interface with default settings
-			netif dummy;
-			dummy.name = "Dummy interface";
-			dummy.addr = address_v4::any();
-			multicast_interfaces.push_back(dummy);
-			dummy.name = "IPv6 dummy interface";
-			dummy.addr = address_v6::any();
-			multicast_interfaces.push_back(dummy);
-		}
-
+		if (!address_override.empty()) multicast_addresses_ = address_override;
 
 		// read the [lab] settings
 		known_peers_ = parse_set(pt.get("lab.KnownPeers", "{}"));
@@ -256,14 +206,25 @@ void api_config::load_from_file(const std::string &filename) {
 		time_probe_max_rtt_ = pt.get("tuning.TimeProbeMaxRTT", 0.128);
 		outlet_buffer_reserve_ms_ = pt.get("tuning.OutletBufferReserveMs", 5000);
 		outlet_buffer_reserve_samples_ = pt.get("tuning.OutletBufferReserveSamples", 128);
-		socket_send_buffer_size_ = pt.get("tuning.SendSocketBufferSize", 0);
 		inlet_buffer_reserve_ms_ = pt.get("tuning.InletBufferReserveMs", 5000);
 		inlet_buffer_reserve_samples_ = pt.get("tuning.InletBufferReserveSamples", 128);
-		socket_receive_buffer_size_ = pt.get("tuning.ReceiveSocketBufferSize", 0);
-		smoothing_halftime_ = pt.get("tuning.SmoothingHalftime", 90.0F);
+		smoothing_halftime_ = pt.get("tuning.SmoothingHalftime", 90.0f);
 		force_default_timestamps_ = pt.get("tuning.ForceDefaultTimestamps", false);
 
-		// log config filename only after setting the verbosity level and all config has been read
+		// read the [log] settings
+		int log_level = pt.get("log.level", (int) loguru::Verbosity_INFO);
+		if (log_level < -3 || log_level > 9)
+			throw std::runtime_error("Invalid log.level (valid range: -3 to 9");
+
+		std::string log_file = pt.get("log.file", "");
+		if (!log_file.empty()) {
+			loguru::add_file(log_file.c_str(), loguru::Append, log_level);
+			// don't duplicate log to stderr
+			loguru::g_stderr_verbosity = -9;
+		} else
+			loguru::g_stderr_verbosity = log_level;
+
+		// log config filename only after setting the verbosity level
 		if (!filename.empty())
 			LOG_F(INFO, "Configuration loaded from %s", filename.c_str());
 		else

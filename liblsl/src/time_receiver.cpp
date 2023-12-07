@@ -2,36 +2,26 @@
 #include "api_config.h"
 #include "inlet_connection.h"
 #include "socket_utils.h"
-#include <asio/io_context.hpp>
-#include <chrono>
-#include <exception>
 #include <limits>
 #include <loguru.hpp>
-#include <memory>
 #include <sstream>
-#include <string>
 
 /// internally used constant to represent an unassigned time offset
 const double NOT_ASSIGNED = std::numeric_limits<double>::max();
 
 using namespace lsl;
+namespace asio = lslboost::asio;
+using err_t = const lslboost::system::error_code &;
 
 time_receiver::time_receiver(inlet_connection &conn)
 	: conn_(conn), was_reset_(false), timeoffset_(std::numeric_limits<double>::max()),
 	  remote_time_(std::numeric_limits<double>::max()),
 	  uncertainty_(std::numeric_limits<double>::max()), cfg_(api_config::get_instance()),
-	  time_sock_(time_io_), outlet_addr_(conn_.get_udp_endpoint()), next_estimate_(time_io_),
-	  aggregate_results_(time_io_), next_packet_(time_io_) {
+	  time_sock_(time_io_), next_estimate_(time_io_), aggregate_results_(time_io_),
+	  next_packet_(time_io_) {
 	conn_.register_onlost(this, &timeoffset_upd_);
-	conn_.register_onrecover(this, [this]() {
-		reset_timeoffset_on_recovery();
-		outlet_addr_ = conn_.get_udp_endpoint();
-		DLOG_F(INFO, "Set new time service address: %s", outlet_addr_.address().to_string().c_str());
-		// handle outlet switching between IPv4 and IPv6
-		time_sock_.close();
-		time_sock_.open(outlet_addr_.protocol());
-	});
-	time_sock_.open(outlet_addr_.protocol());
+	conn_.register_onrecover(this, [this]() { reset_timeoffset_on_recovery(); });
+	time_sock_.open(conn_.udp_protocol());
 }
 
 time_receiver::~time_receiver() {
@@ -135,8 +125,8 @@ void time_receiver::send_next_packet(int packet_num) {
 		request.precision(16);
 		request << "LSL:timedata\r\n" << current_wave_id_ << " " << lsl_clock() << "\r\n";
 		auto msg_buffer = std::make_shared<std::string>(request.str());
-		time_sock_.async_send_to(asio::buffer(*msg_buffer), outlet_addr_,
-			[msg_buffer](err_t /*unused*/, std::size_t /*unused*/) {
+		time_sock_.async_send_to(lslboost::asio::buffer(*msg_buffer), conn_.get_udp_endpoint(),
+			[msg_buffer](err_t, std::size_t) {
 				/* Do nothing, but keep the msg_buffer alive until async_send is completed */
 			});
 	} catch (std::exception &e) {
@@ -152,11 +142,11 @@ void time_receiver::send_next_packet(int packet_num) {
 }
 
 void time_receiver::receive_next_packet() {
-	time_sock_.async_receive_from(asio::buffer(recv_buffer_), remote_endpoint_,
+	time_sock_.async_receive_from(lslboost::asio::buffer(recv_buffer_), remote_endpoint_,
 		[this](err_t err, std::size_t len) { handle_receive_outcome(err, len); });
 }
 
-void time_receiver::handle_receive_outcome(err_t err, std::size_t len) {
+void time_receiver::handle_receive_outcome(error_code err, std::size_t len) {
 	try {
 		if (!err) {
 			// parse the buffer contents
@@ -184,7 +174,7 @@ void time_receiver::handle_receive_outcome(err_t err, std::size_t len) {
 	if (err != asio::error::operation_aborted) receive_next_packet();
 }
 
-void time_receiver::result_aggregation_scheduled(err_t err) {
+void time_receiver::result_aggregation_scheduled(error_code err) {
 	if (err) return;
 
 	if ((int)estimates_.size() >= cfg_->time_update_minprobes()) {
