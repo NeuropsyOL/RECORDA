@@ -11,6 +11,13 @@ android {
         versionName '1.1.0'   // change with every release
         setProperty("archivesBaseName", "LSLRecorder-$versionName")
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        externalNativeBuild {
+            cmake {
+                cppFlags "-std=c++11 -frtti -fexceptions"
+                arguments '-DANDROID_STL=c++_shared'
+            }
+        }
+
     }
 
     buildTypes {
@@ -22,6 +29,7 @@ android {
             versionNameSuffix '0.9'
             ndk {
                 abiFilters "armeabi-v7a", "arm64-v8a", "x86_64"
+
             }
         }
     }
