@@ -324,26 +324,25 @@ public class MainActivity extends Activity {
         if (!isRunning || lsl == null) {
             return;
         }
-        ArrayAdapter<StreamName> adapter = (ArrayAdapter<StreamName>) lv.getAdapter();
-        for (int i = 0; i < adapter.getCount(); i++) {
-            StreamName stream = adapter.getItem(i);
+        for (int i = lv.getFirstVisiblePosition(); i <= lv.getLastVisiblePosition(); i++) {
+            StreamName stream = (StreamName) lv.getItemAtPosition(i);
+            if (stream == null) {
+                Log.w(TAG, "Unexpected: No data item at position " + i);
+                continue;
+            }
             QualityState quality = lsl.getCurrentStreamQuality(stream.lslName);
             if (quality == null) {
                 continue; // that stream is not being recorded
             }
-            if (i < lv.getFirstVisiblePosition() || i > lv.getLastVisiblePosition()) {
-                Log.d("RECORDA", stream.lslName + " not visible, skipping");
-                return;
+            TextView listItem = (TextView) lv.getChildAt(i - lv.getFirstVisiblePosition());
+            if (listItem == null) {
+                Log.w(TAG, "Unexpected: No view at index " + i);
+                continue;
             }
-            TextView listItem = (TextView) lv.getChildAt(i);
-            if (listItem == null)
-                Log.e("RECORDA", "Could not find child: " + stream.lslName + " with id: " + i);
-            else {
-                Log.e("RECORDA", "Setting quality for: " + stream.lslName + " with id: " + i);
-                setColorBasedOnQuality(listItem, quality);
-                double currentSamplingRate = lsl.getCurrentSamplingRate(stream.lslName);
-                setTextBasedOnSamplingRate(listItem, stream, currentSamplingRate);
-            }
+            Log.i(TAG,"Trying to set stream quality for "+stream.lslName+" got:"+listItem.getText());
+            setColorBasedOnQuality(listItem, quality);
+            double currentSamplingRate = lsl.getCurrentSamplingRate(stream.lslName);
+            setTextBasedOnSamplingRate(listItem, stream, currentSamplingRate);
         }
     }
 
