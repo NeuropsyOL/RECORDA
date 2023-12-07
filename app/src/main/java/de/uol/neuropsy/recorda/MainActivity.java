@@ -118,7 +118,6 @@ public class MainActivity extends Activity {
             Long tsLong = System.currentTimeMillis() / 1000;
             String ts = tsLong.toString();
 
-            @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
             @Override
             public void onClick(View v) {
                 if (selectedStreamNames.isEmpty()) {
@@ -135,11 +134,7 @@ public class MainActivity extends Activity {
                     }
                     lv.setEnabled(false);
                     // make this a foreground service so that android does not kill it while it is in the background
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         myStartForegroundService(intent);
-                    } else { // try our best with older Androids
-                        startService(intent);
-                    }
                     bindService(intent, serviceConnection, 0);
                     startMillis = System.currentTimeMillis();
                     tdate.setText("00:00");

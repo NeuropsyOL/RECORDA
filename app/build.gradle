@@ -1,22 +1,16 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 33
+    compileSdk 33
     ndkVersion "25.2.9519653"
     defaultConfig {
         applicationId "com.uol.neuropsy.LSLReceiver"
-        minSdkVersion 24
+        minSdkVersion 26
         targetSdkVersion 31
         versionCode 1       // increment with every release
         versionName '1.0.0'   // change with every release
         setProperty("archivesBaseName", "LSLRecorder-$versionName")
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-        externalNativeBuild {
-            cmake {
-                cppFlags "-std=c++11 -frtti -fexceptions"
-                arguments '-DANDROID_STL=c++_shared'
-            }
-        }
     }
 
     buildTypes {

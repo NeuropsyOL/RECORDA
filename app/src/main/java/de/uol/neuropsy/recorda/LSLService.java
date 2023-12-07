@@ -57,7 +57,6 @@ public class LSLService extends Service {
     
     private final boolean recordTimingOffsets = true;
 
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     public int onStartCommand(final Intent intent, int flags, int startId) {
         Log.i(TAG, "Service onStartCommand");
@@ -70,10 +69,7 @@ public class LSLService extends Service {
         createNotificationChannel();
 
         xdfWriter = new XdfWriter();
-        Path xdfFilePath = null;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            xdfFilePath = freshRecordingFilePath();
-        }
+        Path xdfFilePath = freshRecordingFilePath();;
         xdfWriter.setXdfFilePath(xdfFilePath);
 
         // resolve all streams that are in the network
@@ -114,15 +110,8 @@ public class LSLService extends Service {
             streamRecording.spawnRecorderThread();
         });
 
-        // This service is killed by the OS if it is not started as background service
-        // This feature is only supported in Android 10 or higher
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startMyOwnForeground();
             Toast.makeText(this, "LSL Recorder can safely run in background!", Toast.LENGTH_LONG).show();
-        } else {
-            startForeground(1, new Notification());
-            Toast.makeText(this, "LSL Recorder will be killed when in background!", Toast.LENGTH_LONG).show();
-        }
         return START_NOT_STICKY;
     }
 
@@ -165,7 +154,6 @@ public class LSLService extends Service {
 
     // From https://stackoverflow.com/questions/47531742/startforeground-fail-after-upgrade-to-android-8-1
     // and https://androidwave.com/foreground-service-android-example/
-    @RequiresApi(api = Build.VERSION_CODES.O)
     private void startMyOwnForeground() {
         String NOTIFICATION_CHANNEL_ID = "de.uol.neuropsy.Recorda";
         String channelName = "LSLReceiver Background Service";
@@ -193,7 +181,6 @@ public class LSLService extends Service {
         return new LocalBinder();
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void onDestroy() {
         stopRecordings();
@@ -222,7 +209,6 @@ public class LSLService extends Service {
         Toast.makeText(this, "File written at: " + xdfWriter.getXdfFilePath(), Toast.LENGTH_LONG).show();
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     private static Path freshRecordingFilePath() {
         String isoTime = LocalDateTime.now().toString();
         String fileNameSafeTime = isoTime.replace(':', '-');
@@ -233,11 +219,8 @@ public class LSLService extends Service {
     }
 
     private void createNotificationChannel() {
-        // Create the NotificationChannel, but only on API 26+ because
-        // the NotificationChannel class is not in the Support Library.
         String name = "Recorda Channel";
         String description = "Recorda Channel description";
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             int importance = NotificationManager.IMPORTANCE_HIGH; //Important for heads-up notification
             NotificationChannel channel = null;
             channel = new NotificationChannel("1", name, importance);
@@ -246,13 +229,11 @@ public class LSLService extends Service {
             channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
-        }
     }
 
     private void postStreamQualityNotification(String streamName, QualityState quality) {
         NotificationManager notifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             NotificationChannel channel = notifyManager.getNotificationChannel(QUALITY_NOTIFICATION_CHANNEL_ID);
             if (channel == null) {
                 channel = new NotificationChannel(QUALITY_NOTIFICATION_CHANNEL_ID,
@@ -260,7 +241,6 @@ public class LSLService extends Service {
                 channel.setDescription("RECORDA stream quality notifications");
                 notifyManager.createNotificationChannel(channel);
             }
-        }
 
         Intent intent = new Intent(this, MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
