@@ -9,7 +9,7 @@ android {
         targetSdkVersion 31
         versionCode 2       // increment with every release
         versionName '1.1.0'   // change with every release
-        setProperty("archivesBaseName", "LSLRecorder-$versionName")
+        setProperty("archivesBaseName", "RECORDA-$versionName")
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         externalNativeBuild {
             cmake {
