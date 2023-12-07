@@ -26,7 +26,7 @@ jobs:
           gradle-version: 7.4.2
 
       - name: Setup Android NDK
-        uses: nttld/setup-ndk@v1.2.0
+        uses: nttld/setup-ndk@v1.4.2
         with:
           ndk-version: r25c
 
