@@ -12,4 +12,24 @@ else {
     println("Looking for liblsl-Java in the default path.")
     println("Change this via 'gradle -Pliblsl_java_dir=path/here if this fails")
     project(':liblsl-Java').projectDir = new File("./liblsl-Java")
+}pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
 }
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.name = "RECORDA"
+include ':app'
+
+// Add a project stub for liblsl-Java
+include 'liblsl-Java'
+project(':liblsl-Java').projectDir = new File('./liblsl-Java')

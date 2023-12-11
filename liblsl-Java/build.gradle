@@ -7,23 +7,15 @@
 // in the app's build.gradle
 
 buildscript {
-    repositories {
-        google()
-        mavenCentral()
-    }
+
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.+'
+        classpath 'com.android.tools.build:gradle:8.1.+'
     }
 }
 
 plugins {
     id 'com.android.library'
-}
-
-repositories {
-    google()
-    mavenCentral()
 }
 
 dependencies {
@@ -41,6 +33,7 @@ android {
     }
 
     sourceSets.main.java.srcDirs += 'src'
+    namespace = 'edu.ucsd.sccn'
 
     externalNativeBuild.cmake {
         // If the Android SDK CMake is older than 3.12, you need to install CMake locally and
@@ -51,5 +44,4 @@ android {
 
     }
     ndkVersion '25.2.9519653'
-    namespace 'edu.ucsd.sccn'
 }
