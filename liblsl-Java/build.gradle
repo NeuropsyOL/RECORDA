@@ -51,4 +51,5 @@ android {
 
     }
     ndkVersion '25.2.9519653'
+    namespace 'edu.ucsd.sccn'
 }

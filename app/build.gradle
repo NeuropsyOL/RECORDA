@@ -38,6 +38,7 @@ android {
             path "../libxdf/CMakeLists.txt"
         }
     }
+    namespace 'de.uol.neuropsy.recorda'
 
 }
 
