@@ -6,7 +6,8 @@ on:
       - master  # Change this to your main branch name (e.g., master)
       - dev
 jobs:
-  build:
+  setup:
+    name: Setup
     runs-on: ubuntu-latest
 
     steps:
@@ -32,11 +33,40 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
-      - name: Build APK
-        run: ./gradlew assembleDebug  # Change 'assembleDebug' to 'assembleRelease' if you want a release build
 
+  build-debug:
+    name: Build debug
+    needs: [setup]
+    if: github.ref =='refs/heads/dev'
+    steps:
+      - name: Build debug APK
+        run: ./gradlew assembleDebug
       - name: Upload APK artifact
         uses: actions/upload-artifact@v2
         with:
-          name: app-debug  # Change this to your desired artifact name
-          path: ./app/build/outputs/apk/debug/LSLRecorder-1.0.0-debug.apk
+          name: RECORDA-debug  # Change this to your desired artifact name
+          path: ./app/build/outputs/apk/debug/*.apk
+
+    build-master:
+      name: Build master
+      needs: [setup]
+      if: github.ref == 'refs/heads/master'
+      steps:
+        - name: Build debug APK
+          run: ./gradlew assembleRelease
+        - name: Sign app APK
+          uses: r0adkll/sign-android-release@v1
+          # ID used to access action output
+          id: sign_app
+          with:
+            releaseDirectory: app/build/outputs/apk/release
+            signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+            alias: ${{ secrets.SIGNING_KEY_ALIAS }}
+            keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
+            keyPassword: ${{ secrets.KEY_PASSWORD }}
+        - name: Upload APK artifact
+          uses: actions/upload-artifact@v2
+          with:
+            name: RECORDA-release  # Change this to your desired artifact name
+            path: ${{steps.sign_app.outputs.signedReleaseFile}}  # Change the path to the location of your APK file
+
