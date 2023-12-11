@@ -36,6 +36,7 @@ jobs:
 
   build-debug:
     name: Build debug
+    runs-on: ubuntu-latest
     needs: [setup]
     if: github.ref =='refs/heads/dev'
     steps:
@@ -49,6 +50,7 @@ jobs:
 
     build-master:
       name: Build master
+      runs-on: ubuntu-latest
       needs: [setup]
       if: github.ref == 'refs/heads/master'
       steps:
