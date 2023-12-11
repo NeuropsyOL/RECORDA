@@ -18,12 +18,12 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: temurin
-          java-version: '17'  # Change this to the required Java version for your Android project
+          java-version: '17'
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
         with:
-          gradle-version: 8.1.2
+          gradle-version: 8.5
 
       - name: Setup Android NDK
         uses: nttld/setup-ndk@v1.2.0
