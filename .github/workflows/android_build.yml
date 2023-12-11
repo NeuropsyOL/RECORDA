@@ -37,7 +37,7 @@ jobs:
         run: ./gradlew --version; cmake --version
 
       - name: Build APK
-        run: ./gradlew assembleDebug  # Change 'assembleDebug' to 'assembleRelease' if you want a release build
+        run: ls -a; ./gradlew assembleDebug  # Change 'assembleDebug' to 'assembleRelease' if you want a release build
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v2
