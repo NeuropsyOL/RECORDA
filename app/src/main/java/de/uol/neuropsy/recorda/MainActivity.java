@@ -107,7 +107,8 @@ public class MainActivity extends Activity {
         serviceConnection = new ServiceConnection() {
             @Override
             public void onServiceConnected(ComponentName name, IBinder service) {
-                lslService = ((LSLService.LocalBinder) service).getLSLService();
+                lslService = ((LSLService.LocalBinder)service).getLSLService();
+
             }
 
             @Override
@@ -152,7 +153,8 @@ public class MainActivity extends Activity {
                     }
                     lv.setEnabled(false);
                     // make this a foreground service so that android does not kill it while it is in the background
-                    myStartForegroundService(intent);
+                        myStartForegroundService(intent);
+
                     bindService(intent, serviceConnection, 0);
                     startMillis = System.currentTimeMillis();
                     tdate.setText("00:00");
@@ -191,7 +193,8 @@ public class MainActivity extends Activity {
         stop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (intent != null && t != null) {
+                if (intent != null && t!= null) {
+
                     if (lslService != null) {
                         lslService = null;
                         stopService(intent);
@@ -216,7 +219,8 @@ public class MainActivity extends Activity {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 // selected item
                 ArrayAdapter<StreamName> adapter = (ArrayAdapter<StreamName>) parent.getAdapter();
-                StreamName selectedItem = adapter.getItem(position);
+                StreamName selectedItem = adapter.getItem (position);
+
                 if (selectedStreamNames.contains(selectedItem))
                     selectedStreamNames.remove(selectedItem); //remove deselected item from the list of selected items
                 else
@@ -297,7 +301,6 @@ public class MainActivity extends Activity {
         };
         t.start();
     }
-
 
     private void forceUpdateQualityIndicator(String lslName, QualityState quality) {
         ArrayAdapter<StreamName> adapter = (ArrayAdapter<StreamName>) lv.getAdapter();
