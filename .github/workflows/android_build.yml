@@ -5,6 +5,7 @@ on:
     branches:
       - master  # Change this to your main branch name (e.g., master)
       - dev
+      - 26-ci-is-broken
 jobs:
   build:
     runs-on: ubuntu-latest
