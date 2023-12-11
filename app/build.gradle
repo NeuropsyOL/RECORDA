@@ -52,6 +52,7 @@ android {
     }
     externalNativeBuild {
         cmake {
+            version '3.24.1+'
             path "../libxdf/CMakeLists.txt"
         }
     }
