@@ -34,7 +34,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Dump versions
-        run: ./gradlew --version; cmake --version;ls -l; ls -l liblsl/lslboost/boost/tti/gen/namespace_gen.hpp
+        run: ./gradlew --version; cmake --version;find liblsl/lslboost/tti/
 
       - name: Build APK
         run: ls -a; ./gradlew assembleDebug  # Change 'assembleDebug' to 'assembleRelease' if you want a release build
