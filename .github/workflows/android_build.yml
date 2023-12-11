@@ -49,8 +49,6 @@ jobs:
     needs: [setup]
     if: github.ref == 'refs/heads/master'
     steps:
-
-    steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
@@ -75,6 +73,7 @@ jobs:
 
       - name: Build debug APK
         run: ./gradlew assembleRelease
+
       - name: Sign app APK
         uses: r0adkll/sign-android-release@v1
         # ID used to access action output
@@ -85,6 +84,7 @@ jobs:
           alias: ${{ secrets.SIGNING_KEY_ALIAS }}
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v2
         with:
