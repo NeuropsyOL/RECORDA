@@ -37,7 +37,7 @@ jobs:
         run: ./gradlew assembleDebug
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: RECORDA-debug  # Change this to your desired artifact name
           path: ./app/build/outputs/apk/debug/*.apk
