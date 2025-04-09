@@ -18,10 +18,10 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: temurin
-          java-version: '17'  # Change this to the required Java version for your Android project
+          java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/gradle-build-action@v2
+        uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: 7.4.2
 
@@ -69,7 +69,7 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
-      - name: Build debug APK
+      - name: Build release APK
         run: ./gradlew assembleRelease
 
       - name: Sign app APK
