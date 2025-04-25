@@ -9,13 +9,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Binder;
-import android.os.Build;
 import android.os.Environment;
 import android.os.IBinder;
-import android.support.annotation.RequiresApi;
-import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.widget.Toast;
+
+import androidx.core.app.NotificationCompat;
 
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -69,7 +68,7 @@ public class LSLService extends Service {
         createNotificationChannel();
 
         xdfWriter = new XdfWriter();
-        Path xdfFilePath = freshRecordingFilePath();;
+        Path xdfFilePath = freshRecordingFilePath();
         xdfWriter.setXdfFilePath(xdfFilePath);
 
         // resolve all streams that are in the network

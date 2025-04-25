@@ -5,4 +5,7 @@
     <string name="start">START</string>
     <string name="stop">STOP</string>
     <string name="elapsed_time">Elapsed Time:</string>
+    <string name="tutorial_end">This concludes the tutorial. You can always show it again by pressing the question mark in the top right corner of the main screen.
+    If you have any questions, please do not hesitate to contact the authors at https://github.com/organizations/NeuropsyOL/RECORDA.
+    </string>
 </resources>

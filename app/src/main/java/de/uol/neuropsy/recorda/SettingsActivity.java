@@ -6,18 +6,16 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
-import android.support.annotation.RequiresApi;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
-
 import de.uol.neuropsy.recorda.R;
+import androidx.appcompat.app.AppCompatActivity;
+
 public class SettingsActivity extends AppCompatActivity {
 
     public static Boolean samplingRate_set_Check = Boolean.FALSE;
