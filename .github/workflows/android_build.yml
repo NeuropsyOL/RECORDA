@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - master
-      - development
+      - dev
 
 jobs:
   build:
@@ -26,11 +26,11 @@ jobs:
       - run: chmod +x ./gradlew
 
       - name: Build debug APK
-        if: ${{ matrix.buildType == 'debug' && github.ref_name == 'development' }}
+        if: ${{ matrix.buildType == 'debug' && github.ref_name == 'dev' }}
         run: ./gradlew assembleDebug
 
       - name: Upload debug APK
-        if: ${{ matrix.buildType == 'debug' && github.ref_name == 'development' }}
+        if: ${{ matrix.buildType == 'debug' && github.ref_name == 'dev' }}
         uses: actions/upload-artifact@v4
         with:
           name: RECORDA-debug
