@@ -7,10 +7,6 @@
 // in the app's build.gradle
 
 buildscript {
-    repositories {
-        google()
-        mavenCentral()
-    }
 
     dependencies {
         classpath 'com.android.tools.build:gradle:7.+'
@@ -19,11 +15,6 @@ buildscript {
 
 plugins {
     id 'com.android.library'
-}
-
-repositories {
-    google()
-    mavenCentral()
 }
 
 dependencies {
@@ -50,5 +41,4 @@ android {
         path(properties['liblsl_path'] ?: '../liblsl/CMakeLists.txt')
 
     }
-    ndkVersion '25.2.9519653'
 }
