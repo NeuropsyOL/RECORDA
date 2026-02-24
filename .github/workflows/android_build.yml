@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - dev
+      - fix_signature
 
 jobs:
   build:
@@ -26,22 +27,22 @@ jobs:
       - run: chmod +x ./gradlew
 
       - name: Build debug APK
-        if: ${{ matrix.buildType == 'debug' && github.ref_name == 'dev' }}
+        if: ${{ matrix.buildType == 'debug' && (github.ref_name == 'dev' || github.ref_name == 'fix_signature') }}
         run: ./gradlew assembleDebug
 
       - name: Upload debug APK
-        if: ${{ matrix.buildType == 'debug' && github.ref_name == 'dev' }}
+        if: ${{ matrix.buildType == 'debug' && (github.ref_name == 'dev' || github.ref_name == 'fix_signature') }}
         uses: actions/upload-artifact@v4
         with:
           name: RECORDA-debug
           path: app/build/outputs/apk/debug/*.apk
 
       - name: Build release APK
-        if: ${{ matrix.buildType == 'release' && github.ref_name == 'master' }}
+        if: ${{ matrix.buildType == 'release' && (github.ref_name == 'dev' || github.ref_name == 'fix_signature') }}
         run: ./gradlew assembleRelease
 
       - name: Sign app APK
-        if: ${{ matrix.buildType == 'release' && github.ref_name == 'master' }}
+        if: ${{ matrix.buildType == 'release' && (github.ref_name == 'dev' || github.ref_name == 'fix_signature') }}
         uses: r0adkll/sign-android-release@v1
         id: sign_app
         with:
@@ -55,7 +56,7 @@ jobs:
           BUILD_TOOLS_VERSION: "34.0.0"
 
       - name: Upload release APK
-        if: ${{ matrix.buildType == 'release' && github.ref_name == 'master' }}
+        if: ${{ matrix.buildType == 'release' && (github.ref_name == 'dev' || github.ref_name == 'fix_signature') }}
         uses: actions/upload-artifact@v4
         with:
           name: RECORDA-release
