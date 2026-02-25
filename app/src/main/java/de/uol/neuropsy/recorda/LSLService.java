@@ -7,6 +7,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ServiceInfo;
 import android.graphics.Color;
 import android.os.Binder;
 import android.os.Environment;
@@ -60,57 +61,83 @@ public class LSLService extends Service {
     public int onStartCommand(final Intent intent, int flags, int startId) {
         Log.i(TAG, "Service onStartCommand");
         MainActivity.isRunning = true;
-        Toast.makeText(this,"Recording LSL!", Toast.LENGTH_SHORT).show();
+        safeShowToast("Recording LSL!", Toast.LENGTH_SHORT);
 
-        // this method is part of the mechanisms that allow this to be a foreground service
-        // a notification channel must also registered in the system before we can send notifications
-        // to the user
-        createNotificationChannel();
+        try {
+            // this method is part of the mechanisms that allow this to be a foreground service
+            // a notification channel must also registered in the system before we can send notifications
+            // to the user
+            createNotificationChannel();
 
-        xdfWriter = new XdfWriter();
-        Path xdfFilePath = freshRecordingFilePath();
-        xdfWriter.setXdfFilePath(xdfFilePath);
+            xdfWriter = new XdfWriter();
+            Path xdfFilePath = freshRecordingFilePath();
+            xdfWriter.setXdfFilePath(xdfFilePath);
+            Log.i(TAG, "XDF file path set to: " + xdfFilePath);
 
-        // resolve all streams that are in the network
-        LSL.StreamInfo[] lslStreams = LSL.resolve_streams();
+            // resolve all streams that are in the network
+            LSL.StreamInfo[] lslStreams = LSL.resolve_streams();
+            Log.i(TAG, "Found " + lslStreams.length + " LSL streams");
 
-        Collection<String> selectedLslStreams = MainActivity.selectedStreamNames.stream()
-                .map(stream -> stream.lslName)
-                .collect(Collectors.toSet());
+            Collection<String> selectedLslStreams = MainActivity.selectedStreamNames.stream()
+                    .map(stream -> stream.lslName)
+                    .collect(Collectors.toSet());
 
-        int xdfStreamIndex = 0;
-        synchronized (this) {
-            streamNames = new ArrayList<>();
-            for (LSL.StreamInfo availableStream : lslStreams) {
-                boolean isSelectedToBeRecorded = selectedLslStreams.contains(availableStream.name());
-                if (isSelectedToBeRecorded) {
-                    StreamRecording rec = prepareRecording(availableStream, xdfStreamIndex++);
-                    if (rec != null) {
-                        activeRecordings.add(rec);
-                        streamNames.add(availableStream.name());
+            int xdfStreamIndex = 0;
+            synchronized (this) {
+                streamNames = new ArrayList<>();
+                for (LSL.StreamInfo availableStream : lslStreams) {
+                    boolean isSelectedToBeRecorded = selectedLslStreams.contains(availableStream.name());
+                    if (isSelectedToBeRecorded) {
+                        StreamRecording rec = prepareRecording(availableStream, xdfStreamIndex++);
+                        if (rec != null) {
+                            activeRecordings.add(rec);
+                            streamNames.add(availableStream.name());
+                        }
                     }
                 }
+                streamQualities = new QualityState[activeRecordings.size()];
+                Arrays.fill(streamQualities, QualityState.OK);
             }
-            streamQualities = new QualityState[activeRecordings.size()];
-            Arrays.fill(streamQualities, QualityState.OK);
-        }
 
-        activeRecordings.forEach(streamRecording -> {
-            streamRecording.registerQualityListener((int streamIndex, QualityMetrics q) -> {
-                QualityState qualityNow = q.getCurrentQuality();
-                Log.i(TAG, "Stream " + streamIndex + " srate: " + q.getCurrentSamplingRate() + " q: " + qualityNow);
-                if (streamQualities[streamIndex] != qualityNow) {
-                    streamQualities[streamIndex] = qualityNow;
-                    if (qualityNow != QualityState.OK) {
-                        postStreamQualityNotification(streamNames.get(streamIndex), qualityNow);
+            Log.i(TAG, "Prepared " + activeRecordings.size() + " recordings");
+
+            activeRecordings.forEach(streamRecording -> {
+                streamRecording.registerQualityListener((int streamIndex, QualityMetrics q) -> {
+                    QualityState qualityNow = q.getCurrentQuality();
+                    Log.i(TAG, "Stream " + streamIndex + " srate: " + q.getCurrentSamplingRate() + " q: " + qualityNow);
+                    if (streamQualities[streamIndex] != qualityNow) {
+                        streamQualities[streamIndex] = qualityNow;
+                        if (qualityNow != QualityState.OK) {
+                            postStreamQualityNotification(streamNames.get(streamIndex), qualityNow);
+                        }
                     }
-                }
+                });
+                streamRecording.spawnRecorderThread();
             });
-            streamRecording.spawnRecorderThread();
-        });
 
             startMyOwnForeground();
-            Toast.makeText(this, "LSL Recorder can safely run in background!", Toast.LENGTH_LONG).show();
+            safeShowToast("LSL Recorder can safely run in background!", Toast.LENGTH_LONG);
+            Log.i(TAG, "Service started successfully");
+
+        } catch (Exception e) {
+            Log.e(TAG, "CRITICAL: Error starting LSL recording service", e);
+            safeShowToast("Failed to start recording: " + e.getMessage(), Toast.LENGTH_LONG);
+
+            // Clean up partial initialization
+            try {
+                if (xdfWriter != null) {
+                    Log.w(TAG, "Cleaning up partial initialization");
+                }
+                activeRecordings.clear();
+                MainActivity.isRunning = false;
+            } catch (Exception cleanupError) {
+                Log.e(TAG, "Error during cleanup", cleanupError);
+            }
+
+            // Stop the service since initialization failed
+            stopSelf();
+        }
+
         return START_NOT_STICKY;
     }
 
@@ -171,7 +198,13 @@ public class LSLService extends Service {
                 .setCategory(Notification.CATEGORY_SERVICE)
                 .build();
         int information_id = 2; // this must be unique and not 0, otherwise it does not have a meaning
-        startForeground(information_id, notification);
+
+        // For Android 14+ (API 34+), we need to specify the foreground service type
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(information_id, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
+        } else {
+            startForeground(information_id, notification);
+        }
     }
 
     @Override
@@ -182,30 +215,93 @@ public class LSLService extends Service {
 
     @Override
     public void onDestroy() {
-        stopRecordings();
-        finishXdf();
+        Log.i(TAG, "Service onDestroy called");
 
-        // Forget about recordings after saving
-        activeRecordings.clear();
-        MainActivity.isComplete = true;
+        try {
+            stopRecordings();
+
+            // Only try to finish XDF if it was initialized
+            if (xdfWriter != null) {
+                finishXdf();
+            } else {
+                Log.w(TAG, "Service destroyed before xdfWriter was initialized - no file to save");
+            }
+
+            // Forget about recordings after saving
+            activeRecordings.clear();
+            MainActivity.isComplete = true;
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error during service destruction", e);
+            // Continue with cleanup even if there's an error
+            activeRecordings.clear();
+            MainActivity.isComplete = true;
+        }
     }
 
     /**
      * Stop all ongoing asynchronous recordings and wait for them to finish.
      */
     private void stopRecordings() {
-        // Send stop signals to all recordings
-        MainActivity.isRunning = false;
-        activeRecordings.forEach(StreamRecording::stop);
-        Log.i(TAG, "Sent stop signal. Waiting for recording threads to terminate...");
-        activeRecordings.forEach(StreamRecording::waitFinished);
-        Log.i(TAG, "All recording threads terminated.");
+        try {
+            // Send stop signals to all recordings
+            MainActivity.isRunning = false;
+            Log.i(TAG, "Stopping " + activeRecordings.size() + " recordings");
+
+            activeRecordings.forEach(recording -> {
+                try {
+                    recording.stop();
+                } catch (Exception e) {
+                    Log.e(TAG, "Error stopping recording", e);
+                }
+            });
+
+            Log.i(TAG, "Sent stop signal. Waiting for recording threads to terminate...");
+
+            activeRecordings.forEach(recording -> {
+                try {
+                    recording.waitFinished();
+                } catch (Exception e) {
+                    Log.e(TAG, "Error waiting for recording to finish", e);
+                }
+            });
+
+            Log.i(TAG, "All recording threads terminated.");
+        } catch (Exception e) {
+            Log.e(TAG, "Error during stopRecordings", e);
+        }
     }
 
     private void finishXdf() {
-        Toast.makeText(this, "Finishing XDF file...", Toast.LENGTH_LONG).show();
-        activeRecordings.forEach(StreamRecording::writeStreamFooter);
-        Toast.makeText(this, "File written at: " + xdfWriter.getXdfFilePath(), Toast.LENGTH_LONG).show();
+        try {
+            safeShowToast("Finishing XDF file...", Toast.LENGTH_LONG);
+
+            // Write stream footers for all active recordings
+            activeRecordings.forEach(recording -> {
+                try {
+                    recording.writeStreamFooter();
+                } catch (Exception e) {
+                    Log.e(TAG, "Error writing stream footer", e);
+                }
+            });
+
+            // Show completion message with file path
+            if (xdfWriter != null) {
+                String filePath = xdfWriter.getXdfFilePath();
+                if (filePath != null && !filePath.isEmpty()) {
+                    safeShowToast("File written at: " + filePath, Toast.LENGTH_LONG);
+                    Log.i(TAG, "XDF file written successfully: " + filePath);
+                } else {
+                    Log.w(TAG, "XDF file path is null or empty");
+                }
+            } else {
+                Log.w(TAG, "xdfWriter is null, cannot get file path");
+            }
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error finishing XDF file", e);
+            safeShowToast("Error saving recording file", Toast.LENGTH_SHORT);
+        }
     }
 
     private static Path freshRecordingFilePath() {
@@ -259,6 +355,20 @@ public class LSLService extends Service {
                         .build();
 
         notifyManager.notify(1007, notification);
+    }
+
+    /**
+     * Safely show a Toast message, catching DeadObjectException that can occur
+     * when the app process is being destroyed.
+     */
+    private void safeShowToast(String message, int duration) {
+        try {
+            Toast.makeText(this, message, duration).show();
+        } catch (Exception e) {
+            // DeadObjectException or other exceptions can occur if the app is being destroyed
+            // Log it but don't crash
+            Log.w(TAG, "Failed to show toast: " + message, e);
+        }
     }
 
 

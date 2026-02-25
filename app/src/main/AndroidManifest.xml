@@ -9,6 +9,7 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
 
 
     <application android:allowBackup="true"
@@ -45,7 +46,8 @@
         <service
             android:name="de.uol.neuropsy.recorda.LSLService"
             android:enabled="true"
-            android:exported="true"></service>
+            android:exported="true"
+            android:foregroundServiceType="dataSync"></service>
     </application>
 
 </manifest>

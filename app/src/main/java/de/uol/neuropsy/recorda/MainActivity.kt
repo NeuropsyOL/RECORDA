@@ -124,11 +124,10 @@ class MainActivity : Activity() {
                         }
                     }
                     if (!allOkay) {
-                        Toast.makeText(
-                            this@MainActivity,
+                        safeShowToast(
                             "At least one of the streams you selected is no longer available. Refresh and try again.",
                             Toast.LENGTH_LONG
-                        ).show()
+                        )
                         return
                     }
                     lv!!.isEnabled = false
@@ -145,10 +144,10 @@ class MainActivity : Activity() {
             override fun onTouch(v: View, event: MotionEvent): Boolean {
                 when (event.action) {
                     MotionEvent.ACTION_DOWN -> {
-                        Toast.makeText(
-                            this@MainActivity, "Refreshing Streams...",
+                        safeShowToast(
+                            "Refreshing Streams...",
                             Toast.LENGTH_LONG
-                        ).show()
+                        )
                         val view = v as ImageButton
                         view.background.setColorFilter(0x77000000, PorterDuff.Mode.SRC_ATOP)
                         view.invalidate()
@@ -322,10 +321,10 @@ class MainActivity : Activity() {
                     Manifest.permission.WRITE_EXTERNAL_STORAGE
                 )
             ) {
-                Toast.makeText(
-                    this, "Please grant permissions to write XDF file",
+                safeShowToast(
+                    "Please grant permissions to write XDF file",
                     Toast.LENGTH_LONG
-                ).show()
+                )
                 writePermission = false
 
                 //Give user option to still opt-in the permissions
@@ -405,6 +404,20 @@ class MainActivity : Activity() {
 
         override fun hashCode(): Int {
             return Objects.hash(lslName, displayName)
+        }
+    }
+
+    /**
+     * Safely show a Toast message, catching DeadObjectException that can occur
+     * when the app process is being destroyed.
+     */
+    private fun safeShowToast(message: String, duration: Int) {
+        try {
+            Toast.makeText(this, message, duration).show()
+        } catch (e: Exception) {
+            // DeadObjectException or other exceptions can occur if the app is being destroyed
+            // Log it but don't crash
+            Log.w(TAG, "Failed to show toast: $message", e)
         }
     }
 
