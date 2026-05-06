@@ -33,6 +33,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:layout_marginEnd="8dp"
             android:text="START LSL"
             android:textColor="@color/button_text_light"
             android:background="@drawable/shape"/>
@@ -42,6 +43,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:layout_marginStart="8dp"
             android:text="STOP LSL"
             android:textColor="@color/button_text_light"
             android:background="@drawable/shape"/>
@@ -108,8 +110,7 @@
             android:layout_width="match_parent"
             android:layout_height="110dp"
             android:layout_marginTop="10dp"
-            android:dividerHeight="1dp"
-            android:background="@drawable/boundary"/>
+            android:dividerHeight="1dp"/>
 
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

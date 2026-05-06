@@ -264,7 +264,7 @@ class MainActivity : Activity() {
                     "Could not find child: " + stream!!.lslName + " with id: " + i
                 ) else {
                     Log.e("RECORDA", "Setting quality for: " + stream!!.lslName + " with id: " + i)
-                    setColorBasedOnQuality(listItem, quality)
+                    setColorBasedOnQuality(this, listItem, quality)
                 }
             }
         }
@@ -292,7 +292,7 @@ class MainActivity : Activity() {
                 TAG,
                 "Trying to set stream quality for " + stream.lslName + " got:" + listItem.text
             )
-            setColorBasedOnQuality(listItem, quality)
+            setColorBasedOnQuality(this, listItem, quality)
             val currentSamplingRate = lsl.getCurrentSamplingRate(stream.lslName)
             setTextBasedOnSamplingRate(listItem, stream, currentSamplingRate)
         }
@@ -456,14 +456,14 @@ class MainActivity : Activity() {
             } else String.format("%.1f kHz", rate / 1000.0)
         }
 
-        private fun setColorBasedOnQuality(view: TextView, q: QualityState) {
+        private fun setColorBasedOnQuality(context: Activity, view: TextView, q: QualityState) {
             val backgroundColor =
                 if (q == QualityState.NOT_RESPONDING) COLOR_QUALITY_RED else if (q == QualityState.LAGGY) COLOR_QUALITY_YELLOW else Color.TRANSPARENT
             view.setBackgroundColor(backgroundColor)
             val textColor: Int
             textColor =
                 if (Color.luminance(backgroundColor) > 0.5f || backgroundColor == Color.TRANSPARENT) {
-                    Color.BLACK
+                    ContextCompat.getColor(context, R.color.stream_list_text)
                 } else {
                     Color.WHITE
                 }
