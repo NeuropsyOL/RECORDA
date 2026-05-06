@@ -5,6 +5,7 @@
     android:id="@+id/activity_lsldemo"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/senda_background"
     android:paddingBottom="@dimen/activity_vertical_margin"
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
@@ -33,6 +34,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="START LSL"
+            android:textColor="@color/button_text_light"
             android:background="@drawable/shape"/>
 
         <Button
@@ -41,6 +43,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="STOP LSL"
+            android:textColor="@color/button_text_light"
             android:background="@drawable/shape"/>
     </LinearLayout>
 
@@ -75,7 +78,7 @@
                 android:layout_marginStart="28dp"
                 android:text="TextView"
                 android:textAlignment="center"
-                android:textColor="@color/black"
+                android:textColor="@color/stream_list_text"
                 android:textSize="25sp" />
 
             <ImageButton

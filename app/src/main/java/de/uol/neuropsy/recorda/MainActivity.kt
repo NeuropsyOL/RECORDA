@@ -198,11 +198,6 @@ class MainActivity : Activity() {
                 showSelectedItems()
             }
 
-        val sharedPref = applicationContext.getSharedPreferences("MyPref", 0)
-        if (sharedPref.getBoolean("shouldShowTutorial", true)) {
-            val tutorialIntent = Intent(this, TutorialActivity::class.java)
-            startActivity(tutorialIntent)
-        }
         val tutorialButton = findViewById<Button>(R.id.tutorialButton)
         tutorialButton.setOnClickListener { v: View? ->
             val tutorialIntent = Intent(this, TutorialActivity::class.java)

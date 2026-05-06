@@ -5,6 +5,7 @@
     android:id="@+id/activity_lsldemo"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/senda_background"
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
@@ -34,7 +35,7 @@
             android:layout_weight="1"
             android:background="@drawable/shape"
             android:text="@string/start"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/button_text_light"
             android:textSize="17dp" />
 
         <Button
@@ -44,7 +45,7 @@
             android:layout_weight="1"
             android:background="@drawable/shape"
             android:text="@string/stop"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/button_text_light"
             android:textSize="17dp" />
     </LinearLayout>
 
@@ -79,7 +80,7 @@
                 android:layout_marginStart="28dp"
                 android:text="TextView"
                 android:textAlignment="center"
-                android:textColor="@color/black"
+                android:textColor="@color/stream_list_text"
                 android:textSize="25sp" />
 
             <ImageButton
@@ -142,7 +143,7 @@
                 android:layout_weight="1"
                 android:paddingLeft="10dp"
                 android:text="@string/elapsed_time"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/button_text_light"
                 android:textSize="20sp" />
 
             <TextView
@@ -153,7 +154,7 @@
                 android:paddingRight="10dp"
                 android:text="00:00"
                 android:textAlignment="center"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/button_text_light"
                 android:textSize="20sp" />
         </LinearLayout>
 
@@ -177,7 +178,7 @@
         android:layout_height="wrap_content"
         android:background="@android:color/transparent"
         android:text="&#63;"
-        android:textColor="#20000000"
+        android:textColor="@color/stream_list_text"
         android:textSize="48sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
