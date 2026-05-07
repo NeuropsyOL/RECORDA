@@ -49,6 +49,7 @@ dependencies {
     implementation "androidx.viewpager2:viewpager2:1.0.0"
     //noinspection GradleCompatible
     implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.11.0'
     testImplementation 'junit:junit:4.13'
     //noinspection GradleCompatible
     implementation 'com.android.support:cardview-v7:28.0.0'
