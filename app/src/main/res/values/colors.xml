@@ -12,8 +12,15 @@
     <!-- Screen background (light neutral for contrast) -->
     <color name="screen_background">#F5F5F5</color>
 
+    <!-- Quality warning colors (day) -->
+    <color name="color_quality_red">#D21919</color>
+    <color name="color_quality_yellow">#FFDC00</color>
+
     <!-- Compatibility names used by current RECORDA layouts -->
     <color name="senda_background">@color/screen_background</color>
+    <color name="button_color">#595959</color>
+    <color name="button_primary_color">@color/senda_primary</color>
+    <color name="elapsed_bar_color">#595959</color>
     <color name="button_text_light">#F2F2F2</color>
     <color name="shape_stroke">#E4EAF1</color>
     <color name="shape_gradient_start">#DD5C686C</color>

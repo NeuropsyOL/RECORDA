@@ -1,14 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android" >
-    <stroke android:width="2dp"
-        android:color="@color/shape_stroke"/>
-    <gradient
-        android:angle="225"
-        android:startColor="@color/shape_gradient_start"
-        android:endColor="@color/shape_gradient_end"/>
-    <corners
-        android:bottomLeftRadius="12dp"
-        android:bottomRightRadius="12dp"
-        android:topLeftRadius="12dp"
-        android:topRightRadius="12dp" />
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle"
+    android:padding="10dp">
+    <solid android:color="@color/button_color"/>
+    <corners android:radius="20dp"/>
 </shape>

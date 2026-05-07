@@ -13,6 +13,7 @@ import android.provider.MediaStore;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import de.uol.neuropsy.recorda.R;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -20,10 +21,14 @@ public class SettingsActivity extends AppCompatActivity {
 
     public static Boolean samplingRate_set_Check = Boolean.FALSE;
 
+    private static final int REQUEST_CHOOSE_FOLDER = 9999;
+
     //Button for setting values
     Button samplingSet;
     @SuppressLint("StaticFieldLeak")
     public static EditText filename;
+
+    private TextView saveFolderPathView;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -32,37 +37,57 @@ public class SettingsActivity extends AppCompatActivity {
 
         samplingRate_set_Check = Boolean.TRUE;
 
-        //TODO for now, the location handling is not implemented, every file is stored in
-        // external storage - Download/
         MainActivity.isComplete = true;
         filename = (EditText) findViewById(R.id.filenametext);
         filename.setText(MainActivity.filenamevalue);
-    }
 
-    // In case the user did not change the directory and left the settings view by using the back button
+        saveFolderPathView = (TextView) findViewById(R.id.saveFolderPath);
+        if (MainActivity.saveFolderPath != null) {
+            saveFolderPathView.setText(MainActivity.saveFolderPath);
+        }
+
+        Button chooseFolderButton = (Button) findViewById(R.id.chooseFolderButton);
+        chooseFolderButton.setOnClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+            startActivityForResult(intent, REQUEST_CHOOSE_FOLDER);
+        });
+    }
 
     @Override
     public void onBackPressed() {
         super.onBackPressed();
-        setFilenameOnMainAcitity();
+        setFilenameOnMainActivity();
     }
 
-    private void setFilenameOnMainAcitity() {
+    private void setFilenameOnMainActivity() {
         filename = (EditText) findViewById(R.id.filenametext);
         MainActivity.filenamevalue = String.valueOf(filename.getText());
     }
 
     private static final String TAG = "SettingsActivity";
+
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == 9999) {
-            Uri uri = data.getData();
-            Uri docUri = DocumentsContract.buildDocumentUriUsingTree(uri,
-                        DocumentsContract.getTreeDocumentId(uri));
-            //MainActivity.path = getPath(this, docUri);
-            Log.d(TAG, "onActivityResult: "+"File name starts with: " + MainActivity.filenamevalue);
-            Intent intent = new Intent(SettingsActivity.this, MainActivity.class);
-            startActivity(intent);
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_CHOOSE_FOLDER && resultCode == RESULT_OK && data != null) {
+            Uri treeUri = data.getData();
+            if (treeUri != null) {
+                // Persist access permission so the app can use it across restarts
+                getContentResolver().takePersistableUriPermission(
+                        treeUri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                );
+                Uri docUri = DocumentsContract.buildDocumentUriUsingTree(
+                        treeUri, DocumentsContract.getTreeDocumentId(treeUri));
+                String resolvedPath = getPath(this, docUri);
+                if (resolvedPath != null) {
+                    MainActivity.saveFolderPath = resolvedPath;
+                    saveFolderPathView.setText(resolvedPath);
+                    Log.d(TAG, "Save folder set to: " + resolvedPath);
+                } else {
+                    Log.w(TAG, "Could not resolve path for URI: " + treeUri);
+                }
+            }
         }
     }
 

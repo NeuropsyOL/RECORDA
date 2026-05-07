@@ -2,7 +2,6 @@ package de.uol.neuropsy.recorda
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
@@ -13,6 +12,8 @@ import android.os.Bundle
 import android.os.IBinder
 import android.os.PowerManager
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
 import android.view.View.OnTouchListener
@@ -25,8 +26,10 @@ import android.widget.ImageView
 import android.widget.ListView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.google.android.material.appbar.MaterialToolbar
 import de.uol.neuropsy.recorda.LSLService.LocalBinder
 import de.uol.neuropsy.recorda.recorder.QualityState
 import de.uol.neuropsy.recorda.util.ResolveStreamsTask
@@ -42,7 +45,7 @@ import java.util.Objects
  *
  * Changes: file handling adapted, storage location fixed
  */
-class MainActivity : Activity() {
+class MainActivity : AppCompatActivity() {
     private var serviceConnection: ServiceConnection? = null
 
     @Volatile
@@ -63,12 +66,15 @@ class MainActivity : Activity() {
     var stream: List<String>? = null
     var refresh: ImageView? = null
 
-    //Settings button
-    var settings_button: ImageView? = null
     @SuppressLint("SetTextI18n", "ClickableViewAccessibility")
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        // Wire the toolbar as the action bar
+        val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
+
         tv = findViewById<View>(R.id.tv) as TextView
         start = findViewById<View>(R.id.startLSL) as Button
         stop = findViewById<View>(R.id.stopLSL) as Button
@@ -79,8 +85,7 @@ class MainActivity : Activity() {
         filenamevalue = "recording"
         lv = findViewById<View>(R.id.streams) as ListView
         lv!!.choiceMode = ListView.CHOICE_MODE_MULTIPLE
-        settings_button = findViewById<View>(R.id.settings_btn) as ImageView
-        settings_button!!.visibility = View.VISIBLE
+        lv!!.emptyView = findViewById(R.id.emptyStreamsText)
         val intent = Intent(this, LSLService::class.java)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         serviceConnection = object : ServiceConnection {
@@ -137,6 +142,7 @@ class MainActivity : Activity() {
                     startMillis = System.currentTimeMillis()
                     tdate!!.text = "00:00"
                     ElapsedTime()
+                    updateButtonStates(recording = true)
                 }
             }
         })
@@ -180,29 +186,19 @@ class MainActivity : Activity() {
                 }
                 t!!.interrupt()
                 lv!!.isEnabled = true
+                updateButtonStates(recording = false)
             }
-        }
-        settings_button!!.setOnClickListener {
-            val intent = Intent(this@MainActivity, SettingsActivity::class.java)
-            startActivity(intent)
         }
         tv!!.text = "Available Streams: "
         lv!!.onItemClickListener =
-            OnItemClickListener { parent, view, position, id -> // selected item
+            OnItemClickListener { parent, view, position, id ->
                 val adapter = parent.adapter as ArrayAdapter<StreamName>
                 val selectedItem = adapter.getItem(position)
-                if (selectedStreamNames.contains(selectedItem)) selectedStreamNames.remove(
-                    selectedItem
-                ) //remove deselected item from the list of selected items
-                else selectedStreamNames.add(selectedItem) //add selected item to the list of selected items
+                if (selectedStreamNames.contains(selectedItem)) selectedStreamNames.remove(selectedItem)
+                else selectedStreamNames.add(selectedItem)
                 showSelectedItems()
             }
 
-        val tutorialButton = findViewById<Button>(R.id.tutorialButton)
-        tutorialButton.setOnClickListener { v: View? ->
-            val tutorialIntent = Intent(this, TutorialActivity::class.java)
-            startActivity(tutorialIntent)
-        }
 
         val powerManager = (getSystemService(POWER_SERVICE) as PowerManager)
         val wakeLock =
@@ -210,10 +206,41 @@ class MainActivity : Activity() {
         wakeLock.acquire()
     }
 
+    /** Swaps button colours to highlight the next meaningful action. */
+    private fun updateButtonStates(recording: Boolean) {
+        val primary = ContextCompat.getDrawable(this, R.drawable.shape_primary)
+        val secondary = ContextCompat.getDrawable(this, R.drawable.shape)
+        if (recording) {
+            start!!.background = secondary   // grey — not the active action
+            stop!!.background  = primary     // blue  — next action
+        } else {
+            start!!.background = primary     // blue  — next action
+            stop!!.background  = secondary   // grey  — not the active action
+        }
+    }
+
     fun RefreshStreams() {
-        selectedStreamNames.clear()
         LSLStreamName.clear()
         ResolveStreamsTask().execute(this)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_settings -> {
+                startActivity(Intent(this, SettingsActivity::class.java))
+                true
+            }
+            R.id.action_tutorial -> {
+                startActivity(Intent(this, TutorialActivity::class.java))
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
     }
 
     fun onStreamRefresh(streams: Array<StreamInfo>) {
@@ -333,7 +360,7 @@ class MainActivity : Activity() {
                     this, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
                     MY_PERMISSIONS_WRITE_LSL
                 )
-                filenamevalue = "hardcoded.xdf"
+                filenamevalue = "recording"
             }
         }
     }
@@ -417,8 +444,6 @@ class MainActivity : Activity() {
     }
 
     companion object {
-        val COLOR_QUALITY_RED = Color.rgb(210, 25, 25)
-        val COLOR_QUALITY_YELLOW = Color.rgb(255, 220, 0)
         var lv: ListView? = null
         var LSLStreamName: MutableList<StreamName?> = ArrayList()
         @JvmField
@@ -426,6 +451,8 @@ class MainActivity : Activity() {
         var writePermission = true
         @JvmField
         var filenamevalue: String? = null
+        @JvmField
+        var saveFolderPath: String? = null   // user-chosen save directory, null = default Downloads
         @JvmField
         var isComplete = false
         var tv: TextView? = null
@@ -456,12 +483,15 @@ class MainActivity : Activity() {
             } else String.format("%.1f kHz", rate / 1000.0)
         }
 
-        private fun setColorBasedOnQuality(context: Activity, view: TextView, q: QualityState) {
+        private fun setColorBasedOnQuality(context: AppCompatActivity, view: TextView, q: QualityState) {
+            val colorRed = ContextCompat.getColor(context, R.color.color_quality_red)
+            val colorYellow = ContextCompat.getColor(context, R.color.color_quality_yellow)
             val backgroundColor =
-                if (q == QualityState.NOT_RESPONDING) COLOR_QUALITY_RED else if (q == QualityState.LAGGY) COLOR_QUALITY_YELLOW else Color.TRANSPARENT
+                if (q == QualityState.NOT_RESPONDING) colorRed
+                else if (q == QualityState.LAGGY) colorYellow
+                else Color.TRANSPARENT
             view.setBackgroundColor(backgroundColor)
-            val textColor: Int
-            textColor =
+            val textColor =
                 if (Color.luminance(backgroundColor) > 0.5f || backgroundColor == Color.TRANSPARENT) {
                     ContextCompat.getColor(context, R.color.stream_list_text)
                 } else {
