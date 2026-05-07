@@ -8,5 +8,5 @@
     android:checkMark="?android:attr/listChoiceIndicatorMultiple"
     android:padding="5sp"
     android:textSize="25sp"
-    android:textColor="@color/black"
+    android:textColor="@color/stream_list_text"
     />
