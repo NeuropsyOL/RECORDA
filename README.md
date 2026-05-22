@@ -32,7 +32,9 @@ Tap the tutorial button in the main toolbar to open a step-by-step walkthrough o
 ### Recording Data: 
 After the start of the application, the user is presented with the home screen, containing all main UI elements. 
 The user can refresh the list of available network streams by clicking the refresh button at the top right. All available streams are then listed in the list view below in the format *Stream Name (Sampling Rate)*. The desired streams should be selected from this list before starting the recording. Recording is initiated by pressing the *Start* button. Once the experiment is complete, the user should press the *Stop* button and wait while the file is finalized. The application will display a notification when the file is ready, including the file’s location on the device.
-The gear button on the top left opens a *settings* dialog. An optional recording name can be configured in the settings; if no name is provided, a unique name will be automatically generated for each new file. 
+The gear button on the top left opens a *settings* dialog. Here you can:
+- Set an optional custom recording name (if none is given, a unique name is auto-generated).
+- **Choose the destination folder** for recorded XDF files via a folder picker. The chosen location is remembered across app restarts.
 
 ## Dark Theme
 RECORDA supports the system-wide dark/light mode. When dark mode is active on your device, the app automatically switches to a dark colour scheme that is visually aligned with the [SENDA](https://github.com/NeuropsyOL/SENDA) companion app.
