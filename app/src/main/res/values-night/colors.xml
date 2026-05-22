@@ -4,25 +4,23 @@
     <color name="senda_primary_dark">#303F9F</color>
     <color name="senda_accent">#FF4081</color>
 
-    <!-- Exact SENDA stream-list palette (day) -->
-    <color name="stream_list_background">#FFFFFF</color>
-    <color name="stream_list_stroke">#040404</color>
-    <color name="stream_list_text">#595959</color>
+    <!-- Exact SENDA stream-list palette (night) -->
+    <color name="stream_list_background">#00000000</color>
+    <color name="stream_list_stroke">#444444</color>
+    <color name="stream_list_text">#CCCCCC</color>
 
-    <!-- Screen background (light neutral for contrast) -->
-    <color name="screen_background">#F5F5F5</color>
+    <!-- Screen background (dark) -->
+    <color name="screen_background">#121212</color>
 
-    <!-- Quality warning colors (day) -->
-    <color name="color_quality_red">#D21919</color>
-    <color name="color_quality_yellow">#FFDC00</color>
+    <!-- Quality warning colors (night – brighter/softer for dark backgrounds) -->
+    <color name="color_quality_red">#FF5252</color>
+    <color name="color_quality_yellow">#FFD740</color>
 
     <!-- Compatibility names used by current RECORDA layouts -->
     <color name="senda_background">@color/screen_background</color>
-    <color name="button_color">#595959</color>
-    <color name="button_primary_color">@color/senda_primary</color>
-    <color name="elapsed_bar_color">#595959</color>
+    <!-- button_color and elapsed_bar_color intentionally not overridden — stays #595959 to match Senda -->
     <color name="button_text_light">#F2F2F2</color>
-    <color name="shape_stroke">#E4EAF1</color>
+    <color name="shape_stroke">#666666</color>
     <color name="shape_gradient_start">#DD5C686C</color>
     <color name="shape_gradient_end">#DD292626</color>
     <color name="surface_white">@color/stream_list_background</color>
@@ -31,5 +29,6 @@
     <color name="colorPrimary">@color/senda_primary</color>
     <color name="colorPrimaryDark">@color/senda_primary_dark</color>
     <color name="colorAccent">@color/senda_accent</color>
-    <color name="black">#474747</color>
+    <color name="black">#E0E0E0</color>
 </resources>
+

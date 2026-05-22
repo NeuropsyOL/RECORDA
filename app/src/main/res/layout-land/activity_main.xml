@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/activity_lsldemo"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/senda_background"
     android:paddingBottom="@dimen/activity_vertical_margin"
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context="com.example.aliayubkhan.LSLReceiver.de.example.aliayubkhan.LSLReceiver.MainActivity">
+    tools:context="de.uol.neuropsy.recorda.MainActivity">
 
     <LinearLayout
         android:id="@+id/linearHorizontal"
@@ -32,7 +33,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:layout_marginEnd="8dp"
             android:text="START LSL"
+            android:textColor="@color/button_text_light"
             android:background="@drawable/shape"/>
 
         <Button
@@ -40,7 +43,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:layout_marginStart="8dp"
             android:text="STOP LSL"
+            android:textColor="@color/button_text_light"
             android:background="@drawable/shape"/>
     </LinearLayout>
 
@@ -75,7 +80,7 @@
                 android:layout_marginStart="28dp"
                 android:text="TextView"
                 android:textAlignment="center"
-                android:textColor="@color/black"
+                android:textColor="@color/stream_list_text"
                 android:textSize="25sp" />
 
             <ImageButton
@@ -105,8 +110,7 @@
             android:layout_width="match_parent"
             android:layout_height="110dp"
             android:layout_marginTop="10dp"
-            android:dividerHeight="1dp"
-            android:background="@drawable/boundary"/>
+            android:dividerHeight="1dp"/>
 
     </LinearLayout>
-</android.support.constraint.ConstraintLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

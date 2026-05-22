@@ -1,0 +1,10 @@
+<Button xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/close_tutorial_button"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@android:color/transparent"
+    android:text="X"
+    android:textColor="#20000000"
+    android:textSize="48sp"
+    android:translationY="-16dp"
+    />
