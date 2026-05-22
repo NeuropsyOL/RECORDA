@@ -309,8 +309,13 @@ public class LSLService extends Service {
         String fileNameSafeTime = isoTime.replace(':', '-');
         String filename = MainActivity.filenamevalue + "-" + fileNameSafeTime + ".xdf";
 
-        Path path = Environment.getExternalStorageDirectory().toPath().resolve("Download");
-        return path.resolve(filename);
+        Path folder;
+        if (MainActivity.saveFolderPath != null && !MainActivity.saveFolderPath.isEmpty()) {
+            folder = new java.io.File(MainActivity.saveFolderPath).toPath();
+        } else {
+            folder = Environment.getExternalStorageDirectory().toPath().resolve("Download");
+        }
+        return folder.resolve(filename);
     }
 
     private void createNotificationChannel() {

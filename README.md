@@ -1,6 +1,8 @@
 [![Android Build](https://github.com/NeuropsyOL/RECORDA/actions/workflows/android_build.yml/badge.svg)](https://github.com/NeuropsyOL/RECORDA/actions/workflows/android_build.yml)
 
 # RECORDA
+> 📋 See [CHANGELOG.md](CHANGELOG.md) for the full version history.
+
 ## Overview
 
 **RECORDA** is an Android application to record [LabStreamingLayer](https://labstreaminglayer.readthedocs.io/) (LSL) streams directly on a smartphone. 
@@ -24,10 +26,16 @@ However, since **RECORDA** is using the LSL framework, it can record any kind of
 ### Getting the APK file
 Download the [latest release](https://github.com/NeuropsyOL/RECORDA/releases/latest) and install the apk on your smartphone or tablet running Android 8.0 or higher. 
 
+### In-App Tutorial
+Tap the tutorial button in the main toolbar to open a step-by-step walkthrough of the app's features.
+
 ### Recording Data: 
 After the start of the application, the user is presented with the home screen, containing all main UI elements. 
 The user can refresh the list of available network streams by clicking the refresh button at the top right. All available streams are then listed in the list view below in the format *Stream Name (Sampling Rate)*. The desired streams should be selected from this list before starting the recording. Recording is initiated by pressing the *Start* button. Once the experiment is complete, the user should press the *Stop* button and wait while the file is finalized. The application will display a notification when the file is ready, including the file’s location on the device.
 The gear button on the top left opens a *settings* dialog. An optional recording name can be configured in the settings; if no name is provided, a unique name will be automatically generated for each new file. 
+
+## Dark Theme
+RECORDA supports the system-wide dark/light mode. When dark mode is active on your device, the app automatically switches to a dark colour scheme that is visually aligned with the [SENDA](https://github.com/NeuropsyOL/SENDA) companion app.
 
 
 ## Quality Monitoring
