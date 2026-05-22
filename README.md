@@ -37,6 +37,9 @@ The gear button on the top left opens a *settings* dialog. An optional recording
 ## Dark Theme
 RECORDA supports the system-wide dark/light mode. When dark mode is active on your device, the app automatically switches to a dark colour scheme that is visually aligned with the [SENDA](https://github.com/NeuropsyOL/SENDA) companion app.
 
+<div align="center">
+  <img style="padding:10px" width="250" src="./docs/Images/main_screen_dark.png" alt="RECORDA main screen in dark mode">
+</div>
 
 ## Quality Monitoring
 During a recording, **RECORDA** monitors the quality of the selected streams. 
@@ -54,15 +57,6 @@ The worse result of these two metrics will be displayed in the UI.
 
 Importantly, streams being declared as having an *irregular nominal sampling rate* by the sending side, are not checked with the timeout or deviating sampling rate checks.
 
-<div align="center">
-  <img style="padding:10px" width="227" height="500" src="./docs/Images/bad_quality.png">
-  <img style="padding:10px" width="227" height="500" src="./docs/Images/laggy_quality.png">
-</div>
-
-<p align="center">
-  
-</p>
- 
 ## XDF File Handling
 Once data has been recorded, transfer the file to your computer and then open the file with a program of your choice. For Matlab, there are multiple XDF readers available, for example [this one](https://github.com/xdf-modules/xdf-Matlab). 
 
@@ -102,3 +96,6 @@ libxdf adapted from [App-LabRecorder](https://github.com/labstreaminglayer/App-L
 
 ## Cite As
 - Blum S, Hölle D, Bleichner MG, Debener S. Pocketable Labs for Everyone: Synchronized Multi-Sensor Data Streaming and Recording on Smartphones with the Lab Streaming Layer. Sensors. 2021; 21(23):8135. https://doi.org/10.3390/s21238135
+
+- *(paper in preparation — full citation will be added upon publication)*
+
