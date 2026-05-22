@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Dark theme support** – RECORDA now follows the system-wide dark/light mode setting. Dark-mode colours are aligned with the companion app [SENDA](https://github.com/NeuropsyOL/SENDA).
+- **Configurable save location** – users can now choose the destination folder for recorded XDF files via a folder picker in the Settings dialog. The chosen location is persisted across app restarts.
 - **In-app tutorial** – a step-by-step guide is available via the new tutorial button in the main toolbar, helping new users get started quickly.
 
 ### Fixed
