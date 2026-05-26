@@ -1,15 +1,34 @@
 apply plugin: 'com.android.application'
 apply plugin: 'org.jetbrains.kotlin.android'
 
+// Load signing credentials from keystore.properties (local) or environment variables (CI)
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     compileSdk 34
     namespace "de.uol.neuropsy.recorda"
     ndkVersion "25.2.9519653"
+
+    signingConfigs {
+        release {
+            keyAlias      keystoreProperties['keyAlias']      ?: System.getenv('KEY_ALIAS')
+            keyPassword   keystoreProperties['keyPassword']   ?: System.getenv('KEY_PASSWORD')
+            storeFile     keystoreProperties['storeFile']     ? file(keystoreProperties['storeFile'])
+                                                             : file(System.getenv('KEYSTORE_PATH') ?: 'keystore.jks')
+            storePassword keystoreProperties['storePassword'] ?: System.getenv('KEY_STORE_PASSWORD')
+        }
+    }
+
     defaultConfig {
         applicationId "de.uol.neuropsy.recorda"
         minSdkVersion 26
         targetSdkVersion 34
-        versionCode 5       // increment with every release
+        // versionCode is overridden by -PversionCode=<n> from CI (github.run_number)
+        versionCode project.hasProperty('versionCode') ? project.property('versionCode').toInteger() : 5
         versionName '1.4'   // change with every release
         setProperty("archivesBaseName", "RECORDA-$versionName")
         externalNativeBuild {
@@ -22,11 +41,13 @@ android {
 
     buildTypes {
         release {
+            signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
         debug {
-            versionNameSuffix '0.9'
+            // signingConfig signingConfigs.debug is applied automatically by Android Gradle
+            versionNameSuffix '-debug'
             ndk {
                 abiFilters "armeabi-v7a", "arm64-v8a", "x86_64"
 
