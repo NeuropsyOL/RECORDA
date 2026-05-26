@@ -118,10 +118,6 @@ A **heads-up notification** is shown whenever a stream transitions to laggy or b
 
 Streams declared as *irregular* by the sender are exempt from the timeout and rate-deviation checks.
 
-<div align="center">
-  <img style="padding:10px" width="227" height="500" src="./docs/Images/bad_quality.png">
-  <img style="padding:10px" width="227" height="500" src="./docs/Images/laggy_quality.png">
-</div>
 
 ---
 
