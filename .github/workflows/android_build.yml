@@ -24,7 +24,8 @@ jobs:
       - run: chmod +x ./gradlew
 
       - name: Build debug APK
-        run: ./gradlew assembleDebug
+        # versionCode is set to the GitHub Actions run number for traceability
+        run: ./gradlew assembleDebug -PversionCode=${{ github.run_number }}
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
@@ -49,23 +50,22 @@ jobs:
         with: { ndk-version: r25c }
       - run: chmod +x ./gradlew
 
-      - name: Build release APK
-        run: ./gradlew assembleRelease
+      - name: Decode keystore
+        # Decodes the base64-encoded keystore stored as a GitHub secret
+        run: echo "${{ secrets.SIGNING_KEY }}" | base64 --decode > keystore.jks
 
-      - name: Sign app APK
-        uses: r0adkll/sign-android-release@v1
-        id: sign_app
-        with:
-          releaseDirectory: app/build/outputs/apk/release
-          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
-          alias: ${{ secrets.SIGNING_KEY_ALIAS }}
-          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
-          keyPassword: ${{ secrets.KEY_PASSWORD }}
+      - name: Build & sign release APK
+        # Gradle picks up signing credentials via env vars (see app/build.gradle signingConfigs)
+        # versionCode is set to the GitHub Actions run number for auto-incrementing
+        run: ./gradlew assembleRelease -PversionCode=${{ github.run_number }}
         env:
-          BUILD_TOOLS_VERSION: "34.0.0"
+          KEYSTORE_PATH: keystore.jks
+          KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEY_STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
 
       - name: Upload release APK
         uses: actions/upload-artifact@v4
         with:
           name: RECORDA-release
-          path: ${{ steps.sign_app.outputs.signedReleaseFile }}
+          path: app/build/outputs/apk/release/*.apk

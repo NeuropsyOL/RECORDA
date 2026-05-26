@@ -18,6 +18,11 @@ gen/
 # Local configuration file (sdk path, etc)
 local.properties
 
+# Signing credentials - never commit these
+keystore.properties
+*.jks
+*.keystore
+
 # Windows thumbnail db
 Thumbs.db
 
