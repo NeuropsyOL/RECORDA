@@ -4,6 +4,13 @@
 
 # RECORDA — LabRecorder for Android
 
+**RECORDA** is an Android app for recording [Lab Streaming Layer (LSL)](https://labstreaminglayer.readthedocs.io/) streams to [XDF](https://github.com/sccn/xdf) files directly on a smartphone or tablet — no laptop required. It is the mobile equivalent of [LabRecorder](https://github.com/labstreaminglayer/App-LabRecorder) and is designed for mobile EEG, biosignal, and neuroscience research.
+
+> 🔎 **Looking for a related app?**  
+> → **[SENDA](https://github.com/NeuropsyOL/SENDA)** — streams all built-in phone sensors (accelerometer, gyroscope, light, proximity, …) as LSL streams  
+> → **[VIEWA](https://github.com/NeuropsyOL/VIEWA)** — visual event marker / stimulus presentation app with LSL output  
+> Together, RECORDA + SENDA + VIEWA form a complete **self-contained mobile neuroscience data acquisition toolkit**.
+
 <div align="center">
   <img width="270" src="./docs/Images/RECORDA_mainScreen.png" alt="RECORDA home screen">
 </div>
@@ -57,8 +64,14 @@ Smartphone-based research pipelines (mobile EEG, peripheral biosignals, motion c
 ### liblsl compiled for Android — for the first time
 RECORDA ships **liblsl compiled natively for Android** (ARMv7, ARM64, x86_64) using CMake and the Android NDK. The upstream liblsl project does not officially support Android, and a reliable Android build had not been publicly demonstrated before this project. We provide the full CMake toolchain setup in this repository so others can build on it.
 
-### Designed for use with SENDA
-RECORDA pairs seamlessly with [SENDA](https://github.com/NeuropsyOL/SENDA), our companion app that streams all built-in phone sensors (accelerometer, gyroscope, light, proximity, step count, and more) as LSL streams. Together they form a complete, self-contained mobile data acquisition system.
+### Designed for use with SENDA and VIEWA
+RECORDA pairs seamlessly with [SENDA](https://github.com/NeuropsyOL/SENDA), our companion app that streams all built-in phone sensors (accelerometer, gyroscope, light, proximity, step count, and more) as LSL streams. Add [VIEWA](https://github.com/NeuropsyOL/VIEWA) for visual event markers and stimulus presentation with LSL output. Together they form a complete, self-contained **mobile neuroscience data acquisition system** — no additional hardware needed.
+
+| App | Role |
+|-----|------|
+| **[RECORDA](https://github.com/NeuropsyOL/RECORDA)** | Records all LSL streams to XDF on Android |
+| **[SENDA](https://github.com/NeuropsyOL/SENDA)** | Streams built-in phone sensors as LSL |
+| **[VIEWA](https://github.com/NeuropsyOL/VIEWA)** | Visual event markers / stimuli with LSL output |
 
 ---
 
@@ -209,8 +222,10 @@ Contributions are welcome! Please:
 Developed by the [Neuropsychology Lab of Stefan Debener](https://uol.de/neuropsychologie), University of Oldenburg, Germany.
 
 **Active Developers**
-- **Paul Maanen** — [pmaanen](https://github.com/pmaanen)
 - **Sarah Blum** — [s4rify](https://github.com/s4rify)
+
+**Former Developers**
+- **Paul Maanen** — [pmaanen](https://github.com/pmaanen)
 - **Sören Jeserich**
 
 **Initial Implementation**
@@ -229,5 +244,13 @@ GNU General Public License v3.0 — see [LICENSE.md](LICENSE.md) for details.
 - [liblsl](https://github.com/sccn/liblsl) — MIT License
 - [liblsl-Java](https://github.com/labstreaminglayer/liblsl-Java) — MIT License
 - [libxdf](https://github.com/labstreaminglayer/App-LabRecorder) — adapted from App-LabRecorder, MIT License
+
+---
+
+## Keywords
+
+<!-- This section exists to improve search engine and GitHub discoverability. -->
+
+`Android EEG recorder` · `Lab Streaming Layer Android` · `LSL recorder Android` · `LabRecorder mobile` · `XDF recorder Android` · `mobile EEG` · `mobile biosignal recording` · `mobile neuroscience` · `LSL Android app` · `XDF file Android` · `EEG data collection Android` · `biosignal streaming Android` · `RECORDA` · `SENDA` · `VIEWA` · `NeuropsyOL` · `University of Oldenburg` · `liblsl Android` · `liblsl NDK` · `multi-stream recording` · `time-synchronized data acquisition`
 
 
