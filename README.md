@@ -10,27 +10,39 @@
 
 > 📋 See [CHANGELOG.md](CHANGELOG.md) for the full version history.
 
+---
+
+## Citation
+
+> **If you use RECORDA in your research, please cite the following publication:**
+>
+> Haupt et al. — *Title TBA upon publication* — accepted. Citation will be updated once a DOI is available.
+
+RECORDA is provided **without any warranty**, and without guarantee of fitness for a particular purpose. Use it at your own risk. See [LICENSE](LICENSE) for the full terms.
+
+---
+
 **RECORDA** brings the power of [LabRecorder](https://github.com/labstreaminglayer/App-LabRecorder) to your pocket.  
-It discovers [Lab Streaming Layer (LSL)](https://labstreaminglayer.readthedocs.io/) streams on the local network and records them directly on an Android smartphone or tablet into the standard **XDF** file format — no laptop required.
+It discovers [Lab Streaming Layer (LSL)](https://labstreaminglayer.readthedocs.io/) [[1]](#lsl-ref) streams on the local network and records them directly on an Android smartphone or tablet into the standard **XDF** file format — no laptop required.
 
 ---
 
 ## Table of Contents
 
-1. [Why RECORDA?](#why-recorda)
-2. [Features](#features)
-3. [Getting Started](#getting-started)
-4. [Recording Data](#recording-data)
-5. [XDF Files & Importing Data](#xdf-files--importing-data)
-6. [Quality Monitoring](#quality-monitoring)
-7. [Dark Theme](#dark-theme)
-8. [Building from Source](#building-from-source)
-9. [Scientific Use Cases & Publications](#scientific-use-cases--publications)
-10. [Contributing](#contributing)
-11. [Authors](#authors)
-12. [License](#license)
-13. [Acknowledgments](#acknowledgments)
-14. [Cite As](#cite-as)
+1. [Citation](#citation)
+2. [Why RECORDA?](#why-recorda)
+3. [Features](#features)
+4. [Getting Started](#getting-started)
+5. [Recording Data](#recording-data)
+6. [XDF Files & Importing Data](#xdf-files--importing-data)
+7. [Quality Monitoring](#quality-monitoring)
+8. [Dark Theme](#dark-theme)
+9. [Building from Source](#building-from-source)
+10. [Scientific Use Cases & Publications](#scientific-use-cases--publications)
+11. [Contributing](#contributing)
+12. [Authors](#authors)
+13. [License](#license)
+14. [Acknowledgments](#acknowledgments)
 
 ---
 
@@ -177,6 +189,10 @@ Below are studies from our lab that rely on (or motivated) the RECORDA / SENDA p
   - **Author(s).** Title. *Journal*, Year; Vol(Issue):Pages. https://doi.org/...
 -->
 
+### Lab Streaming Layer
+<a name="lsl-ref"></a>
+- **Kothe C, Shirazi SY, Stenner T, Medine D, Boulay C, Grivich MI, Artoni F, Mullen T, Delorme A, Makeig S.** The Lab Streaming Layer for Synchronized Multimodal Recording. *Imaging Neurosci (Camb).* 2025;3:IMAG.a.136. https://doi.org/10.1162/IMAG.a.136
+
 ---
 
 ## Contributing
@@ -214,14 +230,4 @@ GNU General Public License v3.0 — see [LICENSE.md](LICENSE.md) for details.
 - [liblsl-Java](https://github.com/labstreaminglayer/liblsl-Java) — MIT License
 - [libxdf](https://github.com/labstreaminglayer/App-LabRecorder) — adapted from App-LabRecorder, MIT License
 
----
 
-## Cite As
-
-If you use RECORDA in your research, please cite:
-
-> Blum S, Hölle D, Bleichner MG, Debener S. Pocketable Labs for Everyone: Synchronized Multi-Sensor Data Streaming and Recording on Smartphones with the Lab Streaming Layer. *Sensors*. 2021; 21(23):8135. https://doi.org/10.3390/s21238135
-
-A dedicated RECORDA paper is currently under peer review. Until the final publication is available, please refer to the preprint:
-
-> Preprint available on SSRN: https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5433769
