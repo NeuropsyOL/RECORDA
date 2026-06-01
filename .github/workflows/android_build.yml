@@ -52,14 +52,14 @@ jobs:
 
       - name: Decode keystore
         # Decodes the base64-encoded keystore stored as a GitHub secret
-        run: echo "${{ secrets.SIGNING_KEY }}" | base64 --decode > keystore.jks
+        run: echo "${{ secrets.SIGNING_KEY }}" | base64 --decode > ${{ github.workspace }}/keystore.jks
 
       - name: Build & sign release APK
         # Gradle picks up signing credentials via env vars (see app/build.gradle signingConfigs)
         # versionCode is set to the GitHub Actions run number for auto-incrementing
         run: ./gradlew assembleRelease -PversionCode=${{ github.run_number }}
         env:
-          KEYSTORE_PATH: keystore.jks
+          KEYSTORE_PATH: ${{ github.workspace }}/keystore.jks
           KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           KEY_STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
