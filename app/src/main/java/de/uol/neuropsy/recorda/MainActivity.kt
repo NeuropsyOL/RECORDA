@@ -3,11 +3,13 @@ package de.uol.neuropsy.recorda
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.PorterDuff
+import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.os.IBinder
 import android.os.PowerManager
@@ -50,6 +52,8 @@ class MainActivity : AppCompatActivity() {
 
     @Volatile
     private var lslService: LSLService? = null
+
+    private var multicastLock: WifiManager.MulticastLock? = null
 
     //Elapsed Time
     //Create placeholder for user's consent to record_audio permission.
@@ -190,6 +194,11 @@ class MainActivity : AppCompatActivity() {
             }
         }
         tv!!.text = "Available Streams: "
+
+        val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        multicastLock = wifiManager.createMulticastLock("RECORDA_lsl_discovery")
+        multicastLock!!.setReferenceCounted(true)
+        multicastLock!!.acquire()
         lv!!.onItemClickListener =
             OnItemClickListener { parent, view, position, id ->
                 val adapter = parent.adapter as ArrayAdapter<StreamName>
@@ -397,6 +406,13 @@ class MainActivity : AppCompatActivity() {
     fun myStartForegroundService(intent: Intent?) {
         intent!!.putExtra("inputExtra", "Foreground Service Example in Android")
         ContextCompat.startForegroundService(this, intent)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (multicastLock?.isHeld == true) {
+            multicastLock!!.release()
+        }
     }
 
     /**
