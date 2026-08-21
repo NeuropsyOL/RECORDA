@@ -23,7 +23,7 @@
 
 > **If you use RECORDA in your research, please cite the following publication:**
 >
-> Haupt et al. — *Title TBA upon publication* — accepted. Citation will be updated once a DOI is available.
+> Haupt T, Maanen P, Daeglau M et al. Enhancing mobile brain and body imaging: Open-source solutions for real-world research applications. *iScience*, 2026; 29.
 
 RECORDA is provided **without any warranty**, and without guarantee of fitness for a particular purpose. Use it at your own risk. See [LICENSE](LICENSE) for the full terms.
 
