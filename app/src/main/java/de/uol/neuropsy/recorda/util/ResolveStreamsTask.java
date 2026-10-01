@@ -9,7 +9,8 @@
         MainActivity parent;
         protected LSL.StreamInfo[] doInBackground(MainActivity... main){
             parent=main[0];
-            return LSL.resolve_streams();
+            // runs off the UI thread, so we can afford to wait for slow responders (e.g. hotspot clients)
+            return LSL.resolve_streams(3.0);
         }
 
         @Override

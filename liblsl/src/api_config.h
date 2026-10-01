@@ -1,9 +1,13 @@
 #ifndef API_CONFIG_H
 #define API_CONFIG_H
 
+#include "netinterfaces.h"
 #include <cstdint>
+#include <loguru.hpp>
 #include <string>
 #include <vector>
+
+namespace ip = asio::ip;
 
 namespace lsl {
 /**
@@ -81,7 +85,7 @@ public:
 	const std::string &resolve_scope() const { return resolve_scope_; }
 
 	/**
-	 * @brief List of multicast addresses on which inlets / outlets advertise/discover streams.
+	 * List of multicast addresses on which inlets / outlets advertise/discover streams.
 	 *
 	 * This is merged from several other config file entries
 	 * (LocalAddresses,SiteAddresses,OrganizationAddresses, GlobalAddresses)
@@ -96,7 +100,7 @@ public:
 	 * department) or organization (e.g., the campus), or at larger scope, multicast addresses
 	 * with the according scope need to be included.
 	 */
-	const std::vector<std::string> &multicast_addresses() const { return multicast_addresses_; }
+	const std::vector<ip::address> &multicast_addresses() const { return multicast_addresses_; }
 
 	/**
 	 * @brief The address of the local interface on which to listen to multicast traffic.
@@ -106,8 +110,16 @@ public:
 	const std::string &listen_address() const { return listen_address_; }
 
 	/**
-	 * @brief The TTL setting (time-to-live) for the multicast packets.
+	 * A list of local interface addresses the multicast packets should be
+	 * sent from.
 	 *
+	 * The ini file may contain IPv4 addresses and/or IPv6 addresses with the
+	 * interface index as scope id, e.g. `1234:5678::2%3`
+	 **/
+	std::vector<lsl::netif> multicast_interfaces;
+
+	/**
+	 * The TTL setting (time-to-live) for the multicast packets.
 	 * This is determined according to the ResolveScope setting if not overridden by the TTLOverride
 	 * setting. The higher this number (0-255), the broader their distribution. Routers (if
 	 * correctly configured) employ various thresholds below which packets are not further
@@ -174,10 +186,14 @@ public:
 	int outlet_buffer_reserve_ms() const { return outlet_buffer_reserve_ms_; }
 	/// Default pre-allocated buffer size for the outlet, in samples (irregular streams).
 	int outlet_buffer_reserve_samples() const { return outlet_buffer_reserve_samples_; }
+	/// Default socket send buffer size, in bytes.
+	int socket_send_buffer_size() const { return socket_send_buffer_size_; }
 	/// Default pre-allocated buffer size for the inlet, in ms (regular streams).
 	int inlet_buffer_reserve_ms() const { return inlet_buffer_reserve_ms_; }
 	/// Default pre-allocated buffer size for the inlet, in samples (irregular streams).
 	int inlet_buffer_reserve_samples() const { return inlet_buffer_reserve_samples_; }
+	/// Default socket receive buffer size, in bytes.
+	int socket_receive_buffer_size() const { return socket_receive_buffer_size_; }
 	/// Default halftime of the time-stamp smoothing window (if enabled), in seconds.
 	float smoothing_halftime() const { return smoothing_halftime_; }
 	/// Override timestamps with lsl clock if True
@@ -212,7 +228,7 @@ private:
 	bool allow_random_ports_;
 	uint16_t multicast_port_;
 	std::string resolve_scope_;
-	std::vector<std::string> multicast_addresses_;
+	std::vector<ip::address> multicast_addresses_;
 	int multicast_ttl_;
 	std::string listen_address_;
 	std::vector<std::string> known_peers_;
@@ -235,8 +251,10 @@ private:
 	double time_probe_max_rtt_;
 	int outlet_buffer_reserve_ms_;
 	int outlet_buffer_reserve_samples_;
+	int socket_send_buffer_size_;
 	int inlet_buffer_reserve_ms_;
 	int inlet_buffer_reserve_samples_;
+	int socket_receive_buffer_size_;
 	float smoothing_halftime_;
 	bool force_default_timestamps_;
 };
