@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="senda_primary">#3F51B5</color>
-    <color name="senda_primary_dark">#303F9F</color>
+    <color name="senda_primary">#C62727</color>
+    <color name="senda_primary_dark">#9B1F1F</color>
     <color name="senda_accent">#FF4081</color>
 
     <!-- Exact SENDA stream-list palette (day) -->
