@@ -1,4 +1,4 @@
-#ifndef _WIN32
+#if defined(__GNUC__) || defined(__clang__)
 // Disable all warnings from gcc/clang:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpragmas"
@@ -11,16 +11,13 @@
 #pragma GCC diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
 #pragma GCC diagnostic ignored "-Wmissing-prototypes"
 #pragma GCC diagnostic ignored "-Wpadded"
-#pragma GCC diagnostic ignored "-Wsign-compare"
 #pragma GCC diagnostic ignored "-Wsign-conversion"
 #pragma GCC diagnostic ignored "-Wunknown-pragmas"
 #pragma GCC diagnostic ignored "-Wunused-macros"
 #pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
-#else
-#ifdef _MSC_VER
+#elif defined(_MSC_VER)
 #pragma warning(push)
-#pragma warning(disable:4018)
-#endif // _MSC_VER
+#pragma warning(disable:4365) // conversion from 'X' to 'Y', signed/unsigned mismatch
 #endif
 
 #include "loguru.hpp"
@@ -90,6 +87,17 @@
 	#ifndef LOGURU_STACKTRACES
 		#define LOGURU_STACKTRACES 0
 	#endif
+#if defined(__ANDROID__)
+// Some Android SDKs lack the pthread_getname_np function. Use prctl(PR_GET_NAME) instead
+// https://stackoverflow.com/a/32380917/73299
+// template<T> so NDKs with pthread_getname_np select the NDK function instead of this one
+#include <sys/prctl.h>
+template<typename T> inline int pthread_getname_np(T /*unused*/, char* buf, size_t buflen) {
+	return prctl(PR_GET_NAME, reinterpret_cast<unsigned long>(buf), static_cast<unsigned long>(buflen), 0, 0);
+}
+#endif
+
+
 #else
 	#define LOGURU_PTHREADS    1
 	#define LOGURU_WINTHREADS  0
@@ -111,16 +119,6 @@
 		#include <sys/thr.h>
 	#elif defined(__OpenBSD__)
 		#include <pthread_np.h>
-	#endif
-
-	#ifdef __linux__
-		/* On Linux, the default thread name is the same as the name of the binary.
-		   Additionally, all new threads inherit the name of the thread it got forked from.
-		   For this reason, Loguru use the pthread Thread Local Storage
-		   for storing thread names on Linux. */
-		#ifndef LOGURU_PTLS_NAMES
-			#define LOGURU_PTLS_NAMES 1
-		#endif
 	#endif
 #endif
 
@@ -1023,7 +1021,7 @@ namespace loguru
 	// Where we store the custom thread name set by `set_thread_name`
 	char* thread_name_buffer()
 	{
-		__declspec( thread ) static char thread_name[LOGURU_THREADNAME_WIDTH + 1] = {0};
+		thread_local static char thread_name[LOGURU_THREADNAME_WIDTH + 1] = {0};
 		return &thread_name[0];
 	}
 #endif // LOGURU_WINTHREADS
@@ -1069,7 +1067,8 @@ namespace loguru
 			// Ask the OS about the thread name.
 			// This is what we *want* to do on all platforms, but
 			// only some platforms support it (currently).
-			pthread_getname_np(pthread_self(), buffer, length);
+			if(pthread_getname_np(pthread_self(), buffer, length) != 0)
+				buffer[0] = 0;
 		#elif LOGURU_WINTHREADS
 			snprintf(buffer, static_cast<size_t>(length), "%s", thread_name_buffer());
 		#else
@@ -1244,27 +1243,48 @@ namespace loguru
 	{
 		if (out_buff_size == 0) { return; }
 		out_buff[0] = '\0';
-		long pos = 0;
+		size_t pos = 0;
 		if (g_preamble_date && pos < out_buff_size) {
-			pos += snprintf(out_buff + pos, out_buff_size - pos, "date       ");
+			int bytes = snprintf(out_buff + pos, out_buff_size - pos, "date       ");
+			if (bytes > 0) {
+				pos += bytes;
+			}
 		}
 		if (g_preamble_time && pos < out_buff_size) {
-			pos += snprintf(out_buff + pos, out_buff_size - pos, "time         ");
+			int bytes = snprintf(out_buff + pos, out_buff_size - pos, "time         ");
+			if (bytes > 0) {
+				pos += bytes;
+			}
 		}
 		if (g_preamble_uptime && pos < out_buff_size) {
-			pos += snprintf(out_buff + pos, out_buff_size - pos, "( uptime  ) ");
+			int bytes = snprintf(out_buff + pos, out_buff_size - pos, "( uptime  ) ");
+			if (bytes > 0) {
+				pos += bytes;
+			}
 		}
 		if (g_preamble_thread && pos < out_buff_size) {
-			pos += snprintf(out_buff + pos, out_buff_size - pos, "[%-*s]", LOGURU_THREADNAME_WIDTH, " thread name/id");
+			int bytes = snprintf(out_buff + pos, out_buff_size - pos, "[%-*s]", LOGURU_THREADNAME_WIDTH, " thread name/id");
+			if (bytes > 0) {
+				pos += bytes;
+			}
 		}
 		if (g_preamble_file && pos < out_buff_size) {
-			pos += snprintf(out_buff + pos, out_buff_size - pos, "%*s:line  ", LOGURU_FILENAME_WIDTH, "file");
+			int bytes = snprintf(out_buff + pos, out_buff_size - pos, "%*s:line  ", LOGURU_FILENAME_WIDTH, "file");
+			if (bytes > 0) {
+				pos += bytes;
+			}
 		}
 		if (g_preamble_verbose && pos < out_buff_size) {
-			pos += snprintf(out_buff + pos, out_buff_size - pos, "   v");
+			int bytes = snprintf(out_buff + pos, out_buff_size - pos, "   v");
+			if (bytes > 0) {
+				pos += bytes;
+			}
 		}
 		if (g_preamble_pipe && pos < out_buff_size) {
-			pos += snprintf(out_buff + pos, out_buff_size - pos, "| ");
+			int bytes = snprintf(out_buff + pos, out_buff_size - pos, "| ");
+			if (bytes > 0) {
+				pos += bytes;
+			}
 		}
 	}
 
@@ -1296,36 +1316,57 @@ namespace loguru
 			snprintf(level_buff, sizeof(level_buff) - 1, "% 4d", verbosity);
 		}
 
-		long pos = 0;
+		size_t pos = 0;
 
 		if (g_preamble_date && pos < out_buff_size) {
-			pos += snprintf(out_buff + pos, out_buff_size - pos, "%04d-%02d-%02d ",
-				             1900 + time_info.tm_year, 1 + time_info.tm_mon, time_info.tm_mday);
+			int bytes = snprintf(out_buff + pos, out_buff_size - pos, "%04d-%02d-%02d ",
+				                 1900 + time_info.tm_year, 1 + time_info.tm_mon, time_info.tm_mday);
+			if (bytes > 0) {
+				pos += bytes;
+			}
 		}
 		if (g_preamble_time && pos < out_buff_size) {
-			pos += snprintf(out_buff + pos, out_buff_size - pos, "%02d:%02d:%02d.%03lld ",
-			               time_info.tm_hour, time_info.tm_min, time_info.tm_sec, ms_since_epoch % 1000);
+			int bytes = snprintf(out_buff + pos, out_buff_size - pos, "%02d:%02d:%02d.%03lld ",
+			                     time_info.tm_hour, time_info.tm_min, time_info.tm_sec, ms_since_epoch % 1000);
+			if (bytes > 0) {
+				pos += bytes;
+			}
 		}
 		if (g_preamble_uptime && pos < out_buff_size) {
-			pos += snprintf(out_buff + pos, out_buff_size - pos, "(%8.3fs) ",
-			               uptime_sec);
+			int bytes = snprintf(out_buff + pos, out_buff_size - pos, "(%8.3fs) ",
+			                     uptime_sec);
+			if (bytes > 0) {
+				pos += bytes;
+			}
 		}
 		if (g_preamble_thread && pos < out_buff_size) {
-			pos += snprintf(out_buff + pos, out_buff_size - pos, "[%-*s]",
-			               LOGURU_THREADNAME_WIDTH, thread_name);
+			int bytes = snprintf(out_buff + pos, out_buff_size - pos, "[%-*s]",
+			                     LOGURU_THREADNAME_WIDTH, thread_name);
+			if (bytes > 0) {
+				pos += bytes;
+			}
 		}
 		if (g_preamble_file && pos < out_buff_size) {
 			char shortened_filename[LOGURU_FILENAME_WIDTH + 1];
 			snprintf(shortened_filename, LOGURU_FILENAME_WIDTH + 1, "%s", file);
-			pos += snprintf(out_buff + pos, out_buff_size - pos, "%*s:%-5u ",
-			               LOGURU_FILENAME_WIDTH, shortened_filename, line);
+			int bytes = snprintf(out_buff + pos, out_buff_size - pos, "%*s:%-5u ",
+			                     LOGURU_FILENAME_WIDTH, shortened_filename, line);
+			if (bytes > 0) {
+				pos += bytes;
+			}
 		}
 		if (g_preamble_verbose && pos < out_buff_size) {
-			pos += snprintf(out_buff + pos, out_buff_size - pos, "%4s",
-			               level_buff);
+			int bytes = snprintf(out_buff + pos, out_buff_size - pos, "%4s",
+			                     level_buff);
+			if (bytes > 0) {
+				pos += bytes;
+			}
 		}
 		if (g_preamble_pipe && pos < out_buff_size) {
-			pos += snprintf(out_buff + pos, out_buff_size - pos, "| ");
+			int bytes = snprintf(out_buff + pos, out_buff_size - pos, "| ");
+			if (bytes > 0) {
+				pos += bytes;
+			}
 		}
 	}
 
@@ -1956,10 +1997,11 @@ namespace loguru
 
 #endif // _WIN32
 
-#ifdef _WIN32
-#ifdef _MSC_VER
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
 #pragma warning(pop)
-#endif // _MSC_VER
-#endif // _WIN32
+#endif
 
 #endif // LOGURU_IMPLEMENTATION

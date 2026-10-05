@@ -4,8 +4,11 @@
 #include <mutex>
 #include <set>
 #include <stdexcept>
+#include <string>
 
 namespace lsl {
+class cancellable_object;
+
 /// Exception class that indicates that an operation was performed on an registry that is being shut
 /// down.
 class shutdown_error : public std::runtime_error {
@@ -80,7 +83,7 @@ private:
 inline void cancellable_registry::cancel_all_registered() {
 	std::lock_guard<std::recursive_mutex> lock(state_mut_);
 	std::set<cancellable_obj *> copy(cancellables_);
-	for (auto obj : copy)
+	for (auto *obj : copy)
 		if (cancellables_.find(obj) != cancellables_.end()) obj->cancel();
 }
 

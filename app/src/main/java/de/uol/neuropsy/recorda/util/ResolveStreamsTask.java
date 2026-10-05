@@ -13,7 +13,7 @@ public class ResolveStreamsTask {
         new Thread(() -> {
             LSL.StreamInfo[] resolved;
             try {
-                resolved = LSL.resolve_streams();
+                resolved = LSL.resolve_streams(3.0);
                 Log.i(TAG, "Resolved " + resolved.length + " LSL streams");
             } catch (Throwable t) {
                 Log.e(TAG, "LSL stream resolution failed", t);

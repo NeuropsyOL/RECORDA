@@ -1,14 +1,14 @@
 #pragma once
+#include <asio/ip/address.hpp>
 #include <cstdint>
 #include <string>
 #include <vector>
-#include <boost/asio/ip/address.hpp>
 
 namespace lsl {
 
 class netif {
 public:
-	lslboost::asio::ip::address addr;
+	asio::ip::address addr;
 	uint32_t ifindex;
 	std::string name;
 };
