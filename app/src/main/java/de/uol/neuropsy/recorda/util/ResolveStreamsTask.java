@@ -1,20 +1,26 @@
     package de.uol.neuropsy.recorda.util;
 
-    import android.os.AsyncTask;
+import android.util.Log;
 
-    import de.uol.neuropsy.recorda.MainActivity;
-    import edu.ucsd.sccn.LSL;
+import de.uol.neuropsy.recorda.MainActivity;
+import edu.ucsd.sccn.LSL;
 
-    public class ResolveStreamsTask extends AsyncTask<MainActivity, Integer, LSL.StreamInfo[]> {
-        MainActivity parent;
-        protected LSL.StreamInfo[] doInBackground(MainActivity... main){
-            parent=main[0];
-            // runs off the UI thread, so we can afford to wait for slow responders (e.g. hotspot clients)
-            return LSL.resolve_streams(3.0);
-        }
+public class ResolveStreamsTask {
 
-        @Override
-        protected void onPostExecute(LSL.StreamInfo[] results) {
-    parent.onStreamRefresh(results);
-        }
+    private static final String TAG = "ResolveStreamsTask";
+
+    public void execute(final MainActivity activity) {
+        new Thread(() -> {
+            LSL.StreamInfo[] resolved;
+            try {
+                resolved = LSL.resolve_streams(3.0);
+                Log.i(TAG, "Resolved " + resolved.length + " LSL streams");
+            } catch (Throwable t) {
+                Log.e(TAG, "LSL stream resolution failed", t);
+                resolved = new LSL.StreamInfo[0];
+            }
+            final LSL.StreamInfo[] results = resolved;
+            activity.runOnUiThread(() -> activity.onStreamRefresh(results));
+        }).start();
     }
+}

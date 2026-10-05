@@ -39,6 +39,22 @@ android {
         }
     }
 
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+    kotlinOptions {
+        jvmTarget = '11'
+    }
+
+    packaging {
+        jniLibs {
+            // JNA needs .so files extracted to the filesystem; AGP 8.x changed the default
+            // to false (store uncompressed in APK), which breaks JNA's native lib lookup.
+            useLegacyPackaging = true
+        }
+    }
+
     buildTypes {
         release {
             signingConfig signingConfigs.release

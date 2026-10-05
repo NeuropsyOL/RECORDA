@@ -6,23 +6,18 @@
 // dependencies { implementation project(':liblsl-java') }
 // in the app's build.gradle
 
-buildscript {
-
-    dependencies {
-        classpath 'com.android.tools.build:gradle:7.2.2'
-    }
-}
-
 plugins {
     id 'com.android.library'
 }
 
 dependencies {
-    implementation 'net.java.dev.jna:jna:5.12.0@aar'
+    implementation 'net.java.dev.jna:jna:5.14.0@aar'
 }
 
 android {
-    compileSdkVersion 33
+    namespace 'edu.ucsd.sccn'
+    compileSdk 34
+    ndkVersion "25.2.9519653"
     defaultConfig {
         minSdkVersion 24
         externalNativeBuild.cmake {
